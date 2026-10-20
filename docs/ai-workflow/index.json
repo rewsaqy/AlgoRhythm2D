@@ -11,7 +11,7 @@
   "snapshot": {
     "observed_date": "2026-10-20",
     "source_kind": "git working tree",
-    "revision": "84b82c7",
+    "revision": "77f12cf",
     "dirty": true,
     "completeness_limits": [
       "Original GDD DOCX absent; docs/ALGORHYTHM_GAME_CONTEXT.md is a derived summary.",
@@ -93,11 +93,12 @@
       "id": "entry-bootstrap",
       "path": "Assets/_Project/Scripts/Game/Bootstrap/GameBootstrap.cs",
       "path_state": "existing",
-      "kind": "runtime_bootstrap",
+      "kind": "scene_bootstrap",
       "certainty": "confirmed",
       "claim_ids": [
         "C-014",
-        "C-030"
+        "C-030",
+        "C-031"
       ]
     }
   ],

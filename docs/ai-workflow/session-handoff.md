@@ -1,13 +1,14 @@
 # Session Handoff — AlgoRhythm2D
 
-- Date and source snapshot: 2026-10-20; git revision `84b82c7`; dirty working tree.
-- User goal and authorized scope: refresh the compact Unity workflow pack, then implement I-001 Day 1 (rhythm and combat greybox). I-001 source, EditMode tests, and a bootstrap-only PlayMode smoke test are in the working tree; no rule engine, 1B, decoy, dialogue, results, save, or build work was started.
+- Date and source snapshot: 2026-10-20; git revision `77f12cf`; dirty working tree.
+- User goal and authorized scope: refresh the compact Unity workflow pack, implement I-001 Day 1 (rhythm and combat greybox), rework the greybox so every GameObject is manually authored in `Assets/Scenes/SampleScene.unity` rather than created by scripts at runtime, and run the V-003 manual PlayMode check. I-001 is done; no rule engine, 1B, decoy, dialogue, results, save, or build work was started.
 - Project root / selected entry path: `/home/zxwyvern/AlgoRhythm2D`; `Assets/Scenes/SampleScene.unity`.
 - Pack profile: `compact` (budget `balanced`).
-- Files created or updated: `docs/ALGORHYTHM_DEMO_PLAN_3DAY.md`; `docs/ai-workflow/{agent.md,project-context.md,validation-matrix.md,session-handoff.md,index.json}`; `docs/ai-workflow/tools/{packlib.py,validate_pack.py,suspects.py,context.py}`; root `AGENTS.md` (ai-workflow section); `Assets/InputSystem_Actions.inputactions` (Rhythm map); `Assets/_Project/Scripts/Core/**`; `Assets/_Project/Scripts/Game/**`; `Assets/_Project/Tests/**` plus generated `.meta` files.
-- Review package: `/home/zxwyvern/Downloads/AlgoRhythm2D_ai-workflow-review_2026-10-20-r2.zip` (41 files) covers the corrected pack before I-001 implementation; no new review package has been built for the I-001 source changes.
+- Files created or updated: `docs/ALGORHYTHM_DEMO_PLAN_3DAY.md`; `docs/ai-workflow/{agent.md,project-context.md,validation-matrix.md,session-handoff.md,index.json}`; `docs/ai-workflow/tools/{packlib.py,validate_pack.py,suspects.py,context.py}`; root `AGENTS.md` (ai-workflow section); `Assets/InputSystem_Actions.inputactions` (Rhythm map); `Assets/_Project/Scripts/Core/**`; `Assets/_Project/Scripts/Game/**`; `Assets/_Project/Tests/**`; manual `Assets/Scenes/SampleScene.unity` hierarchy; `Assets/_Project/Data/DemoConfig.asset`; `Assets/_Project/Materials/Greybox*.mat`; `Assets/_Project/Audio/MetronomeClick.wav`; plus generated `.meta` files.
+- Review package: `/home/zxwyvern/Downloads/AlgoRhythm2D_ai-workflow-review_2026-10-20-r2.zip` (41 files) covers the corrected pack before I-001 implementation; no new review package has been built for the I-001 source/scene changes.
 - Coverage: see `project-context.md` §15 "Not inspected".
-- Key facts: C-001 through C-030 in `project-context.md`.
+- Key facts: C-001 through C-032 in `project-context.md`.
+- Manual-scene change: `GameBootstrap`, `ArenaPresenter`, `HudView`, `MetronomePlayer`, `ThreatView`, and `ShieldView` no longer create or destroy GameObjects. `SampleScene` contains a manually authored `AlgoRhythm` hierarchy with serialized `DemoConfig`, arena/direction/grade visuals, 12 inactive threat views, 4 inactive shield views, HUD TextMesh labels, 8 AudioSource children, and the input router. Runtime scripts only move/label/activate existing scene objects and create pure-C# services.
 - Decisions made, proposed, unresolved:
   - A1 demo semantics: auto-shield is independent, capped at Good, spends Energy on fire, and respects cooldown; manual shield remains primary for other directions and Perfect.
   - A1 Set A edge rules: manual non-Miss precedence; no-energy suppression without cost; auto counts Good; decoy −5 without Good; cooldown starts on fire.
@@ -18,14 +19,14 @@
   - Provenance: `docs/ALGORHYTHM_GAME_CONTEXT.md` is derived; §13.5 `[E]` and §17 are analysis, not original GDD; the original DOCX is absent.
   - AnkleBreaker Unity MCP remains an optional external candidate; not installed, configured, or verified.
 - Review corrections applied to docs: R-01/R-02 provenance and claims; R-03 Linux/Windows acceptance split; R-04 C#-safe stubs; R-05 A2 ambiguity; R-06 score formula/`RuleBonus`; R-07 A1 Set A; R-08 E006/validator/`Due` buffer; R-09–R-13 limits and mappings; R-14 package rebuilt with `.meta` files and `asset-inventory.txt`.
-- Checks and outcomes: see validation matrix. V-002 and a bootstrap-only PlayMode smoke test were observed in a disposable Unity batchmode clone; V-003 remains not_run.
-- Checks not run and why: V-003 (no manual Play Mode/input-device observation), V-005 (build target/profile not verified), V-006–V-010 (later increments/content), V-011 (no Linux player yet), V-012 (no Windows Build Support or clean Windows machine).
+- Checks and outcomes: see validation matrix. V-002 and an actual-scene PlayMode smoke were observed in a disposable Unity batchmode clone after the manual-scene rework; V-003 has its observed user-driven run on 2026-10-20 (full 12-threat debug wave to WAVE CLEAR in live Play Mode, 0 console errors). I-001 is done.
+- Checks not run and why: V-005 (build target/profile not verified), V-006–V-010 (later increments/content), V-011 (no Linux player yet), V-012 (no Windows Build Support or clean Windows machine).
 - Blockers, missing access, pending integration:
   - Original GDD DOCX absent; all derived sections are marked.
   - The main Unity editor is open on the project; direct batchmode tests there are blocked by the project lock. A disposable clone was used for compile/tests.
-  - No input-driven Play Mode, build, or player observation exists; only a bootstrap-only PlayMode smoke test has run.
+  - No automated input-driven PlayMode test, build, or player observation exists; V-003 was a user-driven manual run plus the actual-scene PlayMode smoke.
   - Windows Build Support and a clean Windows machine are absent; only LinuxStandaloneSupport is installed.
   - AnkleBreaker MCP requires the companion Unity plugin, a Node server checkout, and an OpenCode MCP entry; Linux/Unity 6.3 compatibility is unverified.
-- Next executable increment and acceptance: V-003 Play Mode check for I-001, then I-002 (rule engine and 1A→1B).
-- Resume instructions and isolated test data: read root `AGENTS.md` and `agent.md`; run `context.py`; open `SampleScene` and enter Play Mode for V-003. The disposable test clone is `/tmp/opencode/AlgoRhythm2D-test`; test results are `/tmp/opencode/editmode-results.xml` and `/tmp/opencode/playmode-results.xml`.
-- Working tree note: I-001 source/asset changes are uncommitted; unrelated dirty/deleted files remain untouched.
+- Next executable increment and acceptance: I-002 (rule engine and 1A→1B), gated by V-004/V-007/V-008.
+- Resume instructions and isolated test data: read root `AGENTS.md` and `agent.md`; run `context.py`; open `SampleScene` and enter Play Mode for V-003. The disposable test clone is `/tmp/opencode/AlgoRhythm2D-test`; test results are `/tmp/opencode/manual-editmode-results.xml` and `/tmp/opencode/manual-playmode-results.xml`.
+- Working tree note: I-001 source/asset/scene changes are uncommitted; unrelated dirty/deleted files remain untouched.

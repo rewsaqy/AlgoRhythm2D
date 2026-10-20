@@ -21,3 +21,7 @@ MonoBehaviour:
   maxIntegrity: 100
   startingEnergy: 6
   straightShooterDamage: 10
+  ruleEnergyCost: 1
+  ruleCooldownMs: 1500
+  energyRegenEveryBeats: 4
+  shieldTransitMs: 180

@@ -21,5 +21,16 @@ namespace AlgoRhythm.Game.Config
         [Min(0)] public int maxIntegrity = 100;
         [Min(0)] public int startingEnergy = 6;
         [Min(0)] public int straightShooterDamage = 10;
+
+        [Header("Rules")]
+        [Min(0)] public int ruleEnergyCost = 1;
+        [Min(0)] public int ruleCooldownMs = 1500;
+        [Min(1)] public int energyRegenEveryBeats = 4;
+
+        [Header("Shield")]
+        [Min(0.0f)] public double shieldTransitMs = 180.0;
+
+        [Header("Notes")]
+        [Range(0.05f, 0.9f)] public float noteStepAttack = 0.25f;
     }
 }

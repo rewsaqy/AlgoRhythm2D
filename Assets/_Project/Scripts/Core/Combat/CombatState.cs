@@ -13,9 +13,11 @@ namespace AlgoRhythm.Core.Combat
     {
         public const int DefaultMaxIntegrity = 100;
         public const int DefaultStartingEnergy = 6;
+        public const int DecoyShieldPenalty = 5;
 
         private readonly HashSet<int> _resolvedThreatIds = new HashSet<int>();
         private int _damageTaken;
+        private int _decoyPenaltyTotal;
 
         public CombatState(
             int maxIntegrity = DefaultMaxIntegrity,
@@ -43,7 +45,7 @@ namespace AlgoRhythm.Core.Combat
             RuleBonus = ruleBonus;
         }
 
-        public int MaxIntegrity { get; }
+        public int MaxIntegrity { get; private set; }
 
         public int Integrity { get; private set; }
 
@@ -59,6 +61,8 @@ namespace AlgoRhythm.Core.Combat
 
         public int DamageTaken => _damageTaken;
 
+        public int DecoyPenaltyTotal => _decoyPenaltyTotal;
+
         public int Score
         {
             get
@@ -67,6 +71,7 @@ namespace AlgoRhythm.Core.Combat
                           + GoodCount * 60
                           - MissCount * 40
                           - _damageTaken * 25
+                          - _decoyPenaltyTotal
                           + RuleBonus;
                 return Math.Max(0, raw);
             }
@@ -141,6 +146,58 @@ namespace AlgoRhythm.Core.Combat
 
             Energy -= amount;
             return true;
+        }
+
+        /// <summary>
+        /// Resolves a decoy exactly once. A shielded decoy costs −5 with no
+        /// grade counters and no damage; an ignored decoy expires neutrally.
+        /// Shares the one-final-result guard with <see cref="ResolveThreat"/>.
+        /// </summary>
+        public bool ResolveDecoy(in ThreatEvent threat, bool shielded, bool fromRule, out int scoreDelta)
+        {
+            scoreDelta = 0;
+            if (threat.Kind != ThreatKind.AdwareDecoy || _resolvedThreatIds.Contains(threat.Id))
+            {
+                return false;
+            }
+
+            _resolvedThreatIds.Add(threat.Id);
+            if (!shielded)
+            {
+                return true;
+            }
+
+            int scoreBefore = Score;
+            _decoyPenaltyTotal += DecoyShieldPenalty;
+            scoreDelta = Score - scoreBefore;
+            return true;
+        }
+
+        /// <summary>
+        /// Fresh sub-wave attempt (A5 retry). Clears the result guard,
+        /// counters, damage, and penalties; restores Integrity and Energy.
+        /// </summary>
+        public void Reset(int maxIntegrity, int startingEnergy)
+        {
+            if (maxIntegrity < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxIntegrity));
+            }
+
+            if (startingEnergy < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startingEnergy));
+            }
+
+            _resolvedThreatIds.Clear();
+            _damageTaken = 0;
+            _decoyPenaltyTotal = 0;
+            MaxIntegrity = maxIntegrity;
+            Integrity = maxIntegrity;
+            Energy = startingEnergy;
+            PerfectCount = 0;
+            GoodCount = 0;
+            MissCount = 0;
         }
 
         public void AddEnergy(int amount)

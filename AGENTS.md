@@ -9,7 +9,7 @@ This repository is a Unity 6.3 project for AlgoRhythm: CODE IS SHIELD. Workflow 
 
 1. Read applicable repository instructions and `docs/ai-workflow/agent.md`.
 2. On resume, read `docs/ai-workflow/session-handoff.md`.
-3. List routes with `python docs/ai-workflow/tools/context.py . --pack docs/ai-workflow`; load only the selected route and its dependency closure. R-001 fits the default 16k budget; R-002–R-004 need about 26–27k, so rerun with `--max-chars 28000` (or the reported size).
+3. List routes with `python docs/ai-workflow/tools/context.py . --pack docs/ai-workflow`; load only the selected route and its dependency closure. R-001 needs about 20.8k, so rerun with `--max-chars 22000`; R-002–R-003 need about 28–29k and R-004 about 30.3k, so rerun with `--max-chars 32000` (or the reported size).
 4. Check claim freshness in `project-context.md`; the excerpt is navigation, not proof.
 
 ## Non-negotiables

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using AlgoRhythm.Core.Combat;
 using AlgoRhythm.Core.Rhythm;
+using AlgoRhythm.Core.Rules;
 using AlgoRhythm.Core.Waves;
 using AlgoRhythm.Game.Config;
 using AlgoRhythm.Game.Input;
@@ -11,20 +12,25 @@ using UnityEngine;
 namespace AlgoRhythm.Game.Combat
 {
     /// <summary>
-    /// I-001 combat driver. Input is graded against the threat's DSP impact
-    /// time; a threat is resolved exactly once, by input or by timeout.
+    /// I-002 combat driver. Manual shield keeps I-001 behavior; at each
+    /// impact the controller then offers the threat to the rule runtime
+    /// (auto-shield, max Good, Set A edge rules). One final result per
+    /// threat, by input, by rule, or by timeout. Integrity 0 retries the
+    /// current sub-wave (A5); clearing a wave advances the director (1A→1B).
     /// </summary>
     public sealed class CombatController : IDisposable
     {
         private readonly IClockSource _clockSource;
         private readonly BeatClock _clock;
         private readonly TimingJudge _judge;
-        private readonly WaveRunner _wave;
+        private readonly WaveDirector _director;
         private readonly CombatState _combat;
         private readonly ArenaPresenter _arena;
         private readonly HudView _hud;
         private readonly MetronomePlayer _metronome;
         private readonly InputRouter _input;
+        private readonly RuleRuntime _rules;
+        private readonly ShieldController _shield;
         private readonly DemoConfig _config;
         private readonly List<ActiveThreat> _active = new List<ActiveThreat>();
         private readonly ThreatEvent[] _spawnBuffer = new ThreatEvent[8];
@@ -32,11 +38,13 @@ namespace AlgoRhythm.Game.Combat
         private bool _started;
         private bool _paused;
         private int _lastBeat = int.MinValue;
+        private bool _clearAnnounced;
 
         private sealed class ActiveThreat
         {
             public ThreatEvent Threat;
             public bool Resolved;
+            public bool ImpactEvaluated;
             public double? BufferedInputDsp;
         }
 
@@ -44,23 +52,27 @@ namespace AlgoRhythm.Game.Combat
             IClockSource clockSource,
             BeatClock clock,
             TimingJudge judge,
-            WaveRunner wave,
+            WaveDirector director,
             CombatState combat,
             ArenaPresenter arena,
             HudView hud,
             MetronomePlayer metronome,
             InputRouter input,
+            RuleRuntime rules,
+            ShieldController shield,
             DemoConfig config)
         {
             _clockSource = clockSource ?? throw new ArgumentNullException(nameof(clockSource));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _judge = judge ?? throw new ArgumentNullException(nameof(judge));
-            _wave = wave ?? throw new ArgumentNullException(nameof(wave));
+            _director = director ?? throw new ArgumentNullException(nameof(director));
             _combat = combat ?? throw new ArgumentNullException(nameof(combat));
             _arena = arena ?? throw new ArgumentNullException(nameof(arena));
             _hud = hud ?? throw new ArgumentNullException(nameof(hud));
             _metronome = metronome ?? throw new ArgumentNullException(nameof(metronome));
             _input = input ?? throw new ArgumentNullException(nameof(input));
+            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            _shield = shield ?? throw new ArgumentNullException(nameof(shield));
             _config = config ?? throw new ArgumentNullException(nameof(config));
         }
 
@@ -73,15 +85,14 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            double startDsp = _clockSource.NowDsp
-                              + _config.startLeadInBeats * _clock.SecondsPerBeat;
-            _clock.Start(startDsp);
             _started = true;
             _lastBeat = int.MinValue;
 
             _input.ShieldPressed += HandleShieldPressed;
             _input.PausePressed += TogglePause;
-            _hud.SetStatus("I-001: straight-shooter greybox");
+            _director.WaveStarted += OnWaveStarted;
+            _director.StartWave(0);
+            _hud.SetStatus("I-002: rules greybox — 1/2/3, Q/E, ENTER, R");
         }
 
         public void Tick()
@@ -96,6 +107,11 @@ namespace AlgoRhythm.Game.Combat
             {
                 _lastBeat = beat;
                 SpawnDue(beat);
+                if (beat > 0 && _config.energyRegenEveryBeats > 0
+                    && beat % _config.energyRegenEveryBeats == 0)
+                {
+                    _combat.AddEnergy(1);
+                }
             }
 
             double now = _clockSource.NowDsp;
@@ -110,23 +126,47 @@ namespace AlgoRhythm.Game.Combat
 
                 double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
                 double spawnDsp = _clock.BeatTime(active.Threat.SpawnBeat);
-                float progress = impactDsp > spawnDsp
-                    ? (float)((now - spawnDsp) / (impactDsp - spawnDsp))
-                    : 1.0f;
-                _arena.UpdateThreat(active.Threat, progress, active.BufferedInputDsp.HasValue);
+                // Beat-quantized glide: one tile per beat, smoothstepped
+                // inside the beat, frozen between beats and on pause. Pure
+                // DSP function; judging is untouched.
+                float progress = BeatGlideProgress(
+                    active.Threat.SpawnBeat,
+                    active.Threat.ImpactBeat,
+                    now);
+                _arena.UpdateThreat(
+                    active.Threat,
+                    progress,
+                    active.BufferedInputDsp.HasValue,
+                    (impactDsp - now) * 1000.0);
 
-                if (active.BufferedInputDsp.HasValue && now >= impactDsp)
+                if (now >= impactDsp && !active.ImpactEvaluated)
                 {
-                    TimingGrade bufferedGrade = _judge.Grade(active.BufferedInputDsp.Value, impactDsp);
-                    Resolve(active, bufferedGrade, "buffered input");
-                    continue;
+                    // The auto-shield decision runs exactly once, at impact;
+                    // later manual presses use the immediate input path.
+                    active.ImpactEvaluated = true;
+                    ResolveAtImpact(active);
                 }
 
-                if (now > impactDsp + _judge.GoodWindowMs / 1000.0)
+                if (!active.Resolved && now > impactDsp + _judge.GoodWindowMs / 1000.0)
                 {
-                    Resolve(active, TimingGrade.Miss, "timeout");
+                    ResolveTimeout(active);
                 }
             }
+
+            if (_combat.Integrity <= 0)
+            {
+                RetryCurrentWave();
+                return;
+            }
+
+            if (!_clearAnnounced && _director.ActiveRunner.IsCleared)
+            {
+                AnnounceWaveClear();
+            }
+
+            _arena.SetShieldPose(
+                _shield.CurrentAngle(now),
+                ArenaPresenter.DirectionCode(_shield.NearestSlot(now)));
         }
 
         public void TogglePause()
@@ -181,24 +221,109 @@ namespace AlgoRhythm.Game.Combat
         {
             _input.ShieldPressed -= HandleShieldPressed;
             _input.PausePressed -= TogglePause;
+            _director.WaveStarted -= OnWaveStarted;
+        }
+
+        private void OnWaveStarted(int index)
+        {
+            _clearAnnounced = false;
+            _hud.ShowWaveSummary(string.Empty);
+        }
+
+        /// <summary>
+        /// Maps DSP time to stepped travel progress: the threat holds still
+        /// for most of each beat, then steps quickly in the last attack
+        /// fraction and lands exactly on the beat. Frozen on pause. Pure DSP
+        /// function; judging is untouched.
+        /// </summary>
+        private float BeatGlideProgress(int spawnBeat, int impactBeat, double nowDsp)
+        {
+            int travelBeats = impactBeat - spawnBeat;
+            if (travelBeats <= 0)
+            {
+                return 1.0f;
+            }
+
+            double beatsSinceSpawn = (nowDsp - _clock.BeatTime(spawnBeat)) / _clock.SecondsPerBeat;
+            if (beatsSinceSpawn <= 0.0)
+            {
+                return 0.0f;
+            }
+
+            float attack = Mathf.Clamp(_config.noteStepAttack, 0.05f, 0.9f);
+            double tile = Math.Floor(beatsSinceSpawn);
+            double frac = beatsSinceSpawn - tile;
+            double eased = tile;
+            if (frac >= 1.0 - attack)
+            {
+                double u = (frac - (1.0 - attack)) / attack;
+                eased = tile + u * u * (3.0 - 2.0 * u);
+            }
+
+            return (float)(eased / travelBeats);
         }
 
         private void SpawnDue(int beat)
         {
-            int count = _wave.Due(beat, _spawnBuffer);
+            WaveRunner wave = _director.ActiveRunner;
+            int count = wave.Due(beat, _spawnBuffer);
             for (int index = 0; index < count; index++)
             {
                 ThreatEvent threat = _spawnBuffer[index];
                 _active.Add(new ActiveThreat { Threat = threat });
-                _arena.SpawnThreat(threat);
+                float travelMs = (float)((_clock.BeatTime(threat.ImpactBeat)
+                                          - _clock.BeatTime(threat.SpawnBeat)) * 1000.0);
+                _arena.SpawnThreat(threat, travelMs);
                 _hud.SetStatus(
                     $"Threat {threat.Id}: {threat.Direction} telegraph — impact beat {threat.ImpactBeat}");
             }
 
-            if (_wave.AllSpawned && _wave.IsCleared)
+            if (wave.AllSpawned && wave.IsCleared)
             {
                 _hud.SetStatus("WAVE CLEAR — all threats resolved");
             }
+        }
+
+        /// <summary>
+        /// Impact order: buffered manual non-Miss wins (precedence); a
+        /// buffered Miss never blocks the rule; otherwise the rule may fire.
+        /// </summary>
+        private void ResolveAtImpact(ActiveThreat active)
+        {
+            double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
+
+            if (active.BufferedInputDsp.HasValue)
+            {
+                TimingGrade bufferedGrade = _judge.Grade(active.BufferedInputDsp.Value, impactDsp);
+                if (bufferedGrade != TimingGrade.Miss)
+                {
+                    ResolveManual(active, bufferedGrade);
+                    return;
+                }
+            }
+
+            RuleFireDecision decision = _rules.EvaluateThreat(
+                active.Threat,
+                _clockSource.NowDsp,
+                _combat.Energy,
+                manualNonMissResolved: false,
+                out RuleFired fired);
+
+            if (decision == RuleFireDecision.Fire && _combat.TrySpendEnergy(fired.EnergySpent))
+            {
+                ResolveAuto(active, fired);
+            }
+        }
+
+        private void ResolveTimeout(ActiveThreat active)
+        {
+            if (active.Threat.Kind == ThreatKind.AdwareDecoy)
+            {
+                ResolveDecoy(active, shielded: false, fromRule: false);
+                return;
+            }
+
+            Resolve(active, TimingGrade.Miss, "timeout");
         }
 
         private void HandleShieldPressed(Direction direction, double inputDsp)
@@ -215,10 +340,20 @@ namespace AlgoRhythm.Game.Combat
             }
 
             ActiveThreat candidate = FindNearestThreat(direction, inputDsp);
+            _shield.RequestDirection(direction, inputDsp);
             if (candidate == null)
             {
                 _arena.ShowInputRejected($"WRONG DIRECTION ({direction})");
                 _hud.SetStatus($"No {direction} threat in the input buffer");
+                return;
+            }
+
+            // The press always moves the shield; the block lands only when the
+            // shield actually covers the lane at press moment.
+            if (!_shield.CoversDirection(direction, inputDsp))
+            {
+                _arena.ShowInputRejected("SHIELD NOT IN LANE");
+                _hud.SetStatus($"Shield en route — {direction} not covered yet");
                 return;
             }
 
@@ -248,14 +383,73 @@ namespace AlgoRhythm.Game.Combat
                     candidate.BufferedInputDsp = inputDsp;
                 }
 
-                _arena.ShowShield(direction, _judge.Grade(inputDsp, impactDsp));
+                _arena.PulseShield();
                 _hud.SetStatus($"Buffered {direction} input — judged at impact");
                 return;
             }
 
             TimingGrade grade = _judge.Grade(inputDsp, impactDsp);
-            _arena.ShowShield(direction, grade);
+            if (candidate.Threat.Kind == ThreatKind.AdwareDecoy && grade != TimingGrade.Miss)
+            {
+                candidate.Resolved = true;
+                ResolveDecoy(candidate, shielded: true, fromRule: false);
+                return;
+            }
+
+            _arena.PulseShield();
             Resolve(candidate, grade, "input");
+        }
+
+        private void ResolveManual(ActiveThreat active, TimingGrade grade)
+        {
+            _rules.TryLogManualPrecedence(active.Threat);
+            if (active.Threat.Kind == ThreatKind.AdwareDecoy)
+            {
+                active.Resolved = true;
+                ResolveDecoy(active, shielded: true, fromRule: false);
+                return;
+            }
+
+            _arena.PulseShield();
+            Resolve(active, grade, "input");
+        }
+
+        private void ResolveAuto(ActiveThreat active, RuleFired fired)
+        {
+            active.Resolved = true;
+            // The auto-shield drives the shield itself: it visibly swooshes to
+            // the lane as the block lands (Set A independence).
+            _shield.RequestDirection(active.Threat.Direction, _clockSource.NowDsp);
+            _arena.PulseShield();
+
+            if (active.Threat.Kind == ThreatKind.AdwareDecoy)
+            {
+                ResolveDecoy(active, shielded: true, fromRule: true);
+                return;
+            }
+
+            _director.ActiveRunner.MarkResolved(active.Threat.Id);
+            if (_combat.ResolveThreat(active.Threat, TimingGrade.Good, fromRule: true, damage: 0))
+            {
+                _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true);
+                _hud.SetStatus($"Threat {active.Threat.Id}: Good (auto-shield)");
+            }
+        }
+
+        private void ResolveDecoy(ActiveThreat active, bool shielded, bool fromRule)
+        {
+            active.Resolved = true;
+            _director.ActiveRunner.MarkResolved(active.Threat.Id);
+
+            if (!_combat.ResolveDecoy(active.Threat, shielded, fromRule, out int scoreDelta))
+            {
+                return;
+            }
+
+            _arena.ResolveDecoyView(active.Threat.Id, shielded);
+            _hud.SetStatus(shielded
+                ? $"Threat {active.Threat.Id}: DECOY −5 ({(fromRule ? "auto-shield" : "manual")})"
+                : $"Threat {active.Threat.Id}: decoy ignored");
         }
 
         private ActiveThreat FindNearestThreat(Direction direction, double inputDsp)
@@ -302,14 +496,37 @@ namespace AlgoRhythm.Game.Combat
             }
 
             active.Resolved = true;
-            _wave.MarkResolved(active.Threat.Id);
+            _director.ActiveRunner.MarkResolved(active.Threat.Id);
             _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: grade != TimingGrade.Miss);
             _hud.SetStatus($"Threat {active.Threat.Id}: {grade} ({reason})");
+        }
 
-            if (_wave.IsCleared)
+        private void AnnounceWaveClear()
+        {
+            _clearAnnounced = true;
+            _combat.AddEnergy(1);
+            _hud.ShowWaveSummary(
+                $"WAVE CLEAR {_director.ActiveRunner.Data.WaveId} — " +
+                $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}  " +
+                $"DMG {_combat.DamageTaken}  SCORE {_combat.Score}");
+            _hud.SetStatus("WAVE CLEAR — all threats resolved");
+
+            _arena.ClearThreats();
+            if (!_director.Advance())
             {
-                _hud.SetStatus("WAVE CLEAR — all threats resolved");
+                _hud.SetStatus("RUN CLEAR — 1A and 1B done");
             }
+        }
+
+        private void RetryCurrentWave()
+        {
+            _arena.ClearThreats();
+            _active.Clear();
+            _combat.Reset(_config.maxIntegrity, _config.startingEnergy);
+            _metronome.Pause();
+            _director.RetryCurrent();
+            _metronome.Resume();
+            _hud.SetStatus("RETRY — wave restarted");
         }
     }
 }
