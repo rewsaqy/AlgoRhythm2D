@@ -7,28 +7,28 @@ Preconditions and environment: Python 3.14.8; pack at `docs/ai-workflow`; tools 
 Runner or exact manual input path: `python docs/ai-workflow/tools/validate_pack.py . docs/ai-workflow`
 Expected observable result: exit 0; no validator errors; any warnings reviewed and explained.
 Status: passed
-Observed result and evidence location: `python docs/ai-workflow/tools/validate_pack.py . docs/ai-workflow` exited 0 with `0 error(s), 0 warning(s)` after the I-001 documentation refresh; `context.py` listed R-001 through R-004. R-001 fits the 16k default; R-002 needs about 25.9k, R-003 about 26.6k, and R-004 about 27.2k, so use `--max-chars 28000`. Terminal output, 2026-10-20.
+Observed result and evidence location: `python docs/ai-workflow/tools/validate_pack.py . docs/ai-workflow` exited 0 with `0 error(s), 0 warning(s)` after V-003 passed and I-001 closed; `context.py` listed R-001 through R-004. R-001 needs about 20.8k, R-002 about 27.8k, R-003 about 28.5k, and R-004 about 30.3k, so use `--max-chars 22000` for R-001 or `--max-chars 32000` for R-002–R-004. Terminal output, 2026-10-20.
 Remaining limit or next action: validator checks mechanics, not claim truth or gameplay behavior.
 
 ### V-002 EditMode timing boundaries
 Covers: R-001, F-002
 Mode: EditMode
-Preconditions and environment: I-001 test assembly at `Assets/_Project/Tests/EditMode/AlgoRhythm.Tests.EditMode.asmdef`; Unity 6000.3.8f1; the main project editor was open, so the run used a disposable clone at `/tmp/opencode/AlgoRhythm2D-test` with identical project source and a symlinked package cache.
-Runner or exact manual input path: `Unity -batchmode -nographics -projectPath /tmp/opencode/AlgoRhythm2D-test -runTests -testPlatform EditMode -testResults /tmp/opencode/editmode-results.xml -logFile /tmp/opencode/editmode.log`.
+Preconditions and environment: I-001 test assembly at `Assets/_Project/Tests/EditMode/AlgoRhythm.Tests.EditMode.asmdef`; Unity 6000.3.8f1; manually authored `SampleScene`; the main project editor was open, so the run used a disposable clone at `/tmp/opencode/AlgoRhythm2D-test` with identical project source and a symlinked package cache.
+Runner or exact manual input path: `Unity -batchmode -nographics -projectPath /tmp/opencode/AlgoRhythm2D-test -runTests -testPlatform EditMode -testResults /tmp/opencode/manual-editmode-results.xml -logFile /tmp/opencode/manual-editmode.log`.
 Expected observable result: `|error| <= 70` is PERFECT at the boundary, 71–130 is GOOD, >130 is MISS; calibration ±150 shifts the expected impact; one final result per event; pause/resume preserves the beat map; wave due buffers do not duplicate or lose threats.
 Status: passed
-Observed result and evidence location: `/tmp/opencode/editmode-results.xml` records 19/19 tests passed (0 failed) on 2026-10-20; test files: `BeatClockTests.cs`, `TimingJudgeTests.cs`, `CombatStateTests.cs`, `WaveRunnerTests.cs`. An epsilon (`1e-6` ms) was added after two exact-boundary tests exposed binary floating-point error.
-Remaining limit or next action: the run used a disposable clone, not the open live project; no PlayMode/input-device/build observation. Keep this check green when timing code changes.
+Observed result and evidence location: `/tmp/opencode/manual-editmode-results.xml` records 19/19 tests passed (0 failed) on 2026-10-20 after the manual-scene rework; test files: `BeatClockTests.cs`, `TimingJudgeTests.cs`, `CombatStateTests.cs`, `WaveRunnerTests.cs`. An epsilon (`1e-6` ms) was added after two exact-boundary tests exposed binary floating-point error.
+Remaining limit or next action: the run used a disposable clone, not the open live project; no input-device/build observation. Keep this check green when timing code changes.
 
 ### V-003 PlayMode manual shield integration
 Covers: R-001, R-003, F-002
 Mode: PlayMode
-Preconditions and environment: I-001 runtime bootstrap in `SampleScene`; new Input System with the `Rhythm` map; one telegraphed debug cue; editor not in a compile/reload loop.
+Preconditions and environment: manually authored I-001 greybox in `SampleScene`; new Input System with the `Rhythm` map; one telegraphed debug cue; editor not in a compile/reload loop.
 Runner or exact manual input path: Open `Assets/Scenes/SampleScene.unity`, enter Play Mode, press W/A/S/D (or arrows) at the telegraphed cues; test correct direction, wrong direction, late input, and pause/resume with Escape/P.
 Expected observable result: Correct direction inside the window yields PERFECT or GOOD; wrong direction yields no shield benefit with an explicit reason; late input yields MISS; pause/resume does not shift the DSP beat origin; no double resolve.
-Status: not_run
-Observed result and evidence location: None for the required manual input/scene checks. A committed bootstrap-only PlayMode smoke test (`Tests/PlayMode/BootstrapSmokeTests.cs`) passed 1/1 in the disposable clone: it injects a test-only `AudioListener`, `GameBootstrap` auto-starts, the metronome scheduling path runs, and the session lasts 6 seconds through the first threat spawn and timeout with no unexpected logs. It does not drive W/A/S/D, verify audible output on a real device, or exercise the actual `SampleScene`, so it is not a substitute for this check.
-Remaining limit or next action: Run the manual scene check in an editor/player with audio; do not claim scene/input integration until observed.
+Status: passed
+Observed result and evidence location: User drove the full 12-threat debug wave in live-editor Play Mode to WAVE CLEAR on 2026-10-20 and reported all five checks good: correct-direction key gave SHIELD plus PERFECT/GOOD with score; wrong-direction key gave NO SHIELD / WRONG DIRECTION with no benefit and an explicit status reason; late/untouched threats gave MISS with Integrity −10; Escape showed the PAUSED overlay with a frozen BEAT counter and resumed with beats continuing in sequence; each threat produced exactly one status result. The metronome was audible. MCP observed Play Mode entry, on-schedule threat spawn/timeout behavior before input, 0 console errors across the run, and live gameplay rendering (`Assets/Screenshots/V003_PlayStart.png`, `Assets/Screenshots/ManualGreybox_Play.png`). The batchmode smoke (`/tmp/opencode/manual-playmode-results.xml`, 1/1) remains a supplement, not the basis.
+Remaining limit or next action: this was a user-driven manual run; no automated input-driven PlayMode test exists yet, and audio was verified by ear on this machine only.
 
 ### V-004 Demo assumptions review
 Covers: R-002, F-001, F-004, F-010
@@ -75,7 +75,7 @@ Covers: R-002, F-001, F-009
 Mode: PlayMode
 Preconditions and environment: I-002 rule wiring; a `WHEN_PROJECTILE + direction + RAISE_SHIELD` rule; Energy/cooldown values; manual shield path still active; A1 Set A semantics recorded.
 Runner or exact manual input path: Play the 1B scenario, commit the auto-shield rule, and observe target-direction auto-shield, manual overlap, Energy deduction on fire, cooldown, max-Good behavior, a decoy, and multiple eligible threats on one beat. Test a wrong-direction threat, a manual Perfect, insufficient Energy at fire, and manual precedence.
-Expected observable result: Auto-shield fires independently on the target direction, spends Energy only on fire, respects cooldown, and yields at most Good; a manual Perfect/Good suppresses auto-shield for that threat without cost; insufficient Energy suppresses without cost; decoy auto-shield spends Energy and applies −5 without Good; with multiple eligible threats on one beat, the lowest Id fires first and cooldown suppresses the rest; manual shield still works for other directions and can earn Perfect; no double resolve; the code panel logs fire/suppression.
+Expected observable result: Auto-shield fires independently on the target direction, spends Energy only on fire, respects cooldown, and yields at most Good; a manual Perfect/Good suppresses auto-shield for that threat without cost; insufficient Energy suppresses without cost; decoy auto-shield spends Energy and applies −5 without Good; single-threat-per-beat spacing is authored (no simultaneous notes per owner order — the lowest-Id tie-break stays in code and EditMode tests only); manual shield still works for other directions and can earn Perfect; no double resolve; the code panel logs fire/suppression.
 Status: not_run
 Observed result and evidence location: none.
 Remaining limit or next action: no rule or scene wiring exists; verify the explicit cost/cooldown, RuleBonus=0 default, and ScoreService inputs in I-002.

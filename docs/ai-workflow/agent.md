@@ -11,7 +11,7 @@ Architecture policy: `conform` to the demo plan's minimal architecture: `AlgoRhy
 ## Start here
 
 1. Read applicable repository instructions and this file. When resuming, read `docs/ai-workflow/session-handoff.md`.
-2. From the repository root, run `python docs/ai-workflow/tools/context.py . --pack docs/ai-workflow` to list routes; add `--route R-001` (or `R-002` / `R-003` / `R-004`) for the selected route. R-001 fits the default 16k budget; R-002 needs about 25.9k, R-003 about 26.6k, and R-004 about 27.2k. If the default exits 2, rerun with `--max-chars 28000` (or the size the tool reports).
+2. From the repository root, run `python docs/ai-workflow/tools/context.py . --pack docs/ai-workflow` to list routes; add `--route R-001` (or `R-002` / `R-003` / `R-004`) for the selected route. R-001 needs about 20.8k, R-002 about 27.8k, R-003 about 28.5k, and R-004 about 30.3k. If the default exits 2, rerun with `--max-chars 22000` for R-001 or `--max-chars 32000` for R-002–R-004 (or the size the tool reports).
 3. Read the route, the demo-plan sections it names, the source/assets, and the relevant claims in `project-context.md`. Check claim freshness before relying on it.
 4. If Python is unavailable, use `docs/ai-workflow/index.json` and read the selected route, its claims and `deps:`, protected areas, and matrix checks directly. Do not load every document by default.
 
@@ -54,11 +54,11 @@ Verify by risk, not by sweeping: diff/reference integrity, Unity compilation/imp
 
 ### R-001 Rhythm timing and manual shield
 Start: demo plan §4, §5, and §9 Hari 1; GDD §4 (`BeatIntervalMs`, `TimingJudge`); `Assets/_Project/Scripts/Core/Rhythm/`; `Assets/_Project/Scripts/Game/`; `Assets/InputSystem_Actions.inputactions`; `Assets/Scenes/SampleScene.unity` (C-005, C-006, C-012, C-014, C-030).
-State owner and scene/assets: I-001 source exists: pure-C# `BeatClock` / `TimingJudge` in `Core/Rhythm/`; `DspClockSource`, `InputRouter`, `CombatController`, and runtime presentation in `Game/`; `GameBootstrap` owns runtime Unity wiring (C-014, C-030). `SampleScene` remains free of serialized gameplay components.
+State owner and scene/assets: I-001 source exists: pure-C# `BeatClock` / `TimingJudge` in `Core/Rhythm/`; `DspClockSource`, `InputRouter`, `CombatController`, and presentation components in `Game/`; `GameBootstrap` is a serialized scene composition root that owns only pure-C# service wiring (C-014, C-031). `SampleScene` contains a manually authored `AlgoRhythm` hierarchy with `ArenaPresenter`, `HudView`, `MetronomePlayer`, `InputRouter`, 12 `ThreatView` objects, 4 `ShieldView` objects, and 8 `AudioSource` children; runtime scripts create no GameObjects.
 Invariants: DSP is the only clock; input timestamps use one conversion path; ±70/±130 ms windows; calibration ±150 ms; one final result per event; no `Time.time` judging.
 Protected areas: P-005, P-006, P-007.
-Required integration step: I-001 created the Core/Game/test assemblies, added the `Rhythm` action map, and instantiated one telegraphed debug cue through the runtime bootstrap. Play Mode verification remains V-003.
-Checks: V-002 (passed in EditMode), V-003 (not run).
+Required integration step: I-001 created the Core/Game/test assemblies, added the `Rhythm` action map, manually authored the greybox scene through the Unity MCP, and wired one telegraphed debug cue. Play Mode verification passed V-003 via a user-driven run to WAVE CLEAR.
+Checks: V-002 (passed in EditMode), V-003 (passed, user-driven).
 
 ### R-002 Three-slot rule engine and auto-shield
 Start: demo plan §4, §5, and §9 Hari 2; GDD §5 (`WHEN_PROJECTILE`, E001–E006, compatibility whitelist) (C-011, C-029, C-016, C-018).
@@ -79,7 +79,7 @@ Checks: V-006, V-009.
 
 ### R-004 Narrative, pause, calibration, results, and build
 Start: demo plan §8, §9 Hari 3, and §12; GDD §9 and §12 (C-016, C-021, C-022, C-024, C-026).
-State owner and scene/assets: I-001 adds a runtime `HudView` and `ArenaPresenter` under `Game/Presentation/`; `DialogueView`, `PauseView`, `ResultsView`, `GameFlow`, dialogue/UI data, and results assets remain future work (C-014, C-030).
+State owner and scene/assets: I-001 adds `HudView`, `ArenaPresenter`, `ThreatView`, `ShieldView`, and `MetronomePlayer` under `Game/Presentation/`; these update manually authored scene visuals rather than creating GameObjects. `DialogueView`, `PauseView`, `ResultsView`, `GameFlow`, dialogue/UI data, and results assets remain future work (C-014, C-031).
 Invariants: text goes through `text_id`; A.I.D.A. 1.0 in the tutorial and 2.0 after 1B is a demo compression, not production canon; pause shifts the DSP origin and stops/resumes audio; calibration ±150 ms persists in `PlayerPrefs`; non-color cues; no crash on pause/resume, alt-tab, retry, or wave completion.
 Protected areas: P-004, P-005, P-007, P-008.
 Required integration step: wire dialogue and results, add a single pause coordinator, persist calibration, run the interaction checks, then produce the Linux internal demo artifact. The Windows clean build remains V-012.
@@ -92,9 +92,9 @@ Hard depends on: none
 Soft depends on: none
 Verification depends on: V-002
 Exit check: V-003
-Status: in_progress
+Status: done
 
-Scope: `BeatClock` + `TimingJudge` + `DspClockSource` + `InputRouter` + a Straight Shooter debug threat + one 1A greybox wave + basic Integrity/Energy/beat HUD + a scheduled metronome/audio placeholder + EditMode boundary tests + PlayMode manual check. Implemented in source, EditMode tests, and a bootstrap-only PlayMode smoke; the manual input/scene check (V-003) is pending. Out of scope: rule engine, 1B, decoy, dialogue, results, save, and build.
+Scope: `BeatClock` + `TimingJudge` + `DspClockSource` + `InputRouter` + a Straight Shooter debug threat + one 1A greybox wave + basic Integrity/Energy/beat HUD + a scheduled metronome/audio placeholder + EditMode boundary tests + PlayMode manual check. Implemented in source, EditMode tests, actual-scene PlayMode smoke, and a user-driven V-003 run to WAVE CLEAR. Out of scope: rule engine, 1B, decoy, dialogue, results, save, and build.
 
 ### I-002 Day 2 — rule engine and 1A→1B
 Hard depends on: I-001

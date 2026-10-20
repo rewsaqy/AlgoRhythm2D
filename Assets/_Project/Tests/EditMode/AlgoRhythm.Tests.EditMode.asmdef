@@ -3,6 +3,7 @@
     "rootNamespace": "AlgoRhythm.Tests",
     "references": [
         "AlgoRhythm.Core",
+        "AlgoRhythm.Game",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

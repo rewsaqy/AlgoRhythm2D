@@ -355,7 +355,7 @@ Implementasi: satu `ThreatEvent` + `ThreatKind` memilih perilaku di Presenter; l
 |---|---|---|
 | `tempo_bpm` | 100 | 100 |
 | `difficulty_tier` | Tutorial | Normal |
-| `spawn_sequence` | ~12 Straight Shooter, 1 arah per beat renggang, urutan arah bergantian | ~20 threat: Straight Shooter + Adware Decoy, sesekali pasangan |
+| `spawn_sequence` | ~12 Straight Shooter, 1 arah per beat renggang, urutan arah bergantian | ~20 threat: Straight Shooter + Adware Decoy, selalu ada gap (min 4 beat, tidak ada note bersamaan — perintah owner) |
 | `rule_unlocks` | `WHEN_PROJECTILE`, `RAISE_SHIELD` (slot sudah terisi sebagian) | + `WHEN_BEAT` |
 | `dialogue_trigger` | `OnStart` (A.I.D.A. 1.0) | `AfterWaveClear` (A.I.D.A. 2.0) |
 | `clear_condition` | `AllThreatsResolved` | `AllThreatsResolved` |

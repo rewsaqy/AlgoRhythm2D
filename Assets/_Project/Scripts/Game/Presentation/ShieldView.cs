@@ -1,57 +1,53 @@
 using AlgoRhythm.Core.Combat;
-using AlgoRhythm.Core.Rhythm;
 using UnityEngine;
 
 namespace AlgoRhythm.Game.Presentation
 {
-    /// <summary>Serialized four-direction shield flash. No runtime object creation.</summary>
+    /// <summary>
+    /// The single orbiting shield. It parks at the controller's angle and
+    /// pulses on a successful block; it never hides on a timer.
+    /// </summary>
     public sealed class ShieldView : MonoBehaviour
     {
-        [SerializeField] private Direction direction;
-
         private TextMesh _label;
-        private float _hideAt;
-
-        public Direction Direction => direction;
+        private Vector3 _baseScale;
+        private float _pulseUntil;
 
         public void Initialize()
         {
-            _label = FindText("Label");
-            Hide();
+            Transform label = transform.Find("Label");
+            _label = label != null ? label.GetComponent<TextMesh>() : null;
+            _baseScale = transform.localScale;
+            gameObject.SetActive(true);
         }
 
-        public void Show(TimingGrade grade)
+        public void Park(Vector3 localPosition, float angleDeg, string slotCode)
         {
             gameObject.SetActive(true);
-            _hideAt = Time.unscaledTime + 0.35f;
-
-            if (_label == null)
+            transform.localPosition = localPosition;
+            transform.localRotation = Quaternion.Euler(0f, 0f, angleDeg);
+            if (_label != null)
             {
-                return;
+                // Counter-rotate so the text stays upright while the bar lies
+                // tangent to the ring.
+                _label.transform.localRotation = Quaternion.Euler(0f, 0f, -angleDeg);
+                _label.text = $"SHIELD\n{slotCode}";
             }
-
-            _label.text = "SHIELD";
-            _label.color = ArenaPresenter.GradeColor(grade);
         }
 
-        public void Hide()
+        public void Pulse()
         {
-            _hideAt = 0f;
-            gameObject.SetActive(false);
+            _pulseUntil = Time.unscaledTime + 0.18f;
+            transform.localScale = _baseScale * 1.25f;
         }
 
         private void Update()
         {
-            if (_hideAt > 0f && Time.unscaledTime >= _hideAt)
+            if (_pulseUntil > 0f && Time.unscaledTime >= _pulseUntil)
             {
-                Hide();
+                _pulseUntil = 0f;
+                transform.localScale = _baseScale;
             }
-        }
-
-        private TextMesh FindText(string childName)
-        {
-            Transform child = transform.Find(childName);
-            return child != null ? child.GetComponent<TextMesh>() : null;
         }
     }
 }

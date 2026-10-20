@@ -1,6 +1,6 @@
 using AlgoRhythm.Core.Combat;
 using AlgoRhythm.Core.Rhythm;
-using AlgoRhythm.Core.Waves;
+using AlgoRhythm.Game.Combat;
 using UnityEngine;
 
 namespace AlgoRhythm.Game.Presentation
@@ -14,7 +14,7 @@ namespace AlgoRhythm.Game.Presentation
     {
         private CombatState _combat;
         private BeatClock _clock;
-        private WaveRunner _wave;
+        private WaveDirector _director;
         private Camera _camera;
         private TextMesh _stats;
         private TextMesh _status;
@@ -22,12 +22,13 @@ namespace AlgoRhythm.Game.Presentation
         private TextMesh _pause;
         private TextMesh _clear;
         private string _statusText = "Waiting for first threat";
+        private string _clearSummary = string.Empty;
 
-        public void Initialize(CombatState combat, BeatClock clock, WaveRunner wave)
+        public void Initialize(CombatState combat, BeatClock clock, WaveDirector director)
         {
             _combat = combat;
             _clock = clock;
-            _wave = wave;
+            _director = director;
             _camera = Camera.main;
             _stats = FindText("Stats");
             _status = FindText("Status");
@@ -39,6 +40,11 @@ namespace AlgoRhythm.Game.Presentation
         public void SetStatus(string status)
         {
             _statusText = status;
+        }
+
+        public void ShowWaveSummary(string summary)
+        {
+            _clearSummary = summary ?? string.Empty;
         }
 
         private void LateUpdate()
@@ -80,7 +86,17 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_clear != null)
             {
-                _clear.text = _wave != null && _wave.IsCleared ? "WAVE CLEAR" : string.Empty;
+                if (_clearSummary.Length > 0)
+                {
+                    _clear.text = _clearSummary;
+                }
+                else
+                {
+                    bool cleared = _director != null
+                                   && _director.ActiveRunner != null
+                                   && _director.ActiveRunner.IsCleared;
+                    _clear.text = cleared ? "WAVE CLEAR" : string.Empty;
+                }
             }
         }
 
