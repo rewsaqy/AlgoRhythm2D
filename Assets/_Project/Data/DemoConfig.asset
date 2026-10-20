@@ -24,4 +24,15 @@ MonoBehaviour:
   ruleEnergyCost: 1
   ruleCooldownMs: 1500
   energyRegenEveryBeats: 4
-  shieldTransitMs: 180
+  shieldTransitMs: 320
+  enableCodePanel: 0
+  shakePerfect: 1
+  shakeDestroy: 0.5
+  shakeDecayPerSecond: 2.5
+  shakeMaxOffset: 0.2
+  aidaFireEveryBeats: 4
+  aidaHitEveryShots: 8
+  aidaFlavorLines:
+  - tembak siapa?
+  - apa yang ditembak?
+  - eh itu musuh ya?

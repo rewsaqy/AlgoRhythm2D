@@ -28,6 +28,9 @@ namespace AlgoRhythm.Game.Combat
         private readonly ArenaPresenter _arena;
         private readonly HudView _hud;
         private readonly MetronomePlayer _metronome;
+        private readonly SfxPlayer _sfx;
+        private readonly CameraShake _shake;
+        private readonly AidaTower _aida;
         private readonly InputRouter _input;
         private readonly RuleRuntime _rules;
         private readonly ShieldController _shield;
@@ -38,7 +41,11 @@ namespace AlgoRhythm.Game.Combat
         private bool _started;
         private bool _paused;
         private int _lastBeat = int.MinValue;
+        private int _lastAidaFireBeat = int.MinValue;
+        private int _aidaShotCount;
+        private int _flavorIndex;
         private bool _clearAnnounced;
+        private readonly List<AidaShotView> _arrivedShots = new List<AidaShotView>();
 
         private sealed class ActiveThreat
         {
@@ -57,6 +64,9 @@ namespace AlgoRhythm.Game.Combat
             ArenaPresenter arena,
             HudView hud,
             MetronomePlayer metronome,
+            SfxPlayer sfx,
+            CameraShake shake,
+            AidaTower aida,
             InputRouter input,
             RuleRuntime rules,
             ShieldController shield,
@@ -70,6 +80,9 @@ namespace AlgoRhythm.Game.Combat
             _arena = arena ?? throw new ArgumentNullException(nameof(arena));
             _hud = hud ?? throw new ArgumentNullException(nameof(hud));
             _metronome = metronome ?? throw new ArgumentNullException(nameof(metronome));
+            _sfx = sfx ?? throw new ArgumentNullException(nameof(sfx));
+            _shake = shake ?? throw new ArgumentNullException(nameof(shake));
+            _aida = aida ?? throw new ArgumentNullException(nameof(aida));
             _input = input ?? throw new ArgumentNullException(nameof(input));
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
             _shield = shield ?? throw new ArgumentNullException(nameof(shield));
@@ -92,7 +105,7 @@ namespace AlgoRhythm.Game.Combat
             _input.PausePressed += TogglePause;
             _director.WaveStarted += OnWaveStarted;
             _director.StartWave(0);
-            _hud.SetStatus("I-002: rules greybox — 1/2/3, Q/E, ENTER, R");
+            _hud.SetStatus("WASD shield — block on the beat");
         }
 
         public void Tick()
@@ -115,6 +128,19 @@ namespace AlgoRhythm.Game.Combat
             }
 
             double now = _clockSource.NowDsp;
+            double beatPhase = (_clock.NowSeconds / _clock.SecondsPerBeat) % 1.0;
+            if (beatPhase < 0.0)
+            {
+                beatPhase += 1.0;
+            }
+
+            if (beat > 0 && _config.aidaFireEveryBeats > 0
+                && beat % _config.aidaFireEveryBeats == 0 && beat != _lastAidaFireBeat)
+            {
+                _lastAidaFireBeat = beat;
+                TryAidaFire(beat, now);
+            }
+
             for (int index = _active.Count - 1; index >= 0; index--)
             {
                 ActiveThreat active = _active[index];
@@ -137,7 +163,8 @@ namespace AlgoRhythm.Game.Combat
                     active.Threat,
                     progress,
                     active.BufferedInputDsp.HasValue,
-                    (impactDsp - now) * 1000.0);
+                    (impactDsp - now) * 1000.0,
+                    beatPhase);
 
                 if (now >= impactDsp && !active.ImpactEvaluated)
                 {
@@ -150,6 +177,25 @@ namespace AlgoRhythm.Game.Combat
                 if (!active.Resolved && now > impactDsp + _judge.GoodWindowMs / 1000.0)
                 {
                     ResolveTimeout(active);
+                }
+            }
+
+            _aida.UpdateShots(now, _arrivedShots);
+            for (int index = 0; index < _arrivedShots.Count; index++)
+            {
+                AidaShotView shot = _arrivedShots[index];
+                int targetId = shot.TargetId;
+                bool hit = shot.WillHit;
+                shot.Hide();
+                if (!hit)
+                {
+                    continue;
+                }
+
+                ActiveThreat target = FindActiveById(targetId);
+                if (target != null && !target.Resolved)
+                {
+                    Resolve(target, TimingGrade.Good, "aida");
                 }
             }
 
@@ -195,6 +241,7 @@ namespace AlgoRhythm.Game.Combat
 
             _clock.Pause();
             _metronome.Pause();
+            _sfx.Pause();
             _paused = true;
             for (int index = 0; index < _active.Count; index++)
             {
@@ -432,6 +479,8 @@ namespace AlgoRhythm.Game.Combat
             if (_combat.ResolveThreat(active.Threat, TimingGrade.Good, fromRule: true, damage: 0))
             {
                 _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true);
+                _sfx.PlayDestroy();
+                _shake.AddTrauma(_config.shakeDestroy);
                 _hud.SetStatus($"Threat {active.Threat.Id}: Good (auto-shield)");
             }
         }
@@ -447,9 +496,113 @@ namespace AlgoRhythm.Game.Combat
             }
 
             _arena.ResolveDecoyView(active.Threat.Id, shielded);
+            if (shielded)
+            {
+                _sfx.PlayDestroy();
+                _shake.AddTrauma(_config.shakeDestroy);
+            }
             _hud.SetStatus(shielded
                 ? $"Threat {active.Threat.Id}: DECOY −5 ({(fromRule ? "auto-shield" : "manual")})"
                 : $"Threat {active.Threat.Id}: decoy ignored");
+        }
+
+        /// <summary>
+        /// AIDA fires on its cadence at the nearest shootable threat. Aim is
+        /// true only on the lucky shot of each hit cycle (-1000 aura); other
+        /// shots take an alternating angular error and always miss harmlessly.
+        /// Decoys are never targeted. Arrival meets the threat near the ring.
+        /// </summary>
+        private void TryAidaFire(int beat, double now)
+        {
+            CycleAidaFlavor();
+
+            ActiveThreat target = FindAidaTarget(beat, now);
+            if (target == null)
+            {
+                return;
+            }
+
+            double impactDsp = _clock.BeatTime(target.Threat.ImpactBeat);
+            int hitEvery = Mathf.Max(1, _config.aidaHitEveryShots);
+            bool willHit = (_aidaShotCount % hitEvery) == hitEvery - 1;
+            float laneAngle = ShieldController.DirectionToAngle(target.Threat.Direction);
+            float aimAngle = willHit
+                ? laneAngle
+                : laneAngle + ((_aidaShotCount % 2 == 0) ? 25f : -25f);
+            _aidaShotCount++;
+            _aida.SetAim(aimAngle);
+
+            float radians = aimAngle * Mathf.Deg2Rad;
+            Vector3 to = _arena.transform.position
+                         + new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * 1.4f;
+            double arrivalDsp = impactDsp - _clock.SecondsPerBeat * 0.25;
+            if (arrivalDsp <= now)
+            {
+                arrivalDsp = now + 0.1;
+            }
+
+            AidaShotView view = _aida.FireShot(
+                _aida.transform.position, to, target.Threat.Id, willHit, arrivalDsp);
+            if (view != null)
+            {
+                _sfx.PlayPew();
+            }
+        }
+
+        private ActiveThreat FindAidaTarget(int beat, double now)
+        {
+            ActiveThreat best = null;
+            double bestDistanceMs = double.MaxValue;
+
+            for (int index = 0; index < _active.Count; index++)
+            {
+                ActiveThreat active = _active[index];
+                if (active.Resolved || active.Threat.Kind != ThreatKind.StraightShooter)
+                {
+                    continue;
+                }
+
+                if (active.Threat.ImpactBeat - beat < 2)
+                {
+                    continue;
+                }
+
+                double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
+                double distanceMs = (impactDsp - now) * 1000.0;
+                if (distanceMs < bestDistanceMs)
+                {
+                    best = active;
+                    bestDistanceMs = distanceMs;
+                }
+            }
+
+            return best;
+        }
+
+        private ActiveThreat FindActiveById(int threatId)
+        {
+            for (int index = 0; index < _active.Count; index++)
+            {
+                if (_active[index].Threat.Id == threatId)
+                {
+                    return _active[index];
+                }
+            }
+
+            return null;
+        }
+
+        private void CycleAidaFlavor()
+        {
+            string[] lines = _config.aidaFlavorLines;
+            if (lines == null || lines.Length == 0)
+            {
+                _aida.SetFlavor(string.Empty);
+                return;
+            }
+
+            _aida.SetFlavor(lines[_flavorIndex % lines.Length]);
+            _flavorIndex++;
         }
 
         private ActiveThreat FindNearestThreat(Direction direction, double inputDsp)
@@ -498,6 +651,13 @@ namespace AlgoRhythm.Game.Combat
             active.Resolved = true;
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
             _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: grade != TimingGrade.Miss);
+            if (grade != TimingGrade.Miss)
+            {
+                _sfx.PlayDestroy();
+                _shake.AddTrauma(grade == TimingGrade.Perfect
+                    ? _config.shakePerfect
+                    : _config.shakeDestroy);
+            }
             _hud.SetStatus($"Threat {active.Threat.Id}: {grade} ({reason})");
         }
 

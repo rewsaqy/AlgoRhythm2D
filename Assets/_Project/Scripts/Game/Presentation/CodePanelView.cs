@@ -425,7 +425,7 @@ namespace AlgoRhythm.Game.Presentation
                 case RuleError.None:
                     return string.Empty;
                 case RuleError.E001_EmptySlot:
-                    return "E001: slot kosong — pilih token dengan Q/E";
+                    return "E001: slot kosong";
                 case RuleError.E002_WrongCategory:
                     return "E002: NEAREST butuh WHEN_PROJECTILE";
                 case RuleError.E003_Unsupported:

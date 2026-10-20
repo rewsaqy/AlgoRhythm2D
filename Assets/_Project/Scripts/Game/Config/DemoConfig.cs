@@ -28,7 +28,26 @@ namespace AlgoRhythm.Game.Config
         [Min(1)] public int energyRegenEveryBeats = 4;
 
         [Header("Shield")]
-        [Min(0.0f)] public double shieldTransitMs = 180.0;
+        [Min(0.0f)] public double shieldTransitMs = 320.0;
+
+        [Header("Code Panel")]
+        public bool enableCodePanel = false;
+
+        [Header("Camera Shake")]
+        [Min(0.0f)] public float shakePerfect = 1.0f;
+        [Min(0.0f)] public float shakeDestroy = 0.5f;
+        [Min(0.0f)] public float shakeDecayPerSecond = 2.5f;
+        [Min(0.0f)] public float shakeMaxOffset = 0.2f;
+
+        [Header("AIDA Tower")]
+        [Min(1)] public int aidaFireEveryBeats = 4;
+        [Min(1)] public int aidaHitEveryShots = 8;
+        public string[] aidaFlavorLines =
+        {
+            "tembak siapa?",
+            "apa yang ditembak?",
+            "eh itu musuh ya?"
+        };
 
         [Header("Notes")]
         [Range(0.05f, 0.9f)] public float noteStepAttack = 0.25f;

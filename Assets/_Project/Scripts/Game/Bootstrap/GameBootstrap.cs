@@ -25,6 +25,9 @@ namespace AlgoRhythm.Game.Bootstrap
         [SerializeField] private ArenaPresenter arena;
         [SerializeField] private HudView hud;
         [SerializeField] private MetronomePlayer metronome;
+        [SerializeField] private SfxPlayer sfx;
+        [SerializeField] private CameraShake cameraShake;
+        [SerializeField] private AidaTower aidaTower;
         [SerializeField] private InputRouter input;
         [SerializeField] private CodePanelView codePanel;
         [SerializeField] private WaveDefinitionSO[] waveDefinitions;
@@ -38,6 +41,7 @@ namespace AlgoRhythm.Game.Bootstrap
         private void Awake()
         {
             if (config == null || arena == null || hud == null || metronome == null
+                || sfx == null || cameraShake == null || aidaTower == null
                 || input == null || codePanel == null
                 || waveDefinitions == null || waveDefinitions.Length == 0)
             {
@@ -72,8 +76,18 @@ namespace AlgoRhythm.Game.Bootstrap
             arena.Initialize(config.perfectWindowMs, config.goodWindowMs);
             hud.Initialize(_combat, clock, _director);
             metronome.Initialize(clock);
+            sfx.Initialize(clock);
+            cameraShake.Initialize(config.shakeDecayPerSecond, config.shakeMaxOffset);
+            aidaTower.Initialize(clock, _clockSource);
             input.Initialize(_clockSource);
-            codePanel.Initialize(validator, _rules, BuildValidationContext);
+            if (config.enableCodePanel)
+            {
+                codePanel.Initialize(validator, _rules, BuildValidationContext);
+            }
+            else
+            {
+                codePanel.gameObject.SetActive(false);
+            }
             _director.WaveStarted += OnWaveStarted;
 
             _controller = new CombatController(
@@ -85,6 +99,9 @@ namespace AlgoRhythm.Game.Bootstrap
                 arena,
                 hud,
                 metronome,
+                sfx,
+                cameraShake,
+                aidaTower,
                 input,
                 _rules,
                 shield,
@@ -108,6 +125,11 @@ namespace AlgoRhythm.Game.Bootstrap
 
         private void OnWaveStarted(int index)
         {
+            if (!config.enableCodePanel)
+            {
+                return;
+            }
+
             if (index >= 0 && index < waveDefinitions.Length
                 && waveDefinitions[index] != null)
             {

@@ -79,7 +79,8 @@ namespace AlgoRhythm.Game.Presentation
             ThreatEvent threat,
             float progress,
             bool buffered,
-            double msToImpact)
+            double msToImpact,
+            double beatPhase)
         {
             if (!_activeThreats.TryGetValue(threat.Id, out ThreatView view))
             {
@@ -91,8 +92,14 @@ namespace AlgoRhythm.Game.Presentation
             Vector3 spawn = (Vector3)(DirectionVector(threat.Direction) * SpawnDistance(threat.Direction));
             view.transform.localPosition = Vector3.Lerp(spawn, target, clamped);
 
-            float pulse = 1.0f + 0.06f * Mathf.Sin(Time.unscaledTime * 16.0f);
-            view.transform.localScale = new Vector3(pulse, pulse, 1.0f);
+            // Beat-locked hentakan: the body pops on every DSP beat and the
+            // pop grows as the threat nears the ring, so late beats feel
+            // heavier. Position and ring stay the timing authority.
+            float tension = 1f - clamped;
+            float amp = 0.06f + 0.24f * tension * tension;
+            float pop = Mathf.Exp(-6f * (float)beatPhase);
+            float body = 1f + amp * pop;
+            view.transform.localScale = new Vector3(body, body, 1f);
             view.SetBuffered(buffered);
             view.SetRing(msToImpact, _perfectMs, _goodMs);
         }
