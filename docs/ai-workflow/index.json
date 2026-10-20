@@ -1,0 +1,210 @@
+{
+  "format": "unity-project-workflow-index",
+  "format_version": "1.2",
+  "workflow_version": "1",
+  "profile": "compact",
+  "project": {
+    "root": ".",
+    "product_type": "game",
+    "tier": "small"
+  },
+  "snapshot": {
+    "observed_date": "2026-10-20",
+    "source_kind": "git working tree",
+    "revision": "84b82c7",
+    "dirty": true,
+    "completeness_limits": [
+      "Original GDD DOCX absent; docs/ALGORHYTHM_GAME_CONTEXT.md is a derived summary.",
+      "Unity 6000.3.8f1 batchmode compile, EditMode tests, and a bootstrap-only PlayMode smoke ran in a disposable clone; no input-driven Play Mode, build, player, or profiler run.",
+      "The main Unity editor was already open; direct tests in the live project were blocked by the project lock.",
+      "Library, Temp, Logs, UserSettings, and Builds excluded from inspection.",
+      "Active build target not recorded in inspected ProjectSettings.",
+      "I-001 source and test assemblies exist; no 1A/1B content assets, prefabs, rule source, or serialized gameplay scene binding exists.",
+      "Windows Build Support is not installed; only LinuxStandaloneSupport is available, and no Wine or clean Windows machine was observed.",
+      "The 3-day demo plan is mostly a target: I-001 greybox source is implemented, but Play Mode and the rest of the demo are not verified."
+    ]
+  },
+  "documents": [
+    {
+      "id": "doc-agents",
+      "path": "AGENTS.md",
+      "path_state": "generated",
+      "purpose": "startup rules and scope"
+    },
+    {
+      "id": "doc-agent",
+      "path": "docs/ai-workflow/agent.md",
+      "path_state": "generated",
+      "purpose": "agent role, operating loop, routes, increments"
+    },
+    {
+      "id": "doc-context",
+      "path": "docs/ai-workflow/project-context.md",
+      "path_state": "generated",
+      "purpose": "canonical facts, claims, findings, protected areas"
+    },
+    {
+      "id": "doc-validation",
+      "path": "docs/ai-workflow/validation-matrix.md",
+      "path_state": "generated",
+      "purpose": "check definitions and statuses"
+    },
+    {
+      "id": "doc-handoff",
+      "path": "docs/ai-workflow/session-handoff.md",
+      "path_state": "generated",
+      "purpose": "current session state and next action"
+    },
+    {
+      "id": "doc-demo-plan",
+      "path": "docs/ALGORHYTHM_DEMO_PLAN_3DAY.md",
+      "path_state": "generated",
+      "purpose": "near-term 3-day demo scope, assumptions, and session decisions"
+    },
+    {
+      "id": "doc-design",
+      "path": "docs/ALGORHYTHM_GAME_CONTEXT.md",
+      "path_state": "existing",
+      "purpose": "derived design summary; §13.5/§17 are analysis, not original GDD"
+    }
+  ],
+  "entry_points": [
+    {
+      "id": "entry-scene",
+      "path": "Assets/Scenes/SampleScene.unity",
+      "path_state": "existing",
+      "kind": "development_scene",
+      "certainty": "confirmed",
+      "claim_ids": [
+        "C-005"
+      ]
+    },
+    {
+      "id": "entry-input",
+      "path": "Assets/InputSystem_Actions.inputactions",
+      "path_state": "existing",
+      "kind": "input_actions",
+      "certainty": "confirmed",
+      "claim_ids": [
+        "C-006"
+      ]
+    },
+    {
+      "id": "entry-bootstrap",
+      "path": "Assets/_Project/Scripts/Game/Bootstrap/GameBootstrap.cs",
+      "path_state": "existing",
+      "kind": "runtime_bootstrap",
+      "certainty": "confirmed",
+      "claim_ids": [
+        "C-014",
+        "C-030"
+      ]
+    }
+  ],
+  "stack": [
+    {
+      "name": "Unity",
+      "version": "6000.3.8f1",
+      "claim_ids": [
+        "C-001"
+      ]
+    },
+    {
+      "name": "Universal RP",
+      "version": "17.3.0",
+      "claim_ids": [
+        "C-002"
+      ]
+    },
+    {
+      "name": "Input System",
+      "version": "1.18.0",
+      "claim_ids": [
+        "C-003"
+      ]
+    },
+    {
+      "name": "Unity Test Framework",
+      "version": "1.6.0",
+      "claim_ids": [
+        "C-004"
+      ]
+    },
+    {
+      "name": "Demo scope",
+      "version": null,
+      "note": "Adware 1A/1B (1C optional); design intent, no content assets yet.",
+      "claim_ids": [
+        "C-016"
+      ]
+    },
+    {
+      "name": "Demo build target",
+      "version": null,
+      "note": "Linux Standalone is a local internal demo artifact; Windows remains the [D] release target.",
+      "claim_ids": [
+        "C-022"
+      ]
+    },
+    {
+      "name": "Target platform",
+      "version": null,
+      "note": "Windows PC is the [D] release target; not confirmed in inspected build settings.",
+      "claim_ids": [
+        "C-015"
+      ]
+    }
+  ],
+  "task_routes": [
+    {
+      "id": "R-001",
+      "title": "Rhythm timing and manual shield",
+      "document": "docs/ai-workflow/agent.md",
+      "check_ids": [
+        "V-002",
+        "V-003"
+      ]
+    },
+    {
+      "id": "R-002",
+      "title": "Three-slot rule engine and auto-shield",
+      "document": "docs/ai-workflow/agent.md",
+      "check_ids": [
+        "V-004",
+        "V-007",
+        "V-008"
+      ]
+    },
+    {
+      "id": "R-003",
+      "title": "Waves, decoy, energy, and transitions",
+      "document": "docs/ai-workflow/agent.md",
+      "check_ids": [
+        "V-006",
+        "V-009"
+      ]
+    },
+    {
+      "id": "R-004",
+      "title": "Narrative, pause, calibration, results, and build",
+      "document": "docs/ai-workflow/agent.md",
+      "check_ids": [
+        "V-005",
+        "V-010",
+        "V-011",
+        "V-012"
+      ]
+    }
+  ],
+  "refresh_triggers": [
+    "source_changed",
+    "serialized_dependency_changed",
+    "package_or_unity_version_changed",
+    "entry_path_changed",
+    "design_authority_changed",
+    "build_configuration_changed",
+    "test_environment_changed",
+    "toolchain_changed",
+    "manual_review_required"
+  ]
+}

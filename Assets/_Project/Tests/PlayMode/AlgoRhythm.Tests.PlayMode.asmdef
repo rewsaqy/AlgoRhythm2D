@@ -1,0 +1,21 @@
+{
+    "name": "AlgoRhythm.Tests.PlayMode",
+    "rootNamespace": "AlgoRhythm.Tests.PlayMode",
+    "references": [
+        "AlgoRhythm.Game",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

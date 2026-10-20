@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6727fa1c63ed77c3ae92c1991d976a0, type: 3}
+  m_Name: DemoConfig
+  m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Config.DemoConfig
+  bpm: 100
+  perfectWindowMs: 70
+  goodWindowMs: 130
+  inputBufferMs: 120
+  calibrationOffsetMs: 0
+  startLeadInBeats: 2
+  maxIntegrity: 100
+  startingEnergy: 6
+  straightShooterDamage: 10
