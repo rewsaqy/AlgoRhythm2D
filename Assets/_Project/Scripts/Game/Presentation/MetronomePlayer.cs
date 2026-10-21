@@ -26,6 +26,9 @@ namespace AlgoRhythm.Game.Presentation
             _clock = clock;
             _sources = GetComponentsInChildren<AudioSource>(true);
             _audioAvailable = clickClip != null && _sources.Length > 0;
+            _nextBeat = 0;
+            _sourceCursor = 0;
+            _paused = false;
 
             for (int index = 0; index < _sources.Length; index++)
             {
@@ -35,6 +38,25 @@ namespace AlgoRhythm.Game.Presentation
                 source.spatialBlend = 0.0f;
                 source.volume = 0.35f;
                 source.clip = clickClip;
+            }
+        }
+
+        /// <summary>
+        /// Re-anchors scheduling to a restarted clock origin (wave change or
+        /// retry). Clears stale PlayScheduled clicks so the old timeline
+        /// never overlaps the new lead-in, then schedules from the new origin.
+        /// </summary>
+        public void Resync()
+        {
+            StopAllSources();
+            _paused = false;
+            if (_clock != null && _clock.IsStarted)
+            {
+                _nextBeat = Mathf.Max(0, _clock.CurrentBeatIndex + 1);
+            }
+            else
+            {
+                _nextBeat = 0;
             }
         }
 

@@ -21,7 +21,7 @@ namespace AlgoRhythm.Game.Presentation
         private TextMesh _controls;
         private TextMesh _pause;
         private TextMesh _clear;
-        private string _statusText = "Waiting for first threat";
+        private string _statusText = string.Empty;
         private string _clearSummary = string.Empty;
 
         public void Initialize(CombatState combat, BeatClock clock, WaveDirector director)
@@ -35,11 +35,36 @@ namespace AlgoRhythm.Game.Presentation
             _controls = FindText("Controls");
             _pause = FindText("Pause");
             _clear = FindText("Clear");
+            if (_controls != null)
+            {
+                _controls.text = string.Empty;
+            }
+
+            if (_status != null)
+            {
+                _status.text = string.Empty;
+            }
         }
 
         public void SetStatus(string status)
         {
-            _statusText = status;
+            if (string.IsNullOrEmpty(status))
+            {
+                _statusText = string.Empty;
+                return;
+            }
+
+            // Player-facing only: pause, resume, clear, retry, run clear.
+            // Per-frame debug spam (telegraph, buffered, per-threat grade)
+            // is ignored; grades already show on ThreatView/Grade.
+            if (status.Contains("PAUSED")
+                || status.Contains("RESUMED")
+                || status.Contains("WAVE CLEAR")
+                || status.Contains("RUN CLEAR")
+                || status.Contains("RETRY"))
+            {
+                _statusText = status;
+            }
         }
 
         public void ShowWaveSummary(string summary)
@@ -64,19 +89,12 @@ namespace AlgoRhythm.Game.Presentation
             {
                 _stats.text =
                     $"INTEGRITY {_combat.Integrity}/{_combat.MaxIntegrity}    ENERGY {_combat.Energy}\n" +
-                    $"SCORE {_combat.Score}    P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}\n" +
-                    $"DAMAGE TAKEN {_combat.DamageTaken}\n" +
-                    $"BEAT {Mathf.Max(0, _clock.CurrentBeatIndex)}    BPM {_clock.Bpm:0}    {(_clock.IsPaused ? "PAUSED" : "LIVE")}";
+                    $"SCORE {_combat.Score}";
             }
 
             if (_status != null)
             {
                 _status.text = _statusText;
-            }
-
-            if (_controls != null)
-            {
-                _controls.text = "W/A/S/D = shield    ESC = pause";
             }
 
             if (_pause != null)

@@ -5,7 +5,8 @@ namespace AlgoRhythm.Game.Presentation
 {
     /// <summary>
     /// The single orbiting shield. It parks at the controller's angle and
-    /// pulses on a successful block; it never hides on a timer.
+    /// pulses on a successful block; it never hides on a timer. The bar
+    /// itself is the cue; the debug text label stays hidden.
     /// </summary>
     public sealed class ShieldView : MonoBehaviour
     {
@@ -17,22 +18,22 @@ namespace AlgoRhythm.Game.Presentation
         {
             Transform label = transform.Find("Label");
             _label = label != null ? label.GetComponent<TextMesh>() : null;
+            if (_label != null)
+            {
+                _label.text = string.Empty;
+                _label.gameObject.SetActive(false);
+            }
+
             _baseScale = transform.localScale;
             gameObject.SetActive(true);
         }
 
         public void Park(Vector3 localPosition, float angleDeg, string slotCode)
         {
+            _ = slotCode;
             gameObject.SetActive(true);
             transform.localPosition = localPosition;
             transform.localRotation = Quaternion.Euler(0f, 0f, angleDeg);
-            if (_label != null)
-            {
-                // Counter-rotate so the text stays upright while the bar lies
-                // tangent to the ring.
-                _label.transform.localRotation = Quaternion.Euler(0f, 0f, -angleDeg);
-                _label.text = $"SHIELD\n{slotCode}";
-            }
         }
 
         public void Pulse()

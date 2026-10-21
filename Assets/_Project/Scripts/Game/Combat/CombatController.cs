@@ -105,7 +105,6 @@ namespace AlgoRhythm.Game.Combat
             _input.PausePressed += TogglePause;
             _director.WaveStarted += OnWaveStarted;
             _director.StartWave(0);
-            _hud.SetStatus("WASD shield — block on the beat");
         }
 
         public void Tick()
@@ -275,6 +274,11 @@ namespace AlgoRhythm.Game.Combat
         {
             _clearAnnounced = false;
             _hud.ShowWaveSummary(string.Empty);
+            // WaveDirector restarts the DSP clock origin here; without a
+            // resync _nextBeat still points into the old timeline and all
+            // future BeatTime() calls land beyond the schedule window,
+            // so the metronome goes silent after 1A→1B.
+            _metronome.Resync();
         }
 
         /// <summary>
@@ -321,8 +325,6 @@ namespace AlgoRhythm.Game.Combat
                 float travelMs = (float)((_clock.BeatTime(threat.ImpactBeat)
                                           - _clock.BeatTime(threat.SpawnBeat)) * 1000.0);
                 _arena.SpawnThreat(threat, travelMs);
-                _hud.SetStatus(
-                    $"Threat {threat.Id}: {threat.Direction} telegraph — impact beat {threat.ImpactBeat}");
             }
 
             if (wave.AllSpawned && wave.IsCleared)
@@ -391,7 +393,6 @@ namespace AlgoRhythm.Game.Combat
             if (candidate == null)
             {
                 _arena.ShowInputRejected($"WRONG DIRECTION ({direction})");
-                _hud.SetStatus($"No {direction} threat in the input buffer");
                 return;
             }
 
@@ -400,7 +401,6 @@ namespace AlgoRhythm.Game.Combat
             if (!_shield.CoversDirection(direction, inputDsp))
             {
                 _arena.ShowInputRejected("SHIELD NOT IN LANE");
-                _hud.SetStatus($"Shield en route — {direction} not covered yet");
                 return;
             }
 
@@ -410,7 +410,6 @@ namespace AlgoRhythm.Game.Combat
             if (deltaMs > _judge.GoodWindowMs)
             {
                 _arena.ShowInputRejected("TOO LATE");
-                _hud.SetStatus("Late input — this threat will Miss");
                 return;
             }
 
@@ -418,7 +417,6 @@ namespace AlgoRhythm.Game.Combat
             if (deltaMs < earliestMs)
             {
                 _arena.ShowInputRejected("TOO EARLY");
-                _hud.SetStatus("Input was outside the buffer window");
                 return;
             }
 
@@ -431,7 +429,6 @@ namespace AlgoRhythm.Game.Combat
                 }
 
                 _arena.PulseShield();
-                _hud.SetStatus($"Buffered {direction} input — judged at impact");
                 return;
             }
 
@@ -481,7 +478,6 @@ namespace AlgoRhythm.Game.Combat
                 _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true);
                 _sfx.PlayDestroy();
                 _shake.AddTrauma(_config.shakeDestroy);
-                _hud.SetStatus($"Threat {active.Threat.Id}: Good (auto-shield)");
             }
         }
 
@@ -501,9 +497,6 @@ namespace AlgoRhythm.Game.Combat
                 _sfx.PlayDestroy();
                 _shake.AddTrauma(_config.shakeDestroy);
             }
-            _hud.SetStatus(shielded
-                ? $"Threat {active.Threat.Id}: DECOY −5 ({(fromRule ? "auto-shield" : "manual")})"
-                : $"Threat {active.Threat.Id}: decoy ignored");
         }
 
         /// <summary>
@@ -632,6 +625,7 @@ namespace AlgoRhythm.Game.Combat
 
         private void Resolve(ActiveThreat active, TimingGrade grade, string reason)
         {
+            _ = reason;
             if (active.Resolved)
             {
                 return;
@@ -658,7 +652,6 @@ namespace AlgoRhythm.Game.Combat
                     ? _config.shakePerfect
                     : _config.shakeDestroy);
             }
-            _hud.SetStatus($"Threat {active.Threat.Id}: {grade} ({reason})");
         }
 
         private void AnnounceWaveClear()
@@ -666,9 +659,7 @@ namespace AlgoRhythm.Game.Combat
             _clearAnnounced = true;
             _combat.AddEnergy(1);
             _hud.ShowWaveSummary(
-                $"WAVE CLEAR {_director.ActiveRunner.Data.WaveId} — " +
-                $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}  " +
-                $"DMG {_combat.DamageTaken}  SCORE {_combat.Score}");
+                $"WAVE CLEAR {_director.ActiveRunner.Data.WaveId} — SCORE {_combat.Score}");
             _hud.SetStatus("WAVE CLEAR — all threats resolved");
 
             _arena.ClearThreats();
