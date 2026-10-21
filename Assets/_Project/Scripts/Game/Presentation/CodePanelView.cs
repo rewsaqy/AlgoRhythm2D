@@ -14,7 +14,9 @@ namespace AlgoRhythm.Game.Presentation
     /// </summary>
     public sealed class CodePanelView : MonoBehaviour
     {
-        private const int MaxLogLines = 5;
+        private const int MaxLogLines = 1;
+        private const float LogVisibleSeconds = 4f;
+        private const float ErrorVisibleSeconds = 3f;
 
         private RuleValidator _validator;
         private RuleRuntime _runtime;
@@ -30,7 +32,6 @@ namespace AlgoRhythm.Game.Presentation
         private int _selectedSlot;
         private int _errorSlot = -1;
         private RuleError _lastError = RuleError.None;
-        private string _lastPreviewKey = string.Empty;
 
         private TextMesh _slotCondition;
         private TextMesh _slotTarget;
@@ -49,6 +50,10 @@ namespace AlgoRhythm.Game.Presentation
         private InputAction _commitRule;
         private InputAction _resetSafe;
         private bool _bound;
+        private bool _touched;
+        private bool _hasCommitted;
+        private float _errorVisibleUntil;
+        private float _logVisibleUntil;
         private int _lastEnergy = int.MinValue;
         private int _lastCooldown = int.MinValue;
         private float _revalidateAt;
@@ -187,7 +192,19 @@ namespace AlgoRhythm.Game.Presentation
         {
             // No camera anchoring: the panel sits at its scene-authored
             // position, so Scene view and runtime match exactly.
-            if (_validator == null || Time.unscaledTime < _revalidateAt)
+            if (_validator == null)
+            {
+                return;
+            }
+
+            // Self-cleaning toast: the last log line fades on its own so
+            // the panel returns to slots + preview + hint only.
+            if (_log != null && _logLines.Count > 0 && Time.unscaledTime > _logVisibleUntil)
+            {
+                _log.text = string.Empty;
+            }
+
+            if (Time.unscaledTime < _revalidateAt)
             {
                 return;
             }
@@ -197,6 +214,11 @@ namespace AlgoRhythm.Game.Presentation
             if (context.Energy != _lastEnergy || context.CooldownRemainingMs != _lastCooldown)
             {
                 Revalidate(force: true);
+                RefreshLabels();
+            }
+            else if (ErrorVisibleNow())
+            {
+                // Refresh for the error-slot blink while the error is up.
                 RefreshLabels();
             }
         }
@@ -276,6 +298,7 @@ namespace AlgoRhythm.Game.Presentation
         private void SelectSlot(int slot)
         {
             _selectedSlot = Mathf.Clamp(slot, 0, 2);
+            TouchForError();
             RefreshLabels();
         }
 
@@ -295,7 +318,21 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             Revalidate(force: true);
+            TouchForError();
             RefreshLabels();
+        }
+
+        private void TouchForError()
+        {
+            _touched = true;
+            _errorVisibleUntil = Time.unscaledTime + ErrorVisibleSeconds;
+        }
+
+        private bool ErrorVisibleNow()
+        {
+            return _touched
+                && _lastError != RuleError.None
+                && Time.unscaledTime <= _errorVisibleUntil;
         }
 
         private static T? CycleOption<T>(List<T> options, T? current, int direction) where T : struct
@@ -321,6 +358,7 @@ namespace AlgoRhythm.Game.Presentation
         private void Commit()
         {
             Revalidate(force: true);
+            TouchForError();
             if (_lastError != RuleError.None)
             {
                 RefreshLabels();
@@ -330,7 +368,8 @@ namespace AlgoRhythm.Game.Presentation
             _runtime.Commit(new RuleDefinition(
                 _cond.Value, _tgt.Value, _act.Value,
                 _validator.EnergyCost, _validator.CooldownMs, priority: 0));
-            AppendLog($"COMMIT {_lastPreviewKey}");
+            _hasCommitted = true;
+            AppendLog("Pasang: " + PlayerPreview());
             RefreshLabels();
         }
 
@@ -339,21 +378,60 @@ namespace AlgoRhythm.Game.Presentation
             _cond = _condOptions.Count == 1 ? _condOptions[0] : (Condition?)null;
             _tgt = null;
             _act = _actOptions.Count == 1 ? _actOptions[0] : (RuleAction?)null;
-            AppendLog("RESET");
+            AppendLog("Atur ulang: kembali aman");
             Revalidate(force: true);
+            TouchForError();
             RefreshLabels();
         }
 
         private void OnRuleFired(RuleFired fired)
         {
-            AppendLog(
-                $"FIRE #{fired.RuleId} threat {fired.ThreatId} -{fired.EnergySpent}E" +
-                (fired.WasDecoy ? " DECOY" : string.Empty));
+            // Player words only: raw ids/keys never reach the screen. The
+            // covered lane already reads on the arena guards + shield flash.
+            if (fired.WasDecoy)
+            {
+                AppendLog($"Auto kena decoy (-{fired.EnergySpent} Energy, -5 skor)");
+                return;
+            }
+
+            AppendLog($"Auto-shield menyala (-{fired.EnergySpent} Energy)");
         }
 
         private void OnRuleLog(string key)
         {
-            AppendLog(key.ToUpperInvariant());
+            // NO_TARGET is expected whenever a threat falls outside the
+            // covered lane, so it stays off the player log. Real
+            // suppressions (energy/manual/cooldown/target-gone) are shown.
+            if (key == RuleRuntime.LogNoTarget)
+            {
+                return;
+            }
+
+            if (key == RuleRuntime.LogSuppressedNoEnergy)
+            {
+                AppendLog("Auto nonaktif: Energy kurang");
+                return;
+            }
+
+            if (key == RuleRuntime.LogManualPrecedence)
+            {
+                AppendLog("Manual menang: auto batal");
+                return;
+            }
+
+            if (key == RuleRuntime.LogCooldown)
+            {
+                AppendLog("Auto jeda: cooldown");
+                return;
+            }
+
+            if (key == RuleRuntime.LogTargetNotFound)
+            {
+                AppendLog("Target sudah hilang");
+                return;
+            }
+
+            AppendLog(key);
         }
 
         private void AppendLog(string line)
@@ -367,6 +445,7 @@ namespace AlgoRhythm.Game.Presentation
             if (_log != null)
             {
                 _log.text = string.Join("\n", _logLines.ToArray());
+                _logVisibleUntil = Time.unscaledTime + LogVisibleSeconds;
             }
         }
 
@@ -379,7 +458,6 @@ namespace AlgoRhythm.Game.Presentation
             var draft = new RuleDraft(_cond, _tgt, _act);
             RuleValidationResult result = _validator.Validate(draft, context);
             _lastError = result.Error;
-            _lastPreviewKey = result.PreviewKey;
             _errorSlot = ErrorSlot(result.Error, draft);
         }
 
@@ -410,20 +488,23 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_preview != null)
             {
-                // Coverage now reads on the arena rule guards, so the
-                // code-panel preview carries only the draft key — no
-                // ACTIVE/COMMITTED/NO-RULE state line.
-                _preview.text = _lastError == RuleError.None && _lastPreviewKey.Length > 0
-                    ? _lastPreviewKey
-                    : "NO PREVIEW";
-                _preview.color = _lastError == RuleError.None && _lastPreviewKey.Length > 0
-                    ? UiTypography.Info
-                    : UiTypography.Dim;
+                // Player sentence, never the raw whitelist key. Coverage
+                // itself reads on the arena rule guards.
+                bool valid = _lastError == RuleError.None;
+                _preview.text = valid ? PlayerPreview() : "Belum ada preview";
+                _preview.color = valid ? UiTypography.Info : UiTypography.Dim;
             }
 
             if (_error != null)
             {
-                _error.text = ErrorText(_lastError);
+                _error.text = ErrorVisibleNow() ? ErrorText(_lastError) : string.Empty;
+            }
+
+            if (_hint != null)
+            {
+                _hint.text = _hasCommitted
+                    ? string.Empty
+                    : "1/2/3 slot · Q/E cycle · ENTER commit · R reset";
             }
         }
 
@@ -434,8 +515,11 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            bool blink = ((int)(Time.unscaledTime * 2f) & 1) == 0;
             string marker = slot == _selectedSlot ? ">" : " ";
-            string flag = slot == _errorSlot ? "  !!" : string.Empty;
+            string flag = (ErrorVisibleNow() && slot == _errorSlot && blink)
+                ? "  !!"
+                : string.Empty;
             label.text = $"{marker}[{slot + 1}] {name}: {value}{flag}";
         }
 
@@ -455,6 +539,8 @@ namespace AlgoRhythm.Game.Presentation
                     return "!! E004: Energy kurang";
                 case RuleError.E005_Cooldown:
                     return "!! E005: cooldown berjalan";
+                case RuleError.E006_TargetNotFound:
+                    return "!! E006: target tidak ditemukan";
                 default:
                     return error.ToString().ToUpperInvariant();
             }
@@ -463,6 +549,37 @@ namespace AlgoRhythm.Game.Presentation
         private static string ConditionName(Condition cond)
         {
             return cond == Condition.WhenBeat ? "WHEN_BEAT" : "WHEN_PROJECTILE";
+        }
+
+        /// <summary>Draft preview in player words (demo plan §5.2).</summary>
+        private string PlayerPreview()
+        {
+            if (!_cond.HasValue || !_tgt.HasValue || !_act.HasValue)
+            {
+                return "Belum ada preview";
+            }
+
+            string trigger = _cond.Value == Condition.WhenBeat
+                ? "Tiap beat"
+                : "Proyektil datang";
+            return $"{trigger} → Shield {LaneName(_tgt.Value)}";
+        }
+
+        private static string LaneName(Target tgt)
+        {
+            switch (tgt)
+            {
+                case Target.North:
+                    return "arah Utara";
+                case Target.East:
+                    return "arah Timur";
+                case Target.South:
+                    return "arah Selatan";
+                case Target.West:
+                    return "arah Barat";
+                default:
+                    return "arah mana pun";
+            }
         }
 
         private static bool TryParseCondition(string token, out Condition cond)

@@ -16,6 +16,7 @@ namespace AlgoRhythm.Game.Presentation
     public sealed class HudView : MonoBehaviour
     {
         private const int BarWidth = 10;
+        private const float StatusVisibleSeconds = 4f;
 
         private CombatState _combat;
         private BeatClock _clock;
@@ -27,8 +28,8 @@ namespace AlgoRhythm.Game.Presentation
         private TextMesh _pause;
         private TextMesh _clear;
         private string _statusText = string.Empty;
+        private float _statusVisibleUntil;
         private string _clearSummary = string.Empty;
-        private string _dialogueId = string.Empty;
         private string _dialogueLine = string.Empty;
 
         public void Initialize(CombatState combat, BeatClock clock, WaveDirector director, TimingJudge judge = null)
@@ -85,6 +86,9 @@ namespace AlgoRhythm.Game.Presentation
                 || status.Contains("RETRY"))
             {
                 _statusText = status;
+                // Transient toast: wave banners and run updates fade on
+                // their own; the wave id stays on the stats line.
+                _statusVisibleUntil = Time.unscaledTime + StatusVisibleSeconds;
             }
         }
 
@@ -94,12 +98,12 @@ namespace AlgoRhythm.Game.Presentation
         }
 
         /// <summary>
-        /// Shows a dialogue subtitle addressed by text_id. The id stays
-        /// visible so the text_id routing is observable in-game.
+        /// Shows a dialogue subtitle addressed by text_id. Routing stays on
+        /// the id; only the line is shown (no debug id on screen).
         /// </summary>
         public void ShowDialogue(string textId, string line)
         {
-            _dialogueId = textId ?? string.Empty;
+            _ = textId;
             _dialogueLine = line ?? string.Empty;
         }
 
@@ -143,20 +147,21 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_status != null)
             {
-                _status.text = _statusText;
+                _status.text = !string.IsNullOrEmpty(_statusText)
+                    && Time.unscaledTime <= _statusVisibleUntil
+                    ? _statusText
+                    : string.Empty;
             }
 
             if (_dialogue != null)
             {
-                _dialogue.text = string.IsNullOrEmpty(_dialogueLine)
-                    ? string.Empty
-                    : $"[{_dialogueId}] {_dialogueLine}";
+                _dialogue.text = _dialogueLine;
             }
 
             if (_pause != null)
             {
                 _pause.text = _clock.IsPaused
-                    ? "II PAUSED\nESC / P lanjutkan\nWASD shield · Z/X kalibrasi"
+                    ? "II PAUSED\nESC / P lanjutkan\nWASD shield · Z/X kalibrasi\n1/2/3 slot · Q/E ganti · ENTER pasang · R reset"
                     : string.Empty;
             }
 

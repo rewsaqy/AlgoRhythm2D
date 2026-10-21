@@ -1,10 +1,10 @@
 namespace AlgoRhythm.Game.Presentation
 {
     /// <summary>
-    /// Demo-only dialogue lines [A]. Every line is addressed by text_id; the
-    /// view renders the id alongside the speaker so the id routing stays
-    /// observable. A.I.D.A. 1.0 teaches the tutorial, 2.0 appears after 1B
-    /// clear — a demo compression, not production canon.
+    /// Demo-only dialogue lines [A]. Every line is addressed by text_id;
+    /// routing stays on the id, the view shows only the line. A.I.D.A. 1.0
+    /// teaches the tutorial, 2.0 appears after 1B clear — a demo compression,
+    /// not production canon.
     /// </summary>
     public static class DemoDialogue
     {

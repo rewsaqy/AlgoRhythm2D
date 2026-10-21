@@ -169,7 +169,6 @@ namespace AlgoRhythm.Game.Combat
                 }
 
                 double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
-                double spawnDsp = _clock.BeatTime(active.Threat.SpawnBeat);
                 // Beat-quantized glide: one tile per beat, smoothstepped
                 // inside the beat, frozen between beats and on pause. Pure
                 // DSP function; judging is untouched.

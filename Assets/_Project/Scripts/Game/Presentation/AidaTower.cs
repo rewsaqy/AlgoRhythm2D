@@ -16,12 +16,11 @@ namespace AlgoRhythm.Game.Presentation
         private readonly List<AidaShotView> _shots = new List<AidaShotView>();
         private Transform _barrelPivot;
         private TextMesh _flavor;
-        private BeatClock _clock;
         private IClockSource _source;
 
         public void Initialize(BeatClock clock, IClockSource source)
         {
-            _clock = clock;
+            _ = clock;
             _source = source;
             _barrelPivot = transform.Find("BarrelPivot");
 
