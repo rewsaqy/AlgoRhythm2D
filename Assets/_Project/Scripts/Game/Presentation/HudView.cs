@@ -16,13 +16,11 @@ namespace AlgoRhythm.Game.Presentation
     public sealed class HudView : MonoBehaviour
     {
         private const int BarWidth = 10;
-        private const float EdgePadding = 0.6f;
 
         private CombatState _combat;
         private BeatClock _clock;
         private WaveDirector _director;
         private TimingJudge _judge;
-        private Camera _camera;
         private TextMesh _stats;
         private TextMesh _status;
         private TextMesh _dialogue;
@@ -39,7 +37,6 @@ namespace AlgoRhythm.Game.Presentation
             _clock = clock;
             _director = director;
             _judge = judge;
-            _camera = Camera.main;
             _stats = FindText("Stats");
             _status = FindText("Status");
             _dialogue = FindText("Controls");
@@ -59,7 +56,7 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_dialogue != null)
             {
-                _dialogue.gameObject.SetActive(true);
+                // Authored active in the scene; position is fixed there too.
                 _dialogue.text = string.Empty;
             }
 
@@ -112,8 +109,9 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            // No camera anchoring: every label sits at its scene-authored
+            // position, so Scene view and runtime match exactly.
             UpdateText();
-            AnchorToCamera();
         }
 
         private void UpdateText()
@@ -174,37 +172,6 @@ namespace AlgoRhythm.Game.Presentation
                                    && _director.ActiveRunner.IsCleared;
                     _clear.text = cleared ? "WAVE CLEAR" : string.Empty;
                 }
-            }
-        }
-
-        private void AnchorToCamera()
-        {
-            Camera camera = _camera != null ? _camera : Camera.main;
-            if (camera == null)
-            {
-                return;
-            }
-
-            const float depth = 10.0f;
-            Vector3 topLeft = camera.ViewportToWorldPoint(new Vector3(0f, 1f, depth));
-            transform.position = new Vector3(
-                topLeft.x + EdgePadding, topLeft.y - EdgePadding, 0f);
-
-            Vector3 center = camera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, depth));
-            if (_pause != null)
-            {
-                _pause.transform.position = new Vector3(center.x, center.y + 0.7f, -0.2f);
-            }
-
-            if (_clear != null)
-            {
-                _clear.transform.position = new Vector3(center.x, center.y - 1.2f, -0.2f);
-            }
-
-            if (_dialogue != null)
-            {
-                Vector3 bottom = camera.ViewportToWorldPoint(new Vector3(0.5f, 0f, depth));
-                _dialogue.transform.position = new Vector3(bottom.x, bottom.y + 1.0f, -0.2f);
             }
         }
 

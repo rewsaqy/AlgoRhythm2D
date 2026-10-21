@@ -49,7 +49,6 @@ namespace AlgoRhythm.Game.Presentation
         private InputAction _commitRule;
         private InputAction _resetSafe;
         private bool _bound;
-        private Camera _camera;
         private int _lastEnergy = int.MinValue;
         private int _lastCooldown = int.MinValue;
         private float _revalidateAt;
@@ -111,7 +110,6 @@ namespace AlgoRhythm.Game.Presentation
 
             _runtime.RuleFired += OnRuleFired;
             _runtime.RuleLog += OnRuleLog;
-            _camera = Camera.main;
 
             TryBind();
             RefreshLabels();
@@ -187,7 +185,8 @@ namespace AlgoRhythm.Game.Presentation
 
         private void Update()
         {
-            AnchorToCamera();
+            // No camera anchoring: the panel sits at its scene-authored
+            // position, so Scene view and runtime match exactly.
             if (_validator == null || Time.unscaledTime < _revalidateAt)
             {
                 return;
@@ -200,18 +199,6 @@ namespace AlgoRhythm.Game.Presentation
                 Revalidate(force: true);
                 RefreshLabels();
             }
-        }
-
-        private void AnchorToCamera()
-        {
-            Camera camera = _camera != null ? _camera : Camera.main;
-            if (camera == null)
-            {
-                return;
-            }
-
-            Vector3 topRight = camera.ViewportToWorldPoint(new Vector3(1f, 1f, 10f));
-            transform.position = new Vector3(topRight.x - 0.6f, topRight.y - 0.6f, 0f);
         }
 
         private void TryBind()
