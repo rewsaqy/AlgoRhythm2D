@@ -14,6 +14,8 @@ namespace AlgoRhythm.Game.Presentation
     /// </summary>
     public sealed class ShieldView : MonoBehaviour
     {
+        private const float BlockFadeSeconds = 0.15f;
+
         private TextMesh _label;
         private Vector3 _baseScale;
         private float _pulseUntil;
@@ -81,8 +83,22 @@ namespace AlgoRhythm.Game.Presentation
                 }
                 else
                 {
-                    float u = Mathf.Clamp01(remaining / _blockHoldTotal);
-                    transform.localScale = _baseScale * Mathf.Lerp(1f, _blockPunch, u * u);
+                    // Two-phase read: punch eases back to 1 over the hold,
+                    // then the block shrinks smoothly to 0 instead of
+                    // popping out, so fast lane switches don't leave a
+                    // hard disappearing edge behind.
+                    float fade = Mathf.Min(BlockFadeSeconds, _blockHoldTotal * 0.5f);
+                    if (remaining <= fade && fade > 0f)
+                    {
+                        float s = Mathf.SmoothStep(0f, 1f, remaining / fade);
+                        transform.localScale = _baseScale * s;
+                    }
+                    else
+                    {
+                        float body = Mathf.Max(_blockHoldTotal - fade, Mathf.Epsilon);
+                        float p = Mathf.Clamp01((_blockHoldTotal - remaining) / body);
+                        transform.localScale = _baseScale * Mathf.Lerp(_blockPunch, 1f, p * p);
+                    }
                 }
 
                 return;
