@@ -79,7 +79,12 @@ namespace AlgoRhythm.Core.Rules
         /// <summary>Gameplay-free log keys for every suppression path.</summary>
         public event Action<string> RuleLog;
 
+        /// <summary>Raised the moment a draft is committed (still pending).</summary>
+        public event Action RuleCommitted;
+
         public bool HasActiveRule => _active.HasValue;
+
+        public bool HasPendingRule => _pending.HasValue;
 
         public int ActiveRuleId => _activeRuleId;
 
@@ -97,6 +102,7 @@ namespace AlgoRhythm.Core.Rules
         {
             _lastRuleId++;
             _pending = rule;
+            RuleCommitted?.Invoke();
         }
 
         public void OnBeat(int beatIndex, in BeatContext ctx)

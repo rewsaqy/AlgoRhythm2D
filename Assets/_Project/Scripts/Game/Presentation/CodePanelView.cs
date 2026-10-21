@@ -411,8 +411,10 @@ namespace AlgoRhythm.Game.Presentation
             if (_preview != null)
             {
                 string active = _runtime != null && _runtime.HasActiveRule
-                    ? $"[ACTIVE RULE #{_runtime.ActiveRuleId}]"
-                    : "[NO ACTIVE RULE]";
+                    ? $"[ACTIVE #{_runtime.ActiveRuleId}]"
+                    : _runtime != null && _runtime.HasPendingRule
+                        ? "[COMMITTED — aktif beat depan]"
+                        : "[NO ACTIVE RULE]";
                 _preview.text = _lastError == RuleError.None && _lastPreviewKey.Length > 0
                     ? $"{_lastPreviewKey}\n{active}"
                     : $"NO PREVIEW\n{active}";

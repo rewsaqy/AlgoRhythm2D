@@ -105,6 +105,7 @@ namespace AlgoRhythm.Game.Combat
 
             _input.ShieldPressed += HandleShieldPressed;
             _input.PausePressed += TogglePause;
+            _rules.RuleCommitted += HandleRuleCommitted;
             _director.WaveStarted += OnWaveStarted;
             _director.StartWave(0);
         }
@@ -289,6 +290,7 @@ namespace AlgoRhythm.Game.Combat
         {
             _input.ShieldPressed -= HandleShieldPressed;
             _input.PausePressed -= TogglePause;
+            _rules.RuleCommitted -= HandleRuleCommitted;
             _director.WaveStarted -= OnWaveStarted;
         }
 
@@ -313,6 +315,17 @@ namespace AlgoRhythm.Game.Combat
         /// input-map change is needed; shield and code-panel bindings win on
         /// their own keys and are unaffected.
         /// </summary>
+        /// <summary>
+        /// Commit confirmation across three channels at once: a pew tick,
+        /// a sticky HUD status, and the code-panel preview/log. Committing
+        /// is a player decision, so it must be unmissable.
+        /// </summary>
+        private void HandleRuleCommitted()
+        {
+            _sfx.PlayPew();
+            _hud.SetStatus("RULE COMMITTED — aktif beat depan");
+        }
+
         private void PollCalibration()
         {
             Keyboard keyboard = Keyboard.current;

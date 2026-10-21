@@ -188,5 +188,24 @@ namespace AlgoRhythm.Tests
             Assert.AreEqual(1, logged.Count);
             Assert.AreEqual(RuleRuntime.LogTargetNotFound, logged[0]);
         }
+
+        [Test]
+        public void Commit_SetsPendingUntilNextBeat_AndRaisesCommitted()
+        {
+            var runtime = new RuleRuntime();
+            int committedCount = 0;
+            runtime.RuleCommitted += () => committedCount++;
+
+            runtime.Commit(EastRule());
+
+            Assert.IsTrue(runtime.HasPendingRule);
+            Assert.IsFalse(runtime.HasActiveRule);
+            Assert.AreEqual(1, committedCount);
+
+            runtime.OnBeat(6, new BeatContext(6, 3.6));
+
+            Assert.IsFalse(runtime.HasPendingRule);
+            Assert.IsTrue(runtime.HasActiveRule);
+        }
     }
 }

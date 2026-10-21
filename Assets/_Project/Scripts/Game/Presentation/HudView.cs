@@ -80,6 +80,7 @@ namespace AlgoRhythm.Game.Presentation
             if (status.Contains("PAUSED")
                 || status.Contains("RESUMED")
                 || status.Contains("WAVE ")
+                || status.Contains("RULE ")
                 || status.Contains("RUN CLEAR")
                 || status.Contains("RETRY"))
             {
