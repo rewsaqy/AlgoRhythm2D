@@ -130,6 +130,11 @@ namespace AlgoRhythm.Game.Combat
             if (beat != _lastBeat)
             {
                 _lastBeat = beat;
+
+                // A3: staged rule commits activate on the next beat. Without
+                // this the code-panel commit would stay pending forever and
+                // auto-shield could never fire.
+                _rules.OnBeat(beat, new BeatContext(beat, _clockSource.NowDsp));
                 SpawnDue(beat);
                 if (beat > 0 && _config.energyRegenEveryBeats > 0
                     && beat % _config.energyRegenEveryBeats == 0)
@@ -204,10 +209,15 @@ namespace AlgoRhythm.Game.Combat
                 }
 
                 ActiveThreat target = FindActiveById(targetId);
-                if (target != null && !target.Resolved)
+                if (target == null || target.Resolved)
                 {
-                    Resolve(target, TimingGrade.Good, "aida");
+                    // E006: the shot was aimed true but its target is gone
+                    // (resolved or retried away before arrival).
+                    _rules.ReportTargetNotFound();
+                    continue;
                 }
+
+                Resolve(target, TimingGrade.Good, "aida");
             }
 
             if (_combat.Integrity <= 0)
@@ -393,6 +403,13 @@ namespace AlgoRhythm.Game.Combat
         /// </summary>
         private void ResolveAtImpact(ActiveThreat active)
         {
+            // Already resolved by direct manual input: no second evaluation,
+            // no energy spend, no cooldown. One final result per threat.
+            if (active.Resolved)
+            {
+                return;
+            }
+
             double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
 
             if (active.BufferedInputDsp.HasValue)

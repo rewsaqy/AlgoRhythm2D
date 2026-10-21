@@ -175,5 +175,18 @@ namespace AlgoRhythm.Tests
             Assert.AreEqual(RuleFireDecision.Fire, decision);
             Assert.IsTrue(fired.WasDecoy);
         }
+
+        [Test]
+        public void ReportTargetNotFound_LogsE006Key()
+        {
+            var runtime = new RuleRuntime();
+            var logged = new List<string>();
+            runtime.RuleLog += logged.Add;
+
+            runtime.ReportTargetNotFound();
+
+            Assert.AreEqual(1, logged.Count);
+            Assert.AreEqual(RuleRuntime.LogTargetNotFound, logged[0]);
+        }
     }
 }

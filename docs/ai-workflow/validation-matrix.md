@@ -56,9 +56,9 @@ Mode: static
 Preconditions and environment: `WaveData` / `WaveDefinitionSO` and telegraph data exist after I-002 content work; demo plan §6/§7 is current.
 Runner or exact manual input path: Inspect the 1A/1B data assets and validate every wave ID, event beat, telegraph lead time, decoy marker, and clear condition.
 Expected observable result: 1A/1B IDs are unique; every dangerous threat has a telegraph and at least one valid response; the decoy is distinguishable by shape/icon, not color alone; no event references an invalid beat or missing target.
-Status: not_run
-Observed result and evidence location: none.
-Remaining limit or next action: no wave assets exist; define the schema in I-002 before content production.
+Status: passed
+Observed result and evidence location: Static review 2026-10-21 on `W1A.asset`/`W1B.asset`: IDs `W1A`/`W1B` unique with threat-ID offsets 0/100; W1A 12×kind-0 N/E/S/W cycle, W1B 16×kind-0 + 4×kind-1 decoys (damage 0); all impactBeats unique per wave (no simultaneous notes) and every travel ≥4 beats (≈2.4 s telegraph at 100 BPM); directions only 0–3; decoys diamond-rotated vs square markers (shape cue, never colour alone; per-note text was removed 2026-10-21, decoy outcome still spelled out on the arena grade label). Telegraph ring/marker/lane verified live in earlier Play Mode captures.
+Remaining limit or next action: none; re-run on wave content changes.
 
 ### V-007 EditMode rule validation
 Covers: R-002, F-007
@@ -66,9 +66,9 @@ Mode: EditMode
 Preconditions and environment: I-002 creates the rule test assembly; `RuleWhitelist`, `RuleValidator`, and `RuleRuntime` exist; A1 Set A semantics recorded.
 Runner or exact manual input path: Run the I-002 EditMode rules suite covering valid/invalid whitelist combinations, empty slots, category mismatch, unsupported actions, insufficient Energy, cooldown, preview keys, commit-next-beat activation, and E006 target resolution failure.
 Expected observable result: Valid rules produce a preview and commit; invalid rules return the specific E001–E005 validation error; no string is executed; E005 uses the cooldown-aware `RuleValidationContext`; E006 is returned/logged by the runtime when target resolution fails; no duplicate fire per event.
-Status: not_run
-Observed result and evidence location: none.
-Remaining limit or next action: no rule source or test assembly exists; verify the E001–E006 contract in I-002.
+Status: passed
+Observed result and evidence location: `/tmp/opencode/i002-editmode-results.xml` records 54/54 passed on 2026-10-21 (disposable clone, Unity 6000.3.8f1): 9-combo whitelist + preview keys, E001×3/E002/E003/E004/E005 incl. E004-before-E005 ordering, commit-next-beat activation, Set A suppression paths (manual precedence, no-energy, cooldown), decoy `WasDecoy`, and new `ReportTargetNotFound_LogsE006Key`. Includes previously-found mechanics fixes: `OnBeat` activation wiring, resolved-threat guard, E006 report path.
+Remaining limit or next action: EditMode only; PlayMode integration still needs V-008.
 
 ### V-008 PlayMode auto-shield integration
 Covers: R-002, F-001, F-009

@@ -64,6 +64,7 @@ namespace AlgoRhythm.Core.Rules
         public const string LogManualPrecedence = "manual_precedence";
         public const string LogCooldown = "cooldown";
         public const string LogNoTarget = "no_target";
+        public const string LogTargetNotFound = "e006_target_not_found";
 
         private RuleDefinition? _pending;
         private RuleDefinition? _active;
@@ -81,6 +82,16 @@ namespace AlgoRhythm.Core.Rules
         public bool HasActiveRule => _active.HasValue;
 
         public int ActiveRuleId => _activeRuleId;
+
+        /// <summary>
+        /// Reports an E006 target-resolution failure: a fired rule arrived at
+        /// a target that no longer exists (resolved or retried away). Log-only;
+        /// no energy is refunded or spent here.
+        /// </summary>
+        public void ReportTargetNotFound()
+        {
+            RuleLog?.Invoke(LogTargetNotFound);
+        }
 
         public void Commit(RuleDefinition rule)
         {
