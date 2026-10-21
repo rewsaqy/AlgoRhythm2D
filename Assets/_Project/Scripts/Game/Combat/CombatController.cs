@@ -41,6 +41,7 @@ namespace AlgoRhythm.Game.Combat
 
         private bool _started;
         private bool _paused;
+        private readonly bool _rulesEnabled;
         private int _lastBeat = int.MinValue;
         private int _lastAidaFireBeat = int.MinValue;
         private int _aidaShotCount;
@@ -89,6 +90,11 @@ namespace AlgoRhythm.Game.Combat
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
             _shield = shield ?? throw new ArgumentNullException(nameof(shield));
             _config = config ?? throw new ArgumentNullException(nameof(config));
+            // Rule/energy 3-slot system is temporarily OFF until the final
+            // AIDA form (owner decision 2026-10-21). DemoConfig.enableCodePanel
+            // is the reversible master switch: panel hidden, no auto-fire,
+            // no energy spend/regen. Manual shield stays the only route.
+            _rulesEnabled = config.enableCodePanel;
         }
 
         public bool IsPaused => _paused;
@@ -138,7 +144,7 @@ namespace AlgoRhythm.Game.Combat
                 _rules.OnBeat(beat, new BeatContext(beat, _clockSource.NowDsp));
                 PushRuleGuards();
                 SpawnDue(beat);
-                if (beat > 0 && _config.energyRegenEveryBeats > 0
+                if (_rulesEnabled && beat > 0 && _config.energyRegenEveryBeats > 0
                     && beat % _config.energyRegenEveryBeats == 0)
                 {
                     _combat.AddEnergy(1);
@@ -329,9 +335,16 @@ namespace AlgoRhythm.Game.Combat
         /// <summary>
         /// Pushes active + pending rule coverage to the arena guards so the
         /// player sees where the rules are. Nearest covers all four lanes.
+        /// No-op (clears guards) while the rule system is disabled.
         /// </summary>
         private void PushRuleGuards()
         {
+            if (!_rulesEnabled)
+            {
+                _arena.SetRuleGuards(0, 0);
+                return;
+            }
+
             _arena.SetRuleGuards(CoverageMask(_rules.ActiveTarget), CoverageMask(_rules.PendingTarget));
         }
 
@@ -458,6 +471,13 @@ namespace AlgoRhythm.Game.Combat
                     ResolveManual(active, bufferedGrade);
                     return;
                 }
+            }
+
+            // Rule system temporarily OFF: manual shield is the only route.
+            // Buffered Miss falls through to the timeout path (Miss).
+            if (!_rulesEnabled)
+            {
+                return;
             }
 
             RuleFireDecision decision = _rules.EvaluateThreat(
@@ -820,15 +840,19 @@ namespace AlgoRhythm.Game.Combat
         private void AnnounceWaveClear()
         {
             _clearAnnounced = true;
-            _combat.AddEnergy(1);
+            if (_rulesEnabled)
+            {
+                _combat.AddEnergy(1);
+            }
             string waveId = _director.ActiveRunner.Data.WaveId;
             bool lastWave = _director.ActiveIndex + 1 >= _director.WaveCount;
             string counts =
                 $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}";
+            string energySuffix = _rulesEnabled ? "\n+1 Energy · lanjut..." : "\nlanjut...";
             _hud.ShowWaveSummary(lastWave
                 ? $"RUN CLEAR — {waveId} selesai\nSCORE {_combat.Score} · {counts}\n" +
                   $"damage {_combat.DamageTaken} · decoy {_combat.DecoyPenaltyTotal}"
-                : $"WAVE CLEAR {waveId} — SCORE {_combat.Score}\n{counts}\n+1 Energy · lanjut...");
+                : $"WAVE CLEAR {waveId} — SCORE {_combat.Score}\n{counts}{energySuffix}");
             _hud.SetStatus(lastWave
                 ? "RUN CLEAR — 1A dan 1B selesai"
                 : $"WAVE CLEAR {waveId} — semua threat resolved");

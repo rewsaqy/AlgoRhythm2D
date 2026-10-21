@@ -25,7 +25,7 @@ MonoBehaviour:
   ruleCooldownMs: 1500
   energyRegenEveryBeats: 4
   shieldTransitMs: 320
-  enableCodePanel: 1
+  enableCodePanel: 0
   shakePerfect: 1
   shakeDestroy: 0.5
   shakeDecayPerSecond: 2.5
@@ -35,4 +35,4 @@ MonoBehaviour:
   aidaFlavorLines:
   - Aku awasi langit. Fokus ritme.
   - Shield ikut beat, Operator.
-  - Hemat Energy. Pilih arah.
+  - Hemat gerakan. Pilih arah.

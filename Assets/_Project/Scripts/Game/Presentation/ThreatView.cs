@@ -13,8 +13,13 @@ namespace AlgoRhythm.Game.Presentation
     /// </summary>
     public sealed class ThreatView : MonoBehaviour
     {
-        private const float RingFullScale = 1.8f;
-        private const float RingMinScale = 0.45f;
+        [Header("Visual [U] — editable musuh. Ubah di Inspector/MCP.")]
+        [Tooltip("Skala ring saat spawn (jauh).")]
+        [Min(0.1f)] [SerializeField] private float ringFullScale = 1.8f;
+        [Tooltip("Skala ring saat tepat di Core (dekat).")]
+        [Min(0.05f)] [SerializeField] private float ringMinScale = 0.45f;
+        [Tooltip("Skala pop saat grade muncul (Perfect/Good/Miss).")]
+        [Min(0.1f)] [SerializeField] private float resolveHideSeconds = 0.45f;
 
         private TextMesh _label;
         private SpriteRenderer _ring;
@@ -87,7 +92,7 @@ namespace AlgoRhythm.Game.Presentation
         public void Resolve(TimingGrade grade)
         {
             _visible = true;
-            _hideAt = Time.unscaledTime + 0.45f;
+            _hideAt = Time.unscaledTime + resolveHideSeconds;
 
             if (_label == null)
             {
@@ -102,7 +107,7 @@ namespace AlgoRhythm.Game.Presentation
         public void ResolveDecoy(bool shielded)
         {
             _visible = true;
-            _hideAt = Time.unscaledTime + 0.45f;
+            _hideAt = Time.unscaledTime + resolveHideSeconds;
 
             if (_label == null)
             {
@@ -133,7 +138,7 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             float clamped = Mathf.Clamp01((float)(msToImpact / _travelMs));
-            float scale = Mathf.Lerp(RingMinScale, RingFullScale, clamped);
+            float scale = Mathf.Lerp(ringMinScale, ringFullScale, clamped);
             _ring.transform.localScale = new Vector3(scale, scale, 1f);
 
             double abs = Math.Abs(msToImpact);

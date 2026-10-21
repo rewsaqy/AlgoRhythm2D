@@ -14,7 +14,19 @@ namespace AlgoRhythm.Game.Presentation
     /// </summary>
     public sealed class ArenaPresenter : MonoBehaviour
     {
-        private const float DirectionRadius = 1.4f;
+        [Header("Layout [U] — editable map. Ubah di Inspector/MCP, tanpa sentuh kode.")]
+        [Tooltip("Jarak Core ke tiap lane (satuan world).")]
+        [Min(0.1f)] [SerializeField] private float directionRadius = 1.4f;
+        [Tooltip("Jarak spawn horizontal (East/West) — lebar layar.")]
+        [Min(1f)] [SerializeField] private float spawnDistanceEastWest = 8.2f;
+        [Tooltip("Jarak spawn vertikal (North/South).")]
+        [Min(1f)] [SerializeField] private float spawnDistanceNorthSouth = 4.6f;
+
+        [Header("Feel [U] — hentakan beat per threat")]
+        [Tooltip("Amplitudo pop saat beat; makin dekat ring makin besar.")]
+        [Range(0f, 1f)] [SerializeField] private float popBase = 0.06f;
+        [Tooltip("Penguat pop saat threat dekat ring.")]
+        [Range(0f, 1f)] [SerializeField] private float popNearRing = 0.24f;
 
         private readonly List<ThreatView> _views = new List<ThreatView>();
         private readonly Dictionary<int, ThreatView> _activeThreats = new Dictionary<int, ThreatView>();
@@ -133,7 +145,7 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             float clamped = Mathf.Clamp01(progress);
-            Vector3 target = (Vector3)(DirectionVector(threat.Direction) * DirectionRadius);
+            Vector3 target = (Vector3)(DirectionVector(threat.Direction) * directionRadius);
             Vector3 spawn = (Vector3)(DirectionVector(threat.Direction) * SpawnDistance(threat.Direction));
             view.transform.localPosition = Vector3.Lerp(spawn, target, clamped);
 
@@ -141,7 +153,7 @@ namespace AlgoRhythm.Game.Presentation
             // pop grows as the threat nears the ring, so late beats feel
             // heavier. Position and ring stay the timing authority.
             float tension = 1f - clamped;
-            float amp = 0.06f + 0.24f * tension * tension;
+            float amp = popBase + popNearRing * tension * tension;
             float pop = Mathf.Exp(-6f * (float)beatPhase);
             float body = 1f + amp * pop;
             view.transform.localScale = new Vector3(body, body, 1f);
@@ -199,7 +211,7 @@ namespace AlgoRhythm.Game.Presentation
 
             float radians = angleDeg * Mathf.Deg2Rad;
             Vector3 position = new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f)
-                               * DirectionRadius;
+                               * directionRadius;
             _shield.Park(position, angleDeg, slotCode);
         }
 
@@ -339,10 +351,13 @@ namespace AlgoRhythm.Game.Presentation
         /// <summary>
         /// Spawn distance per lane: east/west use the wide screen edges,
         /// north/south the near vertical edges. Same travel speed both axes.
+        /// Editable in Inspector (spawnDistanceEastWest/NorthSouth).
         /// </summary>
-        internal static float SpawnDistance(Direction direction)
+        internal float SpawnDistance(Direction direction)
         {
-            return direction == Direction.East || direction == Direction.West ? 8.2f : 4.6f;
+            return direction == Direction.East || direction == Direction.West
+                ? spawnDistanceEastWest
+                : spawnDistanceNorthSouth;
         }
 
         /// <summary>

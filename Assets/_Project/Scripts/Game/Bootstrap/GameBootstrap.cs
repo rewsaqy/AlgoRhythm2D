@@ -75,6 +75,7 @@ namespace AlgoRhythm.Game.Bootstrap
 
             arena.Initialize(config.perfectWindowMs, config.goodWindowMs);
             hud.Initialize(_combat, clock, _director, judge);
+            hud.SetRuleSystemEnabled(config.enableCodePanel);
             metronome.Initialize(clock);
             sfx.Initialize(clock);
             cameraShake.Initialize(config.shakeDecayPerSecond, config.shakeMaxOffset);

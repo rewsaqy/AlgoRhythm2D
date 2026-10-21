@@ -31,6 +31,17 @@ namespace AlgoRhythm.Game.Presentation
         private float _statusVisibleUntil;
         private string _clearSummary = string.Empty;
         private string _dialogueLine = string.Empty;
+        private bool _showEnergy = true;
+
+        /// <summary>
+        /// Called by the bootstrap from DemoConfig.enableCodePanel. When the
+        /// rule/energy system is off, ENERGY is hidden (manual-shield only).
+        /// Reversible: set back to true when the final-AIDA rule system lands.
+        /// </summary>
+        public void SetRuleSystemEnabled(bool enabled)
+        {
+            _showEnergy = enabled;
+        }
 
         public void Initialize(CombatState combat, BeatClock clock, WaveDirector director, TimingJudge judge = null)
         {
@@ -133,9 +144,12 @@ namespace AlgoRhythm.Game.Presentation
                 int beat = _clock.IsStarted ? _clock.CurrentBeatIndex : 0;
                 double calibration = _judge != null ? _judge.CalibrationOffsetMs : 0.0;
                 string calSign = calibration >= 0 ? "+" : "-";
+                string energySegment = _showEnergy
+                    ? $"ENERGY {_combat.Energy}   "
+                    : "MANUAL ONLY   ";
                 _stats.text =
                     $"INTEGRITY [{bar}] {_combat.Integrity}/{_combat.MaxIntegrity}\n" +
-                    $"ENERGY {_combat.Energy}   SCORE {_combat.Score}\n" +
+                    $"{energySegment}SCORE {_combat.Score}\n" +
                     $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
                     $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
                     $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [Z/X]"

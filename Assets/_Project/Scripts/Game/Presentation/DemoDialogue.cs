@@ -5,6 +5,8 @@ namespace AlgoRhythm.Game.Presentation
     /// routing stays on the id, the view shows only the line. A.I.D.A. 1.0
     /// teaches the tutorial, 2.0 appears after 1B clear — a demo compression,
     /// not production canon.
+    /// Rule/energy system is temporarily OFF (manual-shield only until the
+    /// final AIDA form); dialogue therefore never mentions Energy or slots.
     /// </summary>
     public static class DemoDialogue
     {
@@ -15,12 +17,14 @@ namespace AlgoRhythm.Game.Presentation
             if (waveIndex <= 0)
             {
                 textId = "TUTO_01";
-                line = "A.I.D.A: blokir virus ikut irama — W/A/S/D sesuai arah!";
+                line = "A.I.D.A: Hallo, selamat datang di Vierway! Aku AIDA, asisten barumu yang ditugaskan melindungi Data Base ini.\n"
+                    + "A.I.D.A: Ini latihan menembak — arahkan Shield ke ATAS / BAWAH / KANAN / KIRI sesuai arah datangnya, tekan sekali lagi untuk menghancurkan malware dan virus yang masuk.\n"
+                    + "A.I.D.A: Semangat...!";
                 return;
             }
 
             textId = "AIDA2_01";
-            line = "A.I.D.A 2.0: bagus. Sekarang lebih cepat — jaga Energy!";
+            line = "A.I.D.A 2.0: bagus. Sekarang lebih cepat dan ada umpan — abaikan decoy, fokus arah yang benar!";
         }
 
         public static void LineForWaveClear(string waveId, bool runDone, out string textId, out string line)
