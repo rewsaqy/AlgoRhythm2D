@@ -21,8 +21,8 @@ namespace AlgoRhythm.Game.Menu
         [SerializeField] private TextMeshProUGUI title;
 
         [Header("Wipe [U] — stepped sweep")]
-        [Min(0.1f)] [SerializeField] private float wipeDuration = 2.4f;
-        [Min(2)] [SerializeField] private int wipeSteps = 8;
+        [Min(0.1f)] [SerializeField] private float wipeDuration = 2.6f;
+        [Min(2)] [SerializeField] private int wipeSteps = 6;
 
         [Header("Title [U] — typewriter then float")]
         [Min(0f)] [SerializeField] private float revealStartDelay = 0.8f;
@@ -33,8 +33,8 @@ namespace AlgoRhythm.Game.Menu
         [SerializeField] private float labelStaggerDelay = 0.3f;
 
         [Header("Buttons [U] — stepped slide-in from the sides")]
-        [Min(0.1f)] [SerializeField] private float slideDuration = 0.6f;
-        [Min(2)] [SerializeField] private int slideSteps = 8;
+        [Min(0.1f)] [SerializeField] private float slideDuration = 0.7f;
+        [Min(2)] [SerializeField] private int slideSteps = 5;
 
         private readonly List<TextMeshProUGUI> _labels = new List<TextMeshProUGUI>();
         private readonly List<Vector2> _labelBase = new List<Vector2>();
@@ -249,7 +249,7 @@ namespace AlgoRhythm.Game.Menu
 
         private void LoadGame()
         {
-            SceneManager.LoadScene("RealMAp");
+            SceneManager.LoadScene("Opening_1");
         }
 
         private void ExitGame()
