@@ -617,10 +617,12 @@ namespace AlgoRhythm.Game.Combat
         }
 
         /// <summary>
-        /// AIDA fires on its cadence at the nearest shootable threat. Aim is
-        /// true only on the lucky shot of each hit cycle (-1000 aura); other
-        /// shots take an alternating angular error and always miss harmlessly.
-        /// Decoys are never targeted. Arrival meets the threat near the ring.
+        /// AIDA fires on its cadence at the nearest shootable threat, one
+        /// shot per target. Aim is true only on the lucky shot of each hit
+        /// cycle (-1000 aura); other shots take an alternating angular error
+        /// and always miss harmlessly. Decoys are never targeted. Arrival
+        /// meets the threat where it really is at arrival time, not a
+        /// fixed ring point.
         /// </summary>
         private void TryAidaFire(int beat, double now)
         {
@@ -636,20 +638,35 @@ namespace AlgoRhythm.Game.Combat
             int hitEvery = Mathf.Max(1, _config.aidaHitEveryShots);
             bool willHit = (_aidaShotCount % hitEvery) == hitEvery - 1;
             float laneAngle = ShieldController.DirectionToAngle(target.Threat.Direction);
-            float aimAngle = willHit
-                ? laneAngle
-                : laneAngle + ((_aidaShotCount % 2 == 0) ? 25f : -25f);
-            _aidaShotCount++;
-            _aida.SetAim(aimAngle);
-
-            float radians = aimAngle * Mathf.Deg2Rad;
-            Vector3 to = _arena.transform.position
-                         + new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * 1.4f;
             double arrivalDsp = impactDsp - _clock.SecondsPerBeat * 0.25;
             if (arrivalDsp <= now)
             {
                 arrivalDsp = now + 0.1;
             }
+
+            Vector3 to = _arena.transform.position
+                + ArenaPresenter.ThreatLocalPosition(target.Threat.Direction, 1f);
+            float aimAngle;
+            if (willHit)
+            {
+                // Hit the note where it really is at arrival (same travel
+                // math as the threat glide) instead of a fixed ring point,
+                // and point the barrel at that spot.
+                float arrivalProgress = BeatGlideProgress(
+                    target.Threat.SpawnBeat, target.Threat.ImpactBeat, arrivalDsp);
+                to = _arena.transform.position
+                    + ArenaPresenter.ThreatLocalPosition(target.Threat.Direction, arrivalProgress);
+                Vector3 towerPos = _aida.transform.position;
+                aimAngle = Mathf.Atan2(to.x - towerPos.x, to.y - towerPos.y) * Mathf.Rad2Deg;
+                _aida.SetFlavor($"Awas {LaneName(target.Threat.Direction)}!");
+            }
+            else
+            {
+                aimAngle = laneAngle + ((_aidaShotCount % 2 == 0) ? 25f : -25f);
+            }
+
+            _aidaShotCount++;
+            _aida.SetAim(aimAngle);
 
             AidaShotView view = _aida.FireShot(
                 _aida.transform.position, to, target.Threat.Id, willHit, arrivalDsp);
@@ -700,6 +717,23 @@ namespace AlgoRhythm.Game.Combat
             }
 
             return null;
+        }
+
+        private static string LaneName(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.North:
+                    return "Utara";
+                case Direction.East:
+                    return "Timur";
+                case Direction.South:
+                    return "Selatan";
+                case Direction.West:
+                    return "Barat";
+                default:
+                    return "?";
+            }
         }
 
         private void CycleAidaFlavor()
