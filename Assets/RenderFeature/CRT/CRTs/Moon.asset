@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30f312d9f3f24cdb944c1453a1accefb, type: 3}
+  m_Name: Moon
+  m_EditorClassIdentifier: 
+  data:
+    pixelationAmount: 4
+    maxColorChannels:
+      red: 4
+      green: 4
+      blue: 4
+      greyScale: 0
+    dithering4: 0
+    dithering8: 0.205
+    vignette: 1
+    innerCurve: 5.2
+    monitorCurve: 0.165
+    monitorInnerSize:
+      width: 0
+      height: 0
+    monitorOutterSize:
+      width: 0.288
+      height: 0.191
+    zoom: 1.06
+    monitorRoundness: 0.2
+    monitorTexture: {fileID: 2800000, guid: a5e897f9f29eb488ba4791cd52d004b5, type: 3}
+    monitorColor: {r: 0, g: 0, b: 0, a: 0.21176471}
+    innerMonitorDarkness: 0.45
+    innerMonitorShine: 0.03
+    colorScans:
+      greenChannelMultiplier: 0.375
+      redBlueChannelMultiplier: -0.292
+      sizeMultiplier: 2
+    innerMonitorShineRadius: -0.087
+    innerMonitorShineCurve: 10
+  validationId: 2d5e8251-57fc-4a3f-bbbc-b122b0e706b2
