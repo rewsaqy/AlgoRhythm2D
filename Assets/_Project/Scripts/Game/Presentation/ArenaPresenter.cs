@@ -18,7 +18,11 @@ namespace AlgoRhythm.Game.Presentation
 
         private readonly List<ThreatView> _views = new List<ThreatView>();
         private readonly Dictionary<int, ThreatView> _activeThreats = new Dictionary<int, ThreatView>();
+        private readonly Dictionary<Direction, ShieldView> _blocks = new Dictionary<Direction, ShieldView>();
+        private readonly Dictionary<Direction, GameObject> _ruleGuards = new Dictionary<Direction, GameObject>();
         private ShieldView _shield;
+        private int _ruleActiveMask;
+        private int _rulePendingMask;
         private TextMesh _gradeLabel;
         private float _gradeHideAt;
         private float _gradePopUntil;
@@ -48,6 +52,44 @@ namespace AlgoRhythm.Game.Presentation
                 if (_shield != null)
                 {
                     _shield.Initialize();
+                }
+            }
+
+            Transform shieldsRoot = transform.Find("Shields");
+            if (shieldsRoot != null)
+            {
+                foreach (ShieldView block in shieldsRoot.GetComponentsInChildren<ShieldView>(true))
+                {
+                    if (block == null || block == _shield)
+                    {
+                        continue;
+                    }
+
+                    if (!TryBlockDirection(block.name, out Direction slot))
+                    {
+                        continue;
+                    }
+
+                    block.Initialize();
+                    // Blocks rest hidden; FlashShieldBlock shows them.
+                    // Initialize activates, so park them back off.
+                    block.gameObject.SetActive(false);
+                    _blocks[slot] = block;
+                }
+            }
+
+            Transform guardsRoot = transform.Find("RuleGuards");
+            if (guardsRoot != null)
+            {
+                foreach (Transform guard in guardsRoot)
+                {
+                    if (guard == null || !TryBlockDirection(guard.name, out Direction slot))
+                    {
+                        continue;
+                    }
+
+                    guard.gameObject.SetActive(false);
+                    _ruleGuards[slot] = guard.gameObject;
                 }
             }
 
@@ -169,6 +211,32 @@ namespace AlgoRhythm.Game.Presentation
             }
         }
 
+        /// <summary>
+        /// Shows a real shield GO in the pressed lane: instant block flash
+        /// that reads in the arena, not as HUD text. Perfect lands biggest,
+        /// Good/auto medium, plain presses small.
+        /// </summary>
+        public void FlashShieldBlock(Direction direction, float punch, float holdSeconds = 0.3f)
+        {
+            if (_blocks.TryGetValue(direction, out ShieldView block) && block != null)
+            {
+                block.FlashBlock(punch, holdSeconds);
+            }
+        }
+
+        /// <summary>
+        /// Persistent rule-coverage readout: a ring guard stays lit in every
+        /// lane an active rule covers, so the player sees where the rules
+        /// are without reading the code panel. Bit per lane: N=1, E=2, S=4,
+        /// W=8. Pending (committed, live next beat) lanes blink instead.
+        /// </summary>
+        public void SetRuleGuards(int activeMask, int pendingMask)
+        {
+            _ruleActiveMask = activeMask;
+            _rulePendingMask = pendingMask;
+            ApplyRuleGuards(Time.unscaledTime);
+        }
+
         public void ShowInputRejected(string reason)
         {
             if (_gradeLabel == null)
@@ -222,6 +290,11 @@ namespace AlgoRhythm.Game.Presentation
 
         private void Update()
         {
+            if (_rulePendingMask != 0)
+            {
+                ApplyRuleGuards(Time.unscaledTime);
+            }
+
             if (_gradeLabel != null && _gradePopUntil > 0f)
             {
                 if (Time.unscaledTime >= _gradePopUntil)
@@ -334,6 +407,67 @@ namespace AlgoRhythm.Game.Presentation
                 default:
                     return UiTypography.Miss;
             }
+        }
+
+        /// <summary>One bit per lane: N=1, E=2, S=4, W=8.</summary>
+        private static int GuardBit(Direction direction)
+        {
+            // Direction order is North=0..West=3; one bit per lane.
+            return 1 << (int)direction;
+        }
+
+        private void ApplyRuleGuards(float now)
+        {
+            bool blinkOn = (now * 2f) % 1f < 0.5f;
+            foreach (KeyValuePair<Direction, GameObject> pair in _ruleGuards)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                int bit = GuardBit(pair.Key);
+                bool active = (_ruleActiveMask & bit) != 0;
+                bool pending = (_rulePendingMask & bit) != 0 && !active;
+                pair.Value.SetActive(active || (pending && blinkOn));
+            }
+        }
+
+        /// <summary>
+        /// Maps a block GO name (ShieldBlock_N/E/S/W suffix) to its lane.
+        /// Unknown names are ignored so stray ShieldViews never break init.
+        /// </summary>
+        private static bool TryBlockDirection(string objectName, out Direction direction)
+        {
+            if (!string.IsNullOrEmpty(objectName))
+            {
+                if (objectName.EndsWith("_N"))
+                {
+                    direction = Direction.North;
+                    return true;
+                }
+
+                if (objectName.EndsWith("_E"))
+                {
+                    direction = Direction.East;
+                    return true;
+                }
+
+                if (objectName.EndsWith("_S"))
+                {
+                    direction = Direction.South;
+                    return true;
+                }
+
+                if (objectName.EndsWith("_W"))
+                {
+                    direction = Direction.West;
+                    return true;
+                }
+            }
+
+            direction = Direction.South;
+            return false;
         }
     }
 }

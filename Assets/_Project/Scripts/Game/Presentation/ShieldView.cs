@@ -7,12 +7,19 @@ namespace AlgoRhythm.Game.Presentation
     /// The single orbiting shield. It parks at the controller's angle and
     /// pulses on a successful block; it never hides on a timer. The bar
     /// itself is the cue; the debug text label stays hidden.
+    /// The same component also drives the four directional block flashes
+    /// (ShieldBlock_*): FlashBlock shows a real shield GO in the pressed
+    /// lane and auto-hides, so shield feedback reads in the arena instead
+    /// of as HUD text. Blocks never Pulse; the orbiter never FlashBlocks.
     /// </summary>
     public sealed class ShieldView : MonoBehaviour
     {
         private TextMesh _label;
         private Vector3 _baseScale;
         private float _pulseUntil;
+        private float _blockHideAt;
+        private float _blockHoldTotal = 0.3f;
+        private float _blockPunch = 1f;
 
         public void Initialize()
         {
@@ -38,12 +45,49 @@ namespace AlgoRhythm.Game.Presentation
 
         public void Pulse()
         {
+            if (_blockHideAt > 0f)
+            {
+                return;
+            }
+
             _pulseUntil = Time.unscaledTime + 0.28f;
             transform.localScale = _baseScale * 1.45f;
         }
 
+        /// <summary>
+        /// Shows this GO as a shield block in its authored lane: pops to
+        /// punch scale, then eases back and auto-hides after holdSeconds.
+        /// </summary>
+        public void FlashBlock(float punch, float holdSeconds)
+        {
+            _blockPunch = Mathf.Max(1f, punch);
+            _blockHoldTotal = Mathf.Max(0.05f, holdSeconds);
+            _blockHideAt = Time.unscaledTime + _blockHoldTotal;
+            _pulseUntil = 0f;
+            gameObject.SetActive(true);
+            transform.localScale = _baseScale * _blockPunch;
+        }
+
         private void Update()
         {
+            if (_blockHideAt > 0f)
+            {
+                float remaining = _blockHideAt - Time.unscaledTime;
+                if (remaining <= 0f)
+                {
+                    _blockHideAt = 0f;
+                    transform.localScale = _baseScale;
+                    gameObject.SetActive(false);
+                }
+                else
+                {
+                    float u = Mathf.Clamp01(remaining / _blockHoldTotal);
+                    transform.localScale = _baseScale * Mathf.Lerp(1f, _blockPunch, u * u);
+                }
+
+                return;
+            }
+
             if (_pulseUntil > 0f)
             {
                 if (Time.unscaledTime >= _pulseUntil)

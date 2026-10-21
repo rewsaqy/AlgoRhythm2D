@@ -136,6 +136,7 @@ namespace AlgoRhythm.Game.Combat
                 // this the code-panel commit would stay pending forever and
                 // auto-shield could never fire.
                 _rules.OnBeat(beat, new BeatContext(beat, _clockSource.NowDsp));
+                PushRuleGuards();
                 SpawnDue(beat);
                 if (beat > 0 && _config.energyRegenEveryBeats > 0
                     && beat % _config.energyRegenEveryBeats == 0)
@@ -218,7 +219,7 @@ namespace AlgoRhythm.Game.Combat
                     continue;
                 }
 
-                Resolve(target, TimingGrade.Good, "aida");
+                Resolve(target, TimingGrade.Good, "aida", blockFlash: false);
             }
 
             if (_combat.Integrity <= 0)
@@ -316,14 +317,39 @@ namespace AlgoRhythm.Game.Combat
         /// their own keys and are unaffected.
         /// </summary>
         /// <summary>
-        /// Commit confirmation across three channels at once: a pew tick,
-        /// a sticky HUD status, and the code-panel preview/log. Committing
-        /// is a player decision, so it must be unmissable.
+        /// Commit confirmation without HUD text: a pew tick, the code-panel
+        /// log, and a blinking rule guard in the covered lane(s). Committing
+        /// is a player decision, so it must be unmistakable in the arena.
         /// </summary>
         private void HandleRuleCommitted()
         {
             _sfx.PlayPew();
-            _hud.SetStatus("RULE COMMITTED — aktif beat depan");
+            PushRuleGuards();
+        }
+
+        /// <summary>
+        /// Pushes active + pending rule coverage to the arena guards so the
+        /// player sees where the rules are. Nearest covers all four lanes.
+        /// </summary>
+        private void PushRuleGuards()
+        {
+            _arena.SetRuleGuards(CoverageMask(_rules.ActiveTarget), CoverageMask(_rules.PendingTarget));
+        }
+
+        private static int CoverageMask(Target? target)
+        {
+            if (!target.HasValue)
+            {
+                return 0;
+            }
+
+            if (target.Value == Target.Nearest)
+            {
+                return 0b1111;
+            }
+
+            // Target order mirrors Direction North through West.
+            return 1 << (int)target.Value;
         }
 
         private void PollCalibration()
@@ -522,6 +548,7 @@ namespace AlgoRhythm.Game.Combat
             if (candidate.Threat.Kind == ThreatKind.AdwareDecoy && grade != TimingGrade.Miss)
             {
                 candidate.Resolved = true;
+                _arena.FlashShieldBlock(direction, 1.6f, 0.35f);
                 ResolveDecoy(candidate, shielded: true, fromRule: false);
                 return;
             }
@@ -536,6 +563,7 @@ namespace AlgoRhythm.Game.Combat
             if (active.Threat.Kind == ThreatKind.AdwareDecoy)
             {
                 active.Resolved = true;
+                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
                 ResolveDecoy(active, shielded: true, fromRule: false);
                 return;
             }
@@ -554,6 +582,7 @@ namespace AlgoRhythm.Game.Combat
 
             if (active.Threat.Kind == ThreatKind.AdwareDecoy)
             {
+                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
                 ResolveDecoy(active, shielded: true, fromRule: true);
                 return;
             }
@@ -561,6 +590,9 @@ namespace AlgoRhythm.Game.Combat
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
             if (_combat.ResolveThreat(active.Threat, TimingGrade.Good, fromRule: true, damage: 0))
             {
+                // Auto block: the lane shield GO pops (Set A independence
+                // reads here) alongside the grade text.
+                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
                 _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true);
                 _sfx.PlayDestroy();
                 _shake.AddTrauma(_config.shakeDestroy);
@@ -709,7 +741,7 @@ namespace AlgoRhythm.Game.Combat
             return best;
         }
 
-        private void Resolve(ActiveThreat active, TimingGrade grade, string reason)
+        private void Resolve(ActiveThreat active, TimingGrade grade, string reason, bool blockFlash = true)
         {
             _ = reason;
             if (active.Resolved)
@@ -730,7 +762,19 @@ namespace AlgoRhythm.Game.Combat
 
             active.Resolved = true;
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
-            _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: grade != TimingGrade.Miss);
+            bool success = grade != TimingGrade.Miss;
+            if (success && blockFlash)
+            {
+                // Successful shield: the lane shield GO pops alongside the
+                // grade text (Perfect biggest). Arena, sfx, shake and score
+                // tick reinforce the read.
+                _arena.FlashShieldBlock(
+                    active.Threat.Direction,
+                    grade == TimingGrade.Perfect ? 2.0f : 1.6f,
+                    grade == TimingGrade.Perfect ? 0.45f : 0.35f);
+            }
+
+            _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: success);
             if (grade != TimingGrade.Miss)
             {
                 _sfx.PlayDestroy();

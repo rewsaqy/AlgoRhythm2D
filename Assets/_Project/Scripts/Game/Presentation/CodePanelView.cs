@@ -410,14 +410,12 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_preview != null)
             {
-                string active = _runtime != null && _runtime.HasActiveRule
-                    ? $"[ACTIVE #{_runtime.ActiveRuleId}]"
-                    : _runtime != null && _runtime.HasPendingRule
-                        ? "[COMMITTED — aktif beat depan]"
-                        : "[NO ACTIVE RULE]";
+                // Coverage now reads on the arena rule guards, so the
+                // code-panel preview carries only the draft key — no
+                // ACTIVE/COMMITTED/NO-RULE state line.
                 _preview.text = _lastError == RuleError.None && _lastPreviewKey.Length > 0
-                    ? $"{_lastPreviewKey}\n{active}"
-                    : $"NO PREVIEW\n{active}";
+                    ? _lastPreviewKey
+                    : "NO PREVIEW";
                 _preview.color = _lastError == RuleError.None && _lastPreviewKey.Length > 0
                     ? UiTypography.Info
                     : UiTypography.Dim;

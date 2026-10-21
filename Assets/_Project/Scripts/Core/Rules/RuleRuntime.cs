@@ -88,6 +88,12 @@ namespace AlgoRhythm.Core.Rules
 
         public int ActiveRuleId => _activeRuleId;
 
+        /// <summary>Target lane of the active rule, if any.</summary>
+        public Target? ActiveTarget => _active?.Tgt;
+
+        /// <summary>Target lane of the staged rule, if any.</summary>
+        public Target? PendingTarget => _pending?.Tgt;
+
         /// <summary>
         /// Reports an E006 target-resolution failure: a fired rule arrived at
         /// a target that no longer exists (resolved or retried away). Log-only;
