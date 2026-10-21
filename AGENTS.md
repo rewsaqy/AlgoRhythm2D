@@ -25,6 +25,7 @@ This repository is a Unity 6.3 project for AlgoRhythm: CODE IS SHIELD. Workflow 
 - Unity 6.3 / Windows single-player is the release scope; Linux is an internal demo artifact only. No WebGL or multiplayer without explicit approval.
 - Do not claim the Windows clean-build acceptance without an observed Windows player run (V-012).
 - Pack generation changes workflow docs only; gameplay implementation is a separate request.
+- Unity MCP is mandatory whenever the task needs the live editor (scene/asset inspection or edits, Play Mode, screenshots, console): ping read-only first and never claim bridge access without an observed read-only success; treat scene/asset writes, code execution, builds, and Play Mode control as privileged mutations that need explicit user authorization and a post-write inspection.
 - Validation honesty: a check is `passed` only with an observed result; report game checks separately from pack validation.
 
 ## Verification
