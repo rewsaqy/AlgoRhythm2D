@@ -8,6 +8,8 @@ namespace AlgoRhythm.Game.Presentation
     /// <summary>
     /// Serialized greybox threat visual. The view is authored in the scene and
     /// pooled by activation; it never creates GameObjects at runtime.
+    /// Direction always reads as glyph + code text (never colour alone);
+    /// decoys read as a diamond marker plus "?" text.
     /// </summary>
     public sealed class ThreatView : MonoBehaviour
     {
@@ -28,6 +30,16 @@ namespace AlgoRhythm.Game.Presentation
             _label = FindText("Label");
             Transform ring = transform.Find("Ring");
             _ring = ring != null ? ring.GetComponent<SpriteRenderer>() : null;
+            UiTypography.Style(_label, 40, 0.08f, UiTypography.Ink,
+                TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
+            if (_label != null)
+            {
+                // Notes stay text-free: lane, marker shape and the approach
+                // ring carry direction/kind/timing. Grade and decoy feedback
+                // still read as text on the arena grade label.
+                _label.gameObject.SetActive(false);
+            }
+
             Hide();
         }
 
@@ -61,17 +73,15 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_threat.Kind == ThreatKind.AdwareDecoy)
             {
-                _label.text = buffered ? "?\nDECOY+\nBUFFER" : "?\nDECOY";
-                _label.color = Color.white;
+                _label.text = buffered ? "? DECOY\n+BUFFER" : "? DECOY";
+                _label.color = UiTypography.Decoy;
                 return;
             }
 
             string code = ArenaPresenter.DirectionCode(_threat.Direction);
             string glyph = ArenaPresenter.DirectionGlyph(_threat.Direction);
-            _label.text = buffered
-                ? $"{code}\n{glyph}+\nBUFFER"
-                : $"{code}\n{glyph}";
-            _label.color = Color.white;
+            _label.text = buffered ? $"{glyph} {code}\n+BUFFER" : $"{glyph} {code}";
+            _label.color = buffered ? UiTypography.Info : UiTypography.Ink;
         }
 
         public void Resolve(TimingGrade grade)
@@ -84,9 +94,8 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            _label.text = grade == TimingGrade.Miss
-                ? "MISS"
-                : $"SHIELD\n{grade}";
+            // Single line: the grade is the feedback, colour only reinforces.
+            _label.text = grade.ToString().ToUpperInvariant();
             _label.color = ArenaPresenter.GradeColor(grade);
         }
 
@@ -100,10 +109,8 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            _label.text = shielded ? "DECOY\n-5" : "DECOY\nIGNORED";
-            _label.color = shielded
-                ? new Color(1f, 0.95f, 0.35f, 1f)
-                : new Color(0.75f, 0.75f, 0.75f, 1f);
+            _label.text = shielded ? "DECOY -5" : "IGNORED";
+            _label.color = shielded ? UiTypography.Warn : UiTypography.Dim;
         }
 
         public void Hide()
@@ -131,9 +138,9 @@ namespace AlgoRhythm.Game.Presentation
 
             double abs = Math.Abs(msToImpact);
             _ring.color = abs <= perfectMs
-                ? new Color(0.4f, 1f, 0.55f, 0.9f)
+                ? new Color(0.45f, 1f, 0.60f, 0.9f)
                 : abs <= goodMs
-                    ? new Color(1f, 0.95f, 0.35f, 0.9f)
+                    ? new Color(1f, 0.93f, 0.45f, 0.9f)
                     : new Color(0.85f, 0.9f, 1f, 0.55f);
         }
 

@@ -6,38 +6,61 @@ using UnityEngine;
 namespace AlgoRhythm.Game.Presentation
 {
     /// <summary>
-    /// Minimal greybox HUD. Every label is a manually authored TextMesh in the
-    /// scene; this component only updates text and keeps the HUD anchored to
-    /// the camera. Text is the source of truth, not colour.
+    /// Grouped greybox HUD. Every label is a manually authored TextMesh in the
+    /// scene; this component only styles and updates text and keeps the HUD
+    /// anchored to the camera. Text carries meaning, never colour alone:
+    /// grades, counts, wave ids and reasons are always spelled out.
+    /// Layout: stats group top-left, transient status under it, dialogue
+    /// subtitle bottom-center, pause/clear overlays centered.
     /// </summary>
     public sealed class HudView : MonoBehaviour
     {
+        private const int BarWidth = 10;
+        private const float EdgePadding = 0.6f;
+
         private CombatState _combat;
         private BeatClock _clock;
         private WaveDirector _director;
+        private TimingJudge _judge;
         private Camera _camera;
         private TextMesh _stats;
         private TextMesh _status;
-        private TextMesh _controls;
+        private TextMesh _dialogue;
         private TextMesh _pause;
         private TextMesh _clear;
         private string _statusText = string.Empty;
         private string _clearSummary = string.Empty;
+        private string _dialogueId = string.Empty;
+        private string _dialogueLine = string.Empty;
 
-        public void Initialize(CombatState combat, BeatClock clock, WaveDirector director)
+        public void Initialize(CombatState combat, BeatClock clock, WaveDirector director, TimingJudge judge = null)
         {
             _combat = combat;
             _clock = clock;
             _director = director;
+            _judge = judge;
             _camera = Camera.main;
             _stats = FindText("Stats");
             _status = FindText("Status");
-            _controls = FindText("Controls");
+            _dialogue = FindText("Controls");
             _pause = FindText("Pause");
             _clear = FindText("Clear");
-            if (_controls != null)
+
+            UiTypography.Style(_stats, 34, 0.08f, UiTypography.Ink,
+                TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
+            UiTypography.Style(_status, 30, 0.08f, UiTypography.Status,
+                TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
+            UiTypography.Style(_dialogue, 26, 0.07f, UiTypography.Ink,
+                TextAnchor.LowerCenter, TextAlignment.Center, 1.2f);
+            UiTypography.Style(_pause, 52, 0.085f, UiTypography.Ink,
+                TextAnchor.MiddleCenter, TextAlignment.Center, 1.25f);
+            UiTypography.Style(_clear, 40, 0.08f, UiTypography.Good,
+                TextAnchor.MiddleCenter, TextAlignment.Center, 1.25f);
+
+            if (_dialogue != null)
             {
-                _controls.text = string.Empty;
+                _dialogue.gameObject.SetActive(true);
+                _dialogue.text = string.Empty;
             }
 
             if (_status != null)
@@ -54,12 +77,12 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            // Player-facing only: pause, resume, clear, retry, run clear.
-            // Per-frame debug spam (telegraph, buffered, per-threat grade)
-            // is ignored; grades already show on ThreatView/Grade.
+            // Player-facing only: pause, resume, wave banners, clear, retry,
+            // run clear. Per-frame debug spam (telegraph, buffered, per-threat
+            // grade) is ignored; grades already show on ThreatView/Grade.
             if (status.Contains("PAUSED")
                 || status.Contains("RESUMED")
-                || status.Contains("WAVE CLEAR")
+                || status.Contains("WAVE ")
                 || status.Contains("RUN CLEAR")
                 || status.Contains("RETRY"))
             {
@@ -70,6 +93,16 @@ namespace AlgoRhythm.Game.Presentation
         public void ShowWaveSummary(string summary)
         {
             _clearSummary = summary ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Shows a dialogue subtitle addressed by text_id. The id stays
+        /// visible so the text_id routing is observable in-game.
+        /// </summary>
+        public void ShowDialogue(string textId, string line)
+        {
+            _dialogueId = textId ?? string.Empty;
+            _dialogueLine = line ?? string.Empty;
         }
 
         private void LateUpdate()
@@ -87,9 +120,26 @@ namespace AlgoRhythm.Game.Presentation
         {
             if (_stats != null)
             {
+                int max = Mathf.Max(1, _combat.MaxIntegrity);
+                int filled = Mathf.Clamp(
+                    Mathf.RoundToInt((float)_combat.Integrity / max * BarWidth), 0, BarWidth);
+                string bar = new string('#', filled) + new string('-', BarWidth - filled);
+                string waveId = _director != null && _director.ActiveRunner != null
+                    ? _director.ActiveRunner.Data.WaveId
+                    : "--";
+                int beat = _clock.IsStarted ? _clock.CurrentBeatIndex : 0;
+                double calibration = _judge != null ? _judge.CalibrationOffsetMs : 0.0;
+                string calSign = calibration >= 0 ? "+" : "-";
                 _stats.text =
-                    $"INTEGRITY {_combat.Integrity}/{_combat.MaxIntegrity}    ENERGY {_combat.Energy}\n" +
-                    $"SCORE {_combat.Score}";
+                    $"INTEGRITY [{bar}] {_combat.Integrity}/{_combat.MaxIntegrity}\n" +
+                    $"ENERGY {_combat.Energy}   SCORE {_combat.Score}\n" +
+                    $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
+                    $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
+                    $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [Z/X]"
+                    + (_combat.Integrity <= max * 30 / 100 ? "\n!! LOW INTEGRITY" : string.Empty);
+                _stats.color = _combat.Integrity <= max * 30 / 100
+                    ? UiTypography.Warn
+                    : UiTypography.Ink;
             }
 
             if (_status != null)
@@ -97,9 +147,18 @@ namespace AlgoRhythm.Game.Presentation
                 _status.text = _statusText;
             }
 
+            if (_dialogue != null)
+            {
+                _dialogue.text = string.IsNullOrEmpty(_dialogueLine)
+                    ? string.Empty
+                    : $"[{_dialogueId}] {_dialogueLine}";
+            }
+
             if (_pause != null)
             {
-                _pause.text = _clock.IsPaused ? "PAUSED\nESC to resume" : string.Empty;
+                _pause.text = _clock.IsPaused
+                    ? "II PAUSED\nESC / P lanjutkan\nWASD shield · Z/X kalibrasi"
+                    : string.Empty;
             }
 
             if (_clear != null)
@@ -128,7 +187,8 @@ namespace AlgoRhythm.Game.Presentation
 
             const float depth = 10.0f;
             Vector3 topLeft = camera.ViewportToWorldPoint(new Vector3(0f, 1f, depth));
-            transform.position = new Vector3(topLeft.x + 0.35f, topLeft.y - 0.35f, 0f);
+            transform.position = new Vector3(
+                topLeft.x + EdgePadding, topLeft.y - EdgePadding, 0f);
 
             Vector3 center = camera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, depth));
             if (_pause != null)
@@ -138,7 +198,13 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_clear != null)
             {
-                _clear.transform.position = new Vector3(center.x, center.y - 1.0f, -0.2f);
+                _clear.transform.position = new Vector3(center.x, center.y - 1.2f, -0.2f);
+            }
+
+            if (_dialogue != null)
+            {
+                Vector3 bottom = camera.ViewportToWorldPoint(new Vector3(0.5f, 0f, depth));
+                _dialogue.transform.position = new Vector3(bottom.x, bottom.y + 1.0f, -0.2f);
             }
         }
 

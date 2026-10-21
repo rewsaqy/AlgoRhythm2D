@@ -38,16 +38,25 @@ namespace AlgoRhythm.Game.Presentation
 
         public void Pulse()
         {
-            _pulseUntil = Time.unscaledTime + 0.18f;
-            transform.localScale = _baseScale * 1.25f;
+            _pulseUntil = Time.unscaledTime + 0.28f;
+            transform.localScale = _baseScale * 1.45f;
         }
 
         private void Update()
         {
-            if (_pulseUntil > 0f && Time.unscaledTime >= _pulseUntil)
+            if (_pulseUntil > 0f)
             {
-                _pulseUntil = 0f;
-                transform.localScale = _baseScale;
+                if (Time.unscaledTime >= _pulseUntil)
+                {
+                    _pulseUntil = 0f;
+                    transform.localScale = _baseScale;
+                }
+                else
+                {
+                    float t = 1f - (_pulseUntil - Time.unscaledTime) / 0.28f;
+                    float scale = Mathf.Lerp(1.45f, 1.0f, t * t);
+                    transform.localScale = _baseScale * scale;
+                }
             }
         }
     }

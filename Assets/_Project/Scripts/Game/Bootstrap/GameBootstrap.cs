@@ -55,10 +55,10 @@ namespace AlgoRhythm.Game.Bootstrap
 
             _clockSource = new DspClockSource();
             var clock = new BeatClock(_clockSource, config.bpm);
-            var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs)
-            {
-                CalibrationOffsetMs = config.calibrationOffsetMs
-            };
+            var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs);
+            float savedCalibration = PlayerPrefs.GetFloat(
+                DemoDialogue.CalibrationPrefKey, (float)config.calibrationOffsetMs);
+            judge.CalibrationOffsetMs = Mathf.Clamp(savedCalibration, -150f, 150f);
 
             var waves = new List<WaveData>(waveDefinitions.Length);
             foreach (WaveDefinitionSO definition in waveDefinitions)
@@ -74,7 +74,7 @@ namespace AlgoRhythm.Game.Bootstrap
                 RuleWhitelist.Demo, config.ruleEnergyCost, config.ruleCooldownMs);
 
             arena.Initialize(config.perfectWindowMs, config.goodWindowMs);
-            hud.Initialize(_combat, clock, _director);
+            hud.Initialize(_combat, clock, _director, judge);
             metronome.Initialize(clock);
             sfx.Initialize(clock);
             cameraShake.Initialize(config.shakeDecayPerSecond, config.shakeMaxOffset);

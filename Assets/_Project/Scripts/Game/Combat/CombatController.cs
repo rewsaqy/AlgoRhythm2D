@@ -8,6 +8,7 @@ using AlgoRhythm.Game.Config;
 using AlgoRhythm.Game.Input;
 using AlgoRhythm.Game.Presentation;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace AlgoRhythm.Game.Combat
 {
@@ -45,6 +46,7 @@ namespace AlgoRhythm.Game.Combat
         private int _aidaShotCount;
         private int _flavorIndex;
         private bool _clearAnnounced;
+        private float _calDebounceUntil;
         private readonly List<AidaShotView> _arrivedShots = new List<AidaShotView>();
 
         private sealed class ActiveThreat
@@ -109,7 +111,17 @@ namespace AlgoRhythm.Game.Combat
 
         public void Tick()
         {
-            if (!_started || _paused)
+            if (!_started)
+            {
+                return;
+            }
+
+            // Calibration stays adjustable even while paused so players can
+            // dial it in from the pause overlay. Pure presentation/judge
+            // offset; beat authority and judging windows are untouched.
+            PollCalibration();
+
+            if (_paused)
             {
                 return;
             }
@@ -274,11 +286,53 @@ namespace AlgoRhythm.Game.Combat
         {
             _clearAnnounced = false;
             _hud.ShowWaveSummary(string.Empty);
+            string waveId = _director.ActiveRunner.Data.WaveId;
+            _hud.SetStatus($"WAVE {waveId} START");
+            DemoDialogue.LineForWaveStart(index, out string textId, out string line);
+            _hud.ShowDialogue(textId, line);
             // WaveDirector restarts the DSP clock origin here; without a
             // resync _nextBeat still points into the old timeline and all
             // future BeatTime() calls land beyond the schedule window,
             // so the metronome goes silent after 1A→1B.
             _metronome.Resync();
+        }
+
+        /// <summary>
+        /// Z/X nudge the judge calibration in 5 ms steps, clamped to ±150 ms
+        /// and persisted to PlayerPrefs. Read directly from the keyboard so no
+        /// input-map change is needed; shield and code-panel bindings win on
+        /// their own keys and are unaffected.
+        /// </summary>
+        private void PollCalibration()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null || Time.unscaledTime < _calDebounceUntil)
+            {
+                return;
+            }
+
+            int step = 0;
+            if (keyboard.zKey.wasPressedThisFrame)
+            {
+                step -= 5;
+            }
+
+            if (keyboard.xKey.wasPressedThisFrame)
+            {
+                step += 5;
+            }
+
+            if (step == 0)
+            {
+                return;
+            }
+
+            _calDebounceUntil = Time.unscaledTime + 0.18f;
+            double next = Mathf.Clamp(
+                (float)(_judge.CalibrationOffsetMs + step), -150f, 150f);
+            _judge.CalibrationOffsetMs = next;
+            PlayerPrefs.SetFloat(DemoDialogue.CalibrationPrefKey, (float)next);
+            PlayerPrefs.Save();
         }
 
         /// <summary>
@@ -658,15 +712,22 @@ namespace AlgoRhythm.Game.Combat
         {
             _clearAnnounced = true;
             _combat.AddEnergy(1);
-            _hud.ShowWaveSummary(
-                $"WAVE CLEAR {_director.ActiveRunner.Data.WaveId} — SCORE {_combat.Score}");
-            _hud.SetStatus("WAVE CLEAR — all threats resolved");
+            string waveId = _director.ActiveRunner.Data.WaveId;
+            bool lastWave = _director.ActiveIndex + 1 >= _director.WaveCount;
+            string counts =
+                $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}";
+            _hud.ShowWaveSummary(lastWave
+                ? $"RUN CLEAR — {waveId} selesai\nSCORE {_combat.Score} · {counts}\n" +
+                  $"damage {_combat.DamageTaken} · decoy {_combat.DecoyPenaltyTotal}"
+                : $"WAVE CLEAR {waveId} — SCORE {_combat.Score}\n{counts}\n+1 Energy · lanjut...");
+            _hud.SetStatus(lastWave
+                ? "RUN CLEAR — 1A dan 1B selesai"
+                : $"WAVE CLEAR {waveId} — semua threat resolved");
+            DemoDialogue.LineForWaveClear(waveId, lastWave, out string textId, out string line);
+            _hud.ShowDialogue(textId, line);
 
             _arena.ClearThreats();
-            if (!_director.Advance())
-            {
-                _hud.SetStatus("RUN CLEAR — 1A and 1B done");
-            }
+            _director.Advance();
         }
 
         private void RetryCurrentWave()

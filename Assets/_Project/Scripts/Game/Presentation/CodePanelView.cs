@@ -75,7 +75,38 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_hint != null)
             {
-                _hint.text = "1/2/3 slot   Q/E cycle   ENTER commit   R reset";
+                _hint.text = "1/2/3 slot · Q/E cycle · ENTER commit · R reset";
+                _hint.color = UiTypography.Faint;
+            }
+
+            if (_slotCondition != null)
+            {
+                _slotCondition.color = UiTypography.Ink;
+            }
+
+            if (_slotTarget != null)
+            {
+                _slotTarget.color = UiTypography.Ink;
+            }
+
+            if (_slotAction != null)
+            {
+                _slotAction.color = UiTypography.Ink;
+            }
+
+            if (_preview != null)
+            {
+                _preview.color = UiTypography.Info;
+            }
+
+            if (_error != null)
+            {
+                _error.color = UiTypography.Warn;
+            }
+
+            if (_log != null)
+            {
+                _log.color = UiTypography.Dim;
             }
 
             _runtime.RuleFired += OnRuleFired;
@@ -180,7 +211,7 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             Vector3 topRight = camera.ViewportToWorldPoint(new Vector3(1f, 1f, 10f));
-            transform.position = new Vector3(topRight.x - 0.35f, topRight.y - 0.35f, 0f);
+            transform.position = new Vector3(topRight.x - 0.6f, topRight.y - 0.6f, 0f);
         }
 
         private void TryBind()
@@ -393,11 +424,14 @@ namespace AlgoRhythm.Game.Presentation
             if (_preview != null)
             {
                 string active = _runtime != null && _runtime.HasActiveRule
-                    ? $"  [ACTIVE RULE #{_runtime.ActiveRuleId}]"
-                    : "  [NO ACTIVE RULE]";
+                    ? $"[ACTIVE RULE #{_runtime.ActiveRuleId}]"
+                    : "[NO ACTIVE RULE]";
                 _preview.text = _lastError == RuleError.None && _lastPreviewKey.Length > 0
-                    ? $"{_lastPreviewKey}{active}"
-                    : $"NO PREVIEW{active}";
+                    ? $"{_lastPreviewKey}\n{active}"
+                    : $"NO PREVIEW\n{active}";
+                _preview.color = _lastError == RuleError.None && _lastPreviewKey.Length > 0
+                    ? UiTypography.Info
+                    : UiTypography.Dim;
             }
 
             if (_error != null)
@@ -413,8 +447,8 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            string marker = slot == _selectedSlot ? "> " : "  ";
-            string flag = slot == _errorSlot ? "  <!" : string.Empty;
+            string marker = slot == _selectedSlot ? ">" : " ";
+            string flag = slot == _errorSlot ? "  !!" : string.Empty;
             label.text = $"{marker}[{slot + 1}] {name}: {value}{flag}";
         }
 
@@ -425,15 +459,15 @@ namespace AlgoRhythm.Game.Presentation
                 case RuleError.None:
                     return string.Empty;
                 case RuleError.E001_EmptySlot:
-                    return "E001: slot kosong";
+                    return "!! E001: slot kosong — pilih token dengan Q/E";
                 case RuleError.E002_WrongCategory:
-                    return "E002: NEAREST butuh WHEN_PROJECTILE";
+                    return "!! E002: NEAREST butuh WHEN_PROJECTILE";
                 case RuleError.E003_Unsupported:
-                    return "E003: kombinasi tidak didukung";
+                    return "!! E003: kombinasi tidak didukung";
                 case RuleError.E004_NotEnoughEnergy:
-                    return "E004: Energy kurang";
+                    return "!! E004: Energy kurang";
                 case RuleError.E005_Cooldown:
-                    return "E005: cooldown berjalan";
+                    return "!! E005: cooldown berjalan";
                 default:
                     return error.ToString().ToUpperInvariant();
             }

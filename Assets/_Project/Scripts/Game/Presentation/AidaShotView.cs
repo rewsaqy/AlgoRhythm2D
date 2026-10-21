@@ -26,6 +26,13 @@ namespace AlgoRhythm.Game.Presentation
         {
             Transform label = transform.Find("Label");
             _label = label != null ? label.GetComponent<TextMesh>() : null;
+            if (_label != null)
+            {
+                // Shots stay text-free: the diamond marker already reads as
+                // AIDA (never colour alone). Keeps projectiles quiet.
+                _label.gameObject.SetActive(false);
+            }
+
             Hide();
         }
 

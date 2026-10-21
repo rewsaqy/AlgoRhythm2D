@@ -27,11 +27,15 @@ namespace AlgoRhythm.Game.Presentation
 
             Transform flavor = transform.Find("Flavor");
             _flavor = flavor != null ? flavor.GetComponent<TextMesh>() : null;
+            UiTypography.Style(_flavor, 28, 0.07f, UiTypography.Dim,
+                TextAnchor.MiddleCenter, TextAlignment.Center, 1.2f);
 
             Transform nameplate = transform.Find("Nameplate");
             TextMesh nameText = nameplate != null ? nameplate.GetComponent<TextMesh>() : null;
             if (nameText != null)
             {
+                UiTypography.Style(nameText, 32, 0.075f, UiTypography.Info,
+                    nameText.anchor, nameText.alignment, 1.1f);
                 nameText.text = "A.I.D.A v1.0";
             }
 

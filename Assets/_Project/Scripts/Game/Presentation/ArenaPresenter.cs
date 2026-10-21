@@ -21,6 +21,7 @@ namespace AlgoRhythm.Game.Presentation
         private ShieldView _shield;
         private TextMesh _gradeLabel;
         private float _gradeHideAt;
+        private float _gradePopUntil;
         private double _perfectMs = 70.0;
         private double _goodMs = 130.0;
 
@@ -52,6 +53,8 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_gradeLabel != null)
             {
+                UiTypography.Style(_gradeLabel, 52, 0.085f, UiTypography.Ink,
+                    TextAnchor.MiddleCenter, TextAlignment.Center, 1.2f);
                 _gradeLabel.text = string.Empty;
             }
         }
@@ -127,6 +130,8 @@ namespace AlgoRhythm.Game.Presentation
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
             view.ResolveDecoy(shielded);
+            // Notes carry no text, so the decoy outcome reads here instead.
+            ShowDecoyFeedback(shielded);
         }
 
         /// <summary>Hides every pooled view. Used on wave change and retry.</summary>
@@ -171,9 +176,23 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            // Two lines only when there is something to explain; the reason
+            // is always text, never colour alone.
             _gradeLabel.text = $"NO SHIELD\n{reason}";
-            _gradeLabel.color = new Color(1f, 0.85f, 0.25f, 1f);
-            _gradeHideAt = Time.unscaledTime + 0.7f;
+            _gradeLabel.color = UiTypography.Warn;
+            PunchGrade();
+        }
+
+        public void ShowDecoyFeedback(bool shielded)
+        {
+            if (_gradeLabel == null)
+            {
+                return;
+            }
+
+            _gradeLabel.text = shielded ? "DECOY -5" : "IGNORED";
+            _gradeLabel.color = shielded ? UiTypography.Warn : UiTypography.Dim;
+            PunchGrade();
         }
 
         public void ShowGrade(TimingGrade grade, string detail)
@@ -183,15 +202,41 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            _gradeLabel.text = string.IsNullOrEmpty(detail)
+            // Clean hits read as one word; misses and wrong-direction hits
+            // keep their reason on a second line.
+            _gradeLabel.text = grade == TimingGrade.Perfect || grade == TimingGrade.Good
                 ? grade.ToString().ToUpperInvariant()
-                : $"{grade.ToString().ToUpperInvariant()}\n{detail.ToUpperInvariant()}";
+                : string.IsNullOrEmpty(detail)
+                    ? grade.ToString().ToUpperInvariant()
+                    : $"{grade.ToString().ToUpperInvariant()}\n{detail.ToUpperInvariant()}";
             _gradeLabel.color = GradeColor(grade);
+            PunchGrade();
+        }
+
+        private void PunchGrade()
+        {
             _gradeHideAt = Time.unscaledTime + 0.7f;
+            _gradePopUntil = Time.unscaledTime + 0.25f;
+            _gradeLabel.transform.localScale = new Vector3(1.25f, 1.25f, 1f);
         }
 
         private void Update()
         {
+            if (_gradeLabel != null && _gradePopUntil > 0f)
+            {
+                if (Time.unscaledTime >= _gradePopUntil)
+                {
+                    _gradePopUntil = 0f;
+                    _gradeLabel.transform.localScale = Vector3.one;
+                }
+                else
+                {
+                    float t = 1f - (_gradePopUntil - Time.unscaledTime) / 0.25f;
+                    float scale = Mathf.Lerp(1.25f, 1.0f, t * t);
+                    _gradeLabel.transform.localScale = new Vector3(scale, scale, 1f);
+                }
+            }
+
             if (_gradeLabel != null && _gradeHideAt > 0f && Time.unscaledTime >= _gradeHideAt)
             {
                 _gradeLabel.text = string.Empty;
@@ -283,11 +328,11 @@ namespace AlgoRhythm.Game.Presentation
             switch (grade)
             {
                 case TimingGrade.Perfect:
-                    return new Color(0.4f, 1f, 0.55f, 1f);
+                    return UiTypography.Perfect;
                 case TimingGrade.Good:
-                    return new Color(1f, 0.95f, 0.35f, 1f);
+                    return UiTypography.Good;
                 default:
-                    return new Color(1f, 0.35f, 0.35f, 1f);
+                    return UiTypography.Miss;
             }
         }
     }
