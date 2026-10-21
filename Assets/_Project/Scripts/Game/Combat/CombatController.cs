@@ -446,15 +446,17 @@ namespace AlgoRhythm.Game.Combat
             _shield.RequestDirection(direction, inputDsp);
             if (candidate == null)
             {
-                _arena.ShowInputRejected($"WRONG DIRECTION ({direction})");
+                // Pure repositioning move: no threat in this lane, so no
+                // grade text. The shield bar itself moving is the feedback;
+                // grade text is reserved for real threat events.
                 return;
             }
 
             // The press always moves the shield; the block lands only when the
-            // shield actually covers the lane at press moment.
+            // shield actually covers the lane at press moment. No grade text
+            // here either: transit misses are silent, like pure moves.
             if (!_shield.CoversDirection(direction, inputDsp))
             {
-                _arena.ShowInputRejected("SHIELD NOT IN LANE");
                 return;
             }
 
