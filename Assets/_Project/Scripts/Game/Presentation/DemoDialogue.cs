@@ -14,33 +14,35 @@ namespace AlgoRhythm.Game.Presentation
     {
         public const string CalibrationPrefKey = "AlgoRhythm.CalibrationMs";
 
-        /// <summary>Tutorial script: greeting, aim, tap, then practice.</summary>
+        /// <summary>Tutorial script: greeting, small talk, tap drill, then practice.</summary>
         public static IReadOnlyList<DialogueLine> TutorialScript()
         {
             return new[]
             {
                 new DialogueLine("A.I.D.A",
-                    "Halo, Operator. Aku A.I.D.A — asisten yang ditugaskan melindungimu."),
+                    "Eh — halo?! Kamu operator barunya ya? Akhirnya datang juga. Aku A.I.D.A, asisten yang bakal nemenin kamu di sini."),
                 new DialogueLine("A.I.D.A",
-                    "Gerakkan MOUSE untuk mengarahkan paddle ke arah datangnya ancaman."),
+                    "Eh sori, aku excited. Soalnya kantor heboh dari kemarin — katanya yang ditugasin jaga Data Base ini anak baru yang kemampuannya gila banget. Itu kamu?!"),
                 new DialogueLine("A.I.D.A",
-                    "Lalu tekan Z / X / KLIK tepat saat note menyentuh ring. Latihan dulu: SATU malware jinak datang dari UTARA. Beri aku satu PERFECT."),
+                    "Oke oke, pemanasan dulu biar nggak kaku. Liat lingkaran di tengah itu? Itu Core kita. Caranya gampang: gerakin MOUSE buat ngarahin paddle ke ancaman, terus tekan Z / X / KLIK pas not-nya nempel ring."),
+                new DialogueLine("A.I.D.A",
+                    "Nih aku siapin satu malware jinak dari UTARA. Kasih aku satu PERFECT ya — biar aku liat sendiri gosip kantor itu beneran."),
             };
         }
 
         public static string PracticeHint()
         {
-            return "Arahkan paddle ke UTARA (atas). Tekan Z / X / klik TEPAT saat note menyentuh ring!";
+            return "Arahkan paddle ke UTARA (atas). Tap TEPAT pas note nempel ring!";
         }
 
         public static string PracticePraise()
         {
-            return "SEMPURNA. Itu namanya PERFECT — ingat rasanya. Tekan ENTER, misi dimulai.";
+            return "NAH ITU DIA. Perfect! Oke, gosip kantor valid — kamu beneran jago. Tekan ENTER, misi beneran dimulai.";
         }
 
         public static string PracticeRetry()
         {
-            return "Belum pas. Coba lagi — tekan TEPAT saat note menyentuh ring.";
+            return "Yah, belum pas. Santai aja, ikutin dentingnya... tekan TEPAT pas nempel. Sekali lagi, bisa yuk!";
         }
 
         public static void WaveStartLine(string waveId, out string textId, out string line)
@@ -53,23 +55,23 @@ namespace AlgoRhythm.Game.Presentation
                     return;
                 case "W1A":
                     textId = "TUTO_01";
-                    line = "A.I.D.A: Wave 1A — blokir virus ikut irama! Arahkan paddle, tap tepat beat!";
+                    line = "Wave 1A mulai. Blokir virusnya ikut irama — paddle siap, tap yang pas!";
                     return;
                 case "W1B":
                     textId = "AIDA2_01";
-                    line = "A.I.D.A 2.0: bagus. Sekarang lebih cepat dan ada umpan — abaikan decoy, fokus arah yang benar!";
+                    line = "Buset, bagus. Oke naik level — lebih cepat, plus ada umpan. Yang decoy cuekin aja!";
                     return;
                 case "W1C":
                     textId = "AIDA2_C";
-                    line = "A.I.D.A 2.0: kenalkan pasukan baru — baris, armor, penyusup, dan note panjang!";
+                    line = "Nih kenalin pasukan barunya: ada yang baris, badannya tebel, tukang tidur, sama note yang panjang. Seru kan?";
                     return;
                 case "W1D":
                     textId = "AIDA2_D";
-                    line = "A.I.D.A 2.0: gauntlet penuh. Semua yang kau pelajari, sekarang!";
+                    line = "Ronde terakhir pemanasan — semua yang tadi, keluar bareng. Gas!";
                     return;
                 default:
                     textId = "AIDA2_01";
-                    line = "A.I.D.A 2.0: bagus. Sekarang lebih cepat — jaga ritmemu!";
+                    line = "Naikin tempo dikit. Jaga ritmemu!";
                     return;
             }
         }

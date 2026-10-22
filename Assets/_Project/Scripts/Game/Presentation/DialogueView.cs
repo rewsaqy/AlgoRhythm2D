@@ -54,8 +54,8 @@ namespace AlgoRhythm.Game.Presentation
             // TutorialDriver.Begin can fire before it too — so every public
             // entry re-resolves the label lazily via EnsureLabel().
             EnsureLabel();
-            UiTypography.Style(_label, 30, 0.075f, UiTypography.Ink,
-                TextAnchor.LowerCenter, TextAlignment.Center, 1.25f);
+            UiTypography.Style(_label, 34, 0.085f, UiTypography.Ink,
+                TextAnchor.LowerCenter, TextAlignment.Center, 1.2f);
         }
 
         /// <summary>Finds the Controls label on demand; the scene bake may
@@ -260,9 +260,14 @@ namespace AlgoRhythm.Game.Presentation
             DialogueLine line = _script[_index];
             int count = Mathf.Clamp(Mathf.FloorToInt(_shown), 0, line.Text.Length);
             string partial = line.Text.Substring(0, count);
-            // Blinking advance hint so players never stare at a still screen.
-            string hint = (Time.unscaledTime % 1f) < 0.6f ? "\n<color=#9fb2ccff>[ENTER]</color>" : string.Empty;
-            string speaker = string.IsNullOrEmpty(line.Speaker) ? string.Empty : line.Speaker + " ▸ ";
+            // Template "NAMA : dialog". Hint berkedip hanya saat menunggu konfirmasi.
+            string hint = string.Empty;
+            if (count >= line.Text.Length)
+            {
+                hint = (Time.unscaledTime % 1f) < 0.6f ? "\n[ENTER]" : string.Empty;
+            }
+
+            string speaker = string.IsNullOrEmpty(line.Speaker) ? string.Empty : line.Speaker + " : ";
             _label.text = $"{speaker}{partial}{hint}";
         }
     }
