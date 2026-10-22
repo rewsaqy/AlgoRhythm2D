@@ -20,13 +20,13 @@ namespace AlgoRhythm.Game.Presentation
             return new[]
             {
                 new DialogueLine("A.I.D.A",
-                    "Eh — halo?! Kamu operator barunya ya? Akhirnya datang juga. Aku A.I.D.A, asisten yang bakal nemenin kamu di sini."),
+                    "Eh, halo?! Kamu operator barunya ya? Akhirnya datang juga. Aku A.I.D.A, asisten yang bakal nemenin kamu di sini."),
                 new DialogueLine("A.I.D.A",
-                    "Eh sori, aku excited. Soalnya kantor heboh dari kemarin — katanya yang ditugasin jaga Data Base ini anak baru yang kemampuannya gila banget. Itu kamu?!"),
+                    "Eh sori, aku excited. Soalnya kantor heboh dari kemarin. Katanya yang ditugasin jaga Data Base ini anak baru yang kemampuannya gila banget. Itu kamu?!"),
                 new DialogueLine("A.I.D.A",
                     "Oke oke, pemanasan dulu biar nggak kaku. Liat lingkaran di tengah itu? Itu Core kita. Caranya gampang: gerakin MOUSE buat ngarahin paddle ke ancaman, terus tekan Z / X / KLIK pas not-nya nempel ring."),
                 new DialogueLine("A.I.D.A",
-                    "Nih aku siapin satu malware jinak dari UTARA. Kasih aku satu PERFECT ya — biar aku liat sendiri gosip kantor itu beneran."),
+                    "Nih aku siapin satu malware jinak dari UTARA. Kasih aku satu PERFECT ya, biar aku liat sendiri gosip kantor itu beneran."),
             };
         }
 
@@ -37,7 +37,7 @@ namespace AlgoRhythm.Game.Presentation
 
         public static string PracticePraise()
         {
-            return "NAH ITU DIA. Perfect! Oke, gosip kantor valid — kamu beneran jago. Tekan ENTER, misi beneran dimulai.";
+            return "NAH ITU DIA. Perfect! Oke, gosip kantor valid. Kamu beneran jago. Tekan ENTER, misi beneran dimulai.";
         }
 
         public static string PracticeRetry()
@@ -55,11 +55,11 @@ namespace AlgoRhythm.Game.Presentation
                     return;
                 case "W1A":
                     textId = "TUTO_01";
-                    line = "Wave 1A mulai. Blokir virusnya ikut irama — paddle siap, tap yang pas!";
+                    line = "Wave 1A mulai. Blokir virusnya ikut irama. Paddle siap, tap yang pas!";
                     return;
                 case "W1B":
                     textId = "AIDA2_01";
-                    line = "Buset, bagus. Oke naik level — lebih cepat, plus ada umpan. Yang decoy cuekin aja!";
+                    line = "Buset, bagus. Oke naik level. Lebih cepat, plus ada umpan. Yang decoy cuekin aja!";
                     return;
                 case "W1C":
                     textId = "AIDA2_C";
@@ -74,14 +74,14 @@ namespace AlgoRhythm.Game.Presentation
             if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W2"))
             {
                 textId = "AIDA2_W2";
-                line = "Gelombang 2 — tempo naik ke 115. Jangan kasih kendor!";
+                line = "Gelombang 2. Tempo naik ke 115. Jangan kasih kendor!";
                 return;
             }
 
             if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W3"))
             {
                 textId = "AIDA2_W3";
-                line = "Gelombang 3 — 130 BPM. Ini ujian beneran. Tahan!";
+                line = "Gelombang 3. 130 BPM. Ini ujian beneran. Tahan!";
                 return;
             }
 

@@ -54,14 +54,7 @@ namespace AlgoRhythm.Game.Presentation
             }
             UiTypography.Style(_hint, 28, 0.065f, UiTypography.Dim,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
-            if (_title != null)
-            {
-                _title.text = " ###  # #  ###  ####\n"
-                    + "#     # #  #  # #  #\n"
-                    + " ###  ###  #  # ####\n"
-                    + "   #  # #  #  # #\n"
-                    + " ###  # #  ###  #";
-            }
+            if (_title != null) _title.text = "SHOP PHASE";
             if (_hint != null) _hint.text = "ATAS/BAWAH pilih · ENTER beli / lanjut";
             gameObject.SetActive(false);
             _open = false;

@@ -318,7 +318,7 @@ namespace AlgoRhythm.Game.Combat
                 _active[index].BufferedSource = null;
             }
 
-            _hud.SetStatus("PAUSED — press ESC to resume");
+            _hud.SetStatus("PAUSED: press ESC to resume");
         }
 
         public void Resume()
@@ -510,7 +510,7 @@ namespace AlgoRhythm.Game.Combat
 
             if (wave.AllSpawned && wave.IsCleared)
             {
-                _hud.SetStatus("WAVE CLEAR — all threats resolved");
+                _hud.SetStatus("WAVE CLEAR: all threats resolved");
             }
         }
 
@@ -571,7 +571,7 @@ namespace AlgoRhythm.Game.Combat
 
             if (_paused)
             {
-                _hud.SetStatus("PAUSED — press ESC to resume");
+                _hud.SetStatus("PAUSED: press ESC to resume");
                 return;
             }
 
@@ -941,10 +941,10 @@ namespace AlgoRhythm.Game.Combat
                     continue;
                 }
 
-                float noteHalf = active.Threat.HalfWidthDeg > 0f
-                    ? active.Threat.HalfWidthDeg
-                    : _config.noteHalfWidthDeg;
-                if (!AngleMath.Overlaps(active.Threat.AngleDeg, noteHalf, paddleAngleDeg, paddleHalf))
+                // Center-only: note tertutup bila pusat note masuk busur paddle.
+                // noteHalfWidthDeg hanya visual; tidak ikut judging agar
+                // diagonal 45° (mis. NE) tidak menutupi N dan E sekaligus.
+                if (!AngleMath.Overlaps(active.Threat.AngleDeg, 0f, paddleAngleDeg, paddleHalf))
                 {
                     continue;
                 }
@@ -1019,12 +1019,12 @@ namespace AlgoRhythm.Game.Combat
             // Ringkasan skor hanya di wave paling terakhir; wave tengah
             // langsung lanjut ke shop tanpa panel ringkasan.
             _hud.ShowWaveSummary(lastWave
-                ? $"RUN CLEAR — {waveId} selesai\nSCORE {_combat.Score} · {counts}\n" +
+                ? $"RUN CLEAR: {waveId} selesai\nSCORE {_combat.Score} · {counts}\n" +
                   $"damage {_combat.DamageTaken} · decoy {_combat.DecoyPenaltyTotal}"
                 : string.Empty);
             _hud.SetStatus(lastWave
-                ? "RUN CLEAR — semua wave selesai"
-                : $"WAVE CLEAR {waveId} — semua threat resolved");
+                ? "RUN CLEAR: semua wave selesai"
+                : $"WAVE CLEAR {waveId}: semua threat resolved");
             // Dialogue (typewriter panel) is owned by the TutorialDriver.
 
             _arena.ClearThreats();
@@ -1132,13 +1132,13 @@ namespace AlgoRhythm.Game.Combat
 
             string accRow = _aidaHitEvery <= Mathf.Max(2, _config.shopAccMinHitEvery)
                 ? $"AIDA AKURAT Lv{_accBought + 1} (MAX)"
-                : $"AIDA AKURAT Lv{_accBought + 1} — {_config.shopAccCost} PTS";
+                : $"AIDA AKURAT Lv{_accBought + 1}: {_config.shopAccCost} PTS";
             string rateRow = _aidaFireEvery <= Mathf.Max(1, _config.shopRateMinFireEvery)
                 ? $"AIDA CEPAT Lv{_rateBought + 1} (MAX)"
-                : $"AIDA CEPAT Lv{_rateBought + 1} — {_config.shopRateCost} PTS";
+                : $"AIDA CEPAT Lv{_rateBought + 1}: {_config.shopRateCost} PTS";
             _shop.Render(_combat.CurrencyPts, new[]
             {
-                $"HP +{_config.shopHealAmount} — {_config.shopHealCost} PTS",
+                $"HP +{_config.shopHealAmount}: {_config.shopHealCost} PTS",
                 accRow,
                 rateRow,
                 "LANJUT →",
@@ -1153,7 +1153,7 @@ namespace AlgoRhythm.Game.Combat
             _metronome.Pause();
             _director.RetryCurrent();
             _metronome.Resume();
-            _hud.SetStatus("RETRY — wave restarted");
+            _hud.SetStatus("RETRY: wave restarted");
         }
     }
 }

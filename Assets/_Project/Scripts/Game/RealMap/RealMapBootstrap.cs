@@ -413,7 +413,9 @@ namespace AlgoRhythm.Game.RealMap
                     continue;
                 }
 
-                if (!AngleMath.Overlaps(active.Threat.AngleDeg, active.Threat.HalfWidthDeg > 0f ? active.Threat.HalfWidthDeg : 10f, paddleAngleDeg, 35f))
+                // Center-only STRICT: hanya pusat note vs busur paddle 12° agar
+                // paddle harus tepat di jalur note (jam 8 tidak shield West).
+                if (!AngleMath.Overlaps(active.Threat.AngleDeg, 0f, paddleAngleDeg, 12f))
                 {
                     continue;
                 }

@@ -31,8 +31,8 @@ namespace AlgoRhythm.Game.Config
         [Min(0.0f)] public double shieldTransitMs = 320.0;
 
         [Header("Paddle (Beatblock) [U]")]
-        [Tooltip("Setengah busur paddle dalam derajat; penuh = 2x nilai ini (contoh wiki 70).")]
-        [Range(5f, 90f)] public float paddleHalfArcDeg = 35f;
+        [Tooltip("Setengah busur paddle dalam derajat; penuh = 2x nilai ini. STRICT: kecil agar paddle harus tepat di jalur note (jam 8 tidak ikut nge-shield West).")]
+        [Range(5f, 90f)] public float paddleHalfArcDeg = 12f;
         [Tooltip("Setengah lebar sudut note dalam derajat.")]
         [Range(1f, 45f)] public float noteHalfWidthDeg = 10f;
         [Tooltip("SpawnBeat = ImpactBeat - approachBeats untuk angleMode Free.")]

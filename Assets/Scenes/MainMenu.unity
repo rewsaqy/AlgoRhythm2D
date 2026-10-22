@@ -727,7 +727,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: AlgoRhytm
+  m_text: AlgoRhythm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 30cd3926816b203a8bb7334f7efb300f, type: 2}
   m_sharedMaterial: {fileID: 2961158053126031404, guid: 30cd3926816b203a8bb7334f7efb300f, type: 2}

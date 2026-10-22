@@ -34,7 +34,7 @@ namespace AlgoRhythm.Game.Menu
         [SerializeField]
         private string[] bootLines =
         {
-            "ALGORHYTHM/OS v1.0 -- cold boot",
+            "ALGORHYTHM/OS v1.0: cold boot",
             "> mount /core/database ............ OK",
             "> load shield.sys ................ OK",
             "> lock timing.dll [dsp] .......... OK",

@@ -68,5 +68,22 @@ namespace AlgoRhythm.Tests
             paddle.Update(8.0, 7.0);
             Assert.AreEqual(180f, paddle.CurrentAngle, 1e-4);
         }
+
+        [Test]
+        public void Diagonal_DoesNotCoverCardinalNotes()
+        {
+            // Regresi STRICT: paddle di NE (45°) dengan half-arc 12° tidak boleh
+            // menutupi note N (0°) maupun E (90°); jarak pusat 45° > 12°.
+            // Jam 8 (240°) vs West (270°): delta 30° > 12° → tidak kena.
+            var paddle = new PaddleController(45f, 0f);
+            Assert.IsFalse(paddle.Covers(0f, 10f, 12f));
+            Assert.IsFalse(paddle.Covers(90f, 10f, 12f));
+            Assert.IsTrue(paddle.Covers(45f, 10f, 12f));
+
+            var nearWest = new PaddleController(240f, 0f);
+            Assert.IsFalse(nearWest.Covers(270f, 10f, 12f));
+            var onWest = new PaddleController(270f, 0f);
+            Assert.IsTrue(onWest.Covers(270f, 10f, 12f));
+        }
     }
 }

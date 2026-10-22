@@ -32,3 +32,33 @@ This repository is a Unity 6.3 project for AlgoRhythm: CODE IS SHIELD. Workflow 
 
 Use the checks in `docs/ai-workflow/validation-matrix.md`; run the smallest relevant check first. Report source, serialized wiring, scene behavior, and build evidence separately.
 <!-- ai-workflow:end -->
+
+<!-- antislop:start -->
+## UI copy (antislop)
+
+Player-facing UI text follows the antislop rules. Before writing or editing it,
+load the `antislop` core and `antislop-copywriting` skills.
+
+Scope: visible player-facing text in C#, scenes, and data assets. This includes
+button labels, HUD lines, dialogue, prompts, shop rows, and status banners. It
+does not include code comments, Inspector `[Header]`/`[Tooltip]` text, debug
+logs, rule tokens, or text ids.
+
+- No em dash or double hyphen used as a dash. Use a period, comma, colon, or
+  parentheses (R-02).
+- No fabricated numbers, names, testimonials, dates, or claims. Keep game
+  fiction within existing `[D]`/`[U]` content; do not invent lore or tuning
+  (R-17, R-18, R-36, R-38).
+- No buzzwords, filler, fake-candid openers, signposting, chatbot closers, or
+  empty social proof (R-16, R-36).
+- CTAs name the real action. Keep `LANJUT` for the next wave and make
+  buy/continue wording say what ENTER does (R-15).
+- Keep A.I.D.A.'s voice and the existing Indonesian/English mix. Do not flatten
+  it into generic UI English (R-37).
+- The uppercase HUD labels, `!!` warnings, `II PAUSED` glyph, `▶` cursor, and
+  `LANJUT →` arrow are established terminal identity or directional cues. Keep
+  them; they are not caps-as-emphasis or decorative arrows (R-08, R-37).
+- Scene-serialized text counts. Edit it through Unity MCP, never by hand-editing
+  YAML. Ping read-only first, write, then read back and inspect.
+- Report UI copy checks separately from gameplay/pack validation.
+<!-- antislop:end -->

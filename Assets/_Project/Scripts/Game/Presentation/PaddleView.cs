@@ -11,7 +11,7 @@ namespace AlgoRhythm.Game.Presentation
     public sealed class PaddleView : MonoBehaviour
     {
         private Vector3 _authoredScale = Vector3.one;
-        private float _halfArcDeg = 35f;
+        private float _halfArcDeg = 12f;
         private float _appliedHalfArcDeg = -1f;
         private float _pulseUntil;
 
@@ -73,8 +73,8 @@ namespace AlgoRhythm.Game.Presentation
 
         private Vector3 BaseScale()
         {
-            // Greybox: lebarkan bar proporsional terhadap 35° acuan.
-            float w = Mathf.Max(0.2f, _halfArcDeg / 35f);
+            // Greybox: lebarkan bar proporsional terhadap 12° acuan (STRICT).
+            float w = Mathf.Max(0.2f, _halfArcDeg / 12f);
             return new Vector3(_authoredScale.x * w, _authoredScale.y, 1f);
         }
 

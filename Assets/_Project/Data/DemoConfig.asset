@@ -25,7 +25,7 @@ MonoBehaviour:
   ruleCooldownMs: 1500
   energyRegenEveryBeats: 4
   shieldTransitMs: 320
-  paddleHalfArcDeg: 35
+  paddleHalfArcDeg: 12
   noteHalfWidthDeg: 10
   approachBeats: 8
   noteMotionMode: 1

@@ -66,10 +66,16 @@ namespace AlgoRhythm.Core.Combat
             _current = _target;
         }
 
-        /// <summary>True bila paddle menutupi note pada sudutnya.</summary>
+        /// <summary>
+        /// True bila paddle menutupi note pada sudutnya.
+        /// Center-only: hanya pusat note vs setengah busur paddle.
+        /// noteHalfWidthDeg hanya visual; tidak ikut judging agar diagonal
+        /// 45° tidak menutupi N (0°) dan E (90°) sekaligus (35+10=45 bocor).
+        /// </summary>
         public bool Covers(float noteAngleDeg, float noteHalfWidthDeg, float paddleHalfArcDeg)
         {
-            return AngleMath.Overlaps(noteAngleDeg, noteHalfWidthDeg, _current, paddleHalfArcDeg);
+            _ = noteHalfWidthDeg;
+            return AngleMath.Overlaps(noteAngleDeg, 0f, _current, paddleHalfArcDeg);
         }
     }
 }
