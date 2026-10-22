@@ -665,7 +665,7 @@ namespace AlgoRhythm.Game.Combat
             }
 
             Vector3 to = _arena.transform.position
-                + ArenaPresenter.ThreatLocalPosition(target.Threat.Direction, 1f);
+                + _arena.ThreatLocalPosition(target.Threat.Direction, 1f);
             float aimAngle;
             if (willHit)
             {
@@ -675,7 +675,7 @@ namespace AlgoRhythm.Game.Combat
                 float arrivalProgress = BeatGlideProgress(
                     target.Threat.SpawnBeat, target.Threat.ImpactBeat, arrivalDsp);
                 to = _arena.transform.position
-                    + ArenaPresenter.ThreatLocalPosition(target.Threat.Direction, arrivalProgress);
+                    + _arena.ThreatLocalPosition(target.Threat.Direction, arrivalProgress);
                 Vector3 towerPos = _aida.transform.position;
                 aimAngle = Mathf.Atan2(to.x - towerPos.x, to.y - towerPos.y) * Mathf.Rad2Deg;
                 _aida.SetFlavor($"Awas {LaneName(target.Threat.Direction)}!");

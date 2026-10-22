@@ -365,9 +365,9 @@ namespace AlgoRhythm.Game.Presentation
         /// UpdateThreat's linear spawn-to-ring blend. Used to aim A.I.D.A.
         /// shots at the note's real spot instead of a fixed ring point.
         /// </summary>
-        internal static Vector3 ThreatLocalPosition(Direction direction, float progress)
+        internal Vector3 ThreatLocalPosition(Direction direction, float progress)
         {
-            Vector3 target = (Vector3)(DirectionVector(direction) * DirectionRadius);
+            Vector3 target = (Vector3)(DirectionVector(direction) * directionRadius);
             Vector3 spawn = (Vector3)(DirectionVector(direction) * SpawnDistance(direction));
             return Vector3.Lerp(spawn, target, Mathf.Clamp01(progress));
         }
