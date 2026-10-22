@@ -15,7 +15,6 @@ namespace AlgoRhythm.Game.Presentation
     /// </summary>
     public sealed class HudView : MonoBehaviour
     {
-        private const int BarWidth = 10;
         private const float StatusVisibleSeconds = 4f;
 
         private CombatState _combat;
@@ -32,6 +31,7 @@ namespace AlgoRhythm.Game.Presentation
         private string _clearSummary = string.Empty;
         private string _dialogueLine = string.Empty;
         private bool _showEnergy = true;
+        private IntegrityBarView _bar;
 
         /// <summary>
         /// Called by the bootstrap from DemoConfig.enableCodePanel. When the
@@ -54,6 +54,7 @@ namespace AlgoRhythm.Game.Presentation
             _dialogue = FindText("Controls");
             _pause = FindText("Pause");
             _clear = FindText("Clear");
+            _bar = GetComponentInChildren<IntegrityBarView>(true);
 
             UiTypography.Style(_stats, 34, 0.08f, UiTypography.Ink,
                 TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
@@ -135,9 +136,11 @@ namespace AlgoRhythm.Game.Presentation
             if (_stats != null)
             {
                 int max = Mathf.Max(1, _combat.MaxIntegrity);
-                int filled = Mathf.Clamp(
-                    Mathf.RoundToInt((float)_combat.Integrity / max * BarWidth), 0, BarWidth);
-                string bar = new string('#', filled) + new string('-', BarWidth - filled);
+                float fraction = (float)_combat.Integrity / max;
+                if (_bar != null)
+                {
+                    _bar.SetFraction(fraction);
+                }
                 string waveId = _director != null && _director.ActiveRunner != null
                     ? _director.ActiveRunner.Data.WaveId
                     : "--";
@@ -148,7 +151,7 @@ namespace AlgoRhythm.Game.Presentation
                     ? $"ENERGY {_combat.Energy}   "
                     : "MANUAL ONLY   ";
                 _stats.text =
-                    $"INTEGRITY [{bar}] {_combat.Integrity}/{_combat.MaxIntegrity}\n" +
+                    $"INTEGRITY {_combat.Integrity}/{_combat.MaxIntegrity}\n" +
                     $"{energySegment}SCORE {_combat.Score}\n" +
                     $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
                     $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
