@@ -151,7 +151,6 @@ namespace AlgoRhythm.Game.Presentation
                     ? $"ENERGY {_combat.Energy}   "
                     : "MANUAL ONLY   ";
                 _stats.text =
-                    $"INTEGRITY {_combat.Integrity}/{_combat.MaxIntegrity}\n" +
                     $"{energySegment}SCORE {_combat.Score}\n" +
                     $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
                     $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
