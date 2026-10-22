@@ -10,6 +10,11 @@ namespace AlgoRhythm.Game.Data
     {
         public static WaveData ToWaveData(WaveDefinitionSO definition)
         {
+            return ToWaveData(definition, approachBeats: 8);
+        }
+
+        public static WaveData ToWaveData(WaveDefinitionSO definition, int approachBeats)
+        {
             if (definition == null)
             {
                 throw new ArgumentNullException(nameof(definition));
@@ -20,13 +25,30 @@ namespace AlgoRhythm.Game.Data
             for (int index = 0; index < rows.Length; index++)
             {
                 WaveThreatEntry row = rows[index];
-                threats.Add(new ThreatEvent(
-                    definition.idOffset + index + 1,
-                    row.kind,
-                    row.direction,
-                    row.spawnBeat,
-                    row.impactBeat,
-                    row.baseDamage));
+                float halfWidth = row.halfWidthDeg <= 0f ? 10f : row.halfWidthDeg;
+                if (row.angleMode == WaveAngleMode.Free)
+                {
+                    int spawnBeat = row.impactBeat - Math.Max(1, approachBeats);
+                    threats.Add(new ThreatEvent(
+                        definition.idOffset + index + 1,
+                        row.kind,
+                        row.direction,
+                        row.angleDeg,
+                        halfWidth,
+                        spawnBeat,
+                        row.impactBeat,
+                        row.baseDamage));
+                }
+                else
+                {
+                    threats.Add(new ThreatEvent(
+                        definition.idOffset + index + 1,
+                        row.kind,
+                        row.direction,
+                        row.spawnBeat,
+                        row.impactBeat,
+                        row.baseDamage));
+                }
             }
 
             return new WaveData(definition.waveId, definition.tempoBpm, threats);

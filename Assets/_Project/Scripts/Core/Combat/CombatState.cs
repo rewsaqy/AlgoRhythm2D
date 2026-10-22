@@ -5,15 +5,22 @@ using AlgoRhythm.Core.Rhythm;
 namespace AlgoRhythm.Core.Combat
 {
     /// <summary>
-    /// Owns integrity, energy, scoring, and the one-final-result guard for
-    /// resolved threats. It has no Unity dependency and is safe to test in
-    /// EditMode.
+    /// Owns integrity, energy, scoring, shop currency, and the one-final-result
+    /// guard for resolved threats. It has no Unity dependency and is safe to
+    /// test in EditMode.
     /// </summary>
     public sealed class CombatState
     {
         public const int DefaultMaxIntegrity = 100;
         public const int DefaultStartingEnergy = 6;
         public const int DecoyShieldPenalty = 5;
+
+        /// <summary>Shop currency (PTS): Perfect awards 2 PTS, Good awards 1 PTS.</summary>
+        public const int PerfectBits = 2;
+        public const int GoodBits = 1;
+
+        /// <summary>Starting shop currency for a new run.</summary>
+        public const int DefaultStartingBits = 10;
 
         private readonly HashSet<int> _resolvedThreatIds = new HashSet<int>();
         private int _damageTaken;
@@ -43,6 +50,7 @@ namespace AlgoRhythm.Core.Combat
             Integrity = maxIntegrity;
             Energy = startingEnergy;
             RuleBonus = ruleBonus;
+            CurrencyPts = DefaultStartingBits;
         }
 
         public int MaxIntegrity { get; private set; }
@@ -58,6 +66,9 @@ namespace AlgoRhythm.Core.Combat
         public int GoodCount { get; private set; }
 
         public int MissCount { get; private set; }
+
+        /// <summary>Shop currency (PTS). Survives retry (Reset) — PTS are never wiped.</summary>
+        public int CurrencyPts { get; private set; }
 
         public int DamageTaken => _damageTaken;
 
@@ -103,10 +114,12 @@ namespace AlgoRhythm.Core.Combat
             if (grade == TimingGrade.Perfect)
             {
                 PerfectCount++;
+                CurrencyPts += PerfectBits;
             }
             else if (grade == TimingGrade.Good)
             {
                 GoodCount++;
+                CurrencyPts += GoodBits;
             }
             else
             {
@@ -208,6 +221,39 @@ namespace AlgoRhythm.Core.Combat
             }
 
             Energy += amount;
+        }
+
+        /// <summary>Spends shop currency. Returns false when PTS are insufficient.</summary>
+        public bool TrySpendPts(int amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount));
+            }
+
+            if (CurrencyPts < amount)
+            {
+                return false;
+            }
+
+            CurrencyPts -= amount;
+            return true;
+        }
+
+        /// <summary>Shop heal: restores Integrity up to MaxIntegrity.</summary>
+        public void Heal(int amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount));
+            }
+
+            int before = Integrity;
+            Integrity = Math.Min(MaxIntegrity, Integrity + amount);
+            if (Integrity != before)
+            {
+                IntegrityChanged?.Invoke(Integrity);
+            }
         }
     }
 }

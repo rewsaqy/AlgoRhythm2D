@@ -15,6 +15,7 @@ namespace AlgoRhythm.Game.Presentation
     {
         private readonly List<AidaShotView> _shots = new List<AidaShotView>();
         private Transform _barrelPivot;
+        private Transform _barrel;
         private TextMesh _flavor;
         private IClockSource _source;
 
@@ -23,6 +24,7 @@ namespace AlgoRhythm.Game.Presentation
             _ = clock;
             _source = source;
             _barrelPivot = transform.Find("BarrelPivot");
+            _barrel = _barrelPivot != null ? _barrelPivot.Find("Barrel") : null;
 
             Transform flavor = transform.Find("Flavor");
             _flavor = flavor != null ? flavor.GetComponent<TextMesh>() : null;
@@ -59,6 +61,27 @@ namespace AlgoRhythm.Game.Presentation
 
             // The barrel mesh points +Y; rotating -angle lands it on (sin, cos).
             _barrelPivot.localRotation = Quaternion.Euler(0f, 0f, -angleDeg);
+        }
+
+        /// <summary>
+        /// World position of the barrel tip (muzzle), computed through the
+        /// pivot so shots emerge from the barrel mouth instead of the tower
+        /// center. Falls back to the tower center when the rig is missing.
+        /// </summary>
+        public Vector3 MuzzleWorldPosition()
+        {
+            if (_barrelPivot == null)
+            {
+                return transform.position;
+            }
+
+            Vector3 tipLocal = Vector3.up * 0.75f;
+            if (_barrel != null)
+            {
+                tipLocal = _barrel.localPosition + Vector3.up * (_barrel.localScale.y * 0.5f);
+            }
+
+            return _barrelPivot.TransformPoint(tipLocal);
         }
 
         public void SetFlavor(string line)

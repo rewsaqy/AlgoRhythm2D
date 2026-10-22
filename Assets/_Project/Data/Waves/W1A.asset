@@ -19,62 +19,62 @@ MonoBehaviour:
   spawnSequence:
   - kind: 0
     direction: 0
-    spawnBeat: 5
+    spawnBeat: 2
     impactBeat: 10
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 8
+    spawnBeat: 10
     impactBeat: 18
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 21
+    spawnBeat: 18
     impactBeat: 26
     baseDamage: 10
   - kind: 0
     direction: 3
-    spawnBeat: 24
+    spawnBeat: 26
     impactBeat: 34
     baseDamage: 10
   - kind: 0
     direction: 0
-    spawnBeat: 37
+    spawnBeat: 34
     impactBeat: 42
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 40
+    spawnBeat: 42
     impactBeat: 50
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 53
+    spawnBeat: 50
     impactBeat: 58
     baseDamage: 10
   - kind: 0
     direction: 3
-    spawnBeat: 56
+    spawnBeat: 58
     impactBeat: 66
     baseDamage: 10
   - kind: 0
     direction: 0
-    spawnBeat: 69
+    spawnBeat: 66
     impactBeat: 74
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 72
+    spawnBeat: 74
     impactBeat: 82
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 85
+    spawnBeat: 82
     impactBeat: 90
     baseDamage: 10
   - kind: 0
     direction: 3
-    spawnBeat: 88
+    spawnBeat: 90
     impactBeat: 98
     baseDamage: 10
   ruleUnlocks:

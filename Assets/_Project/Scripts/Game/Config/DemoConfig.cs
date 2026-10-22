@@ -30,8 +30,39 @@ namespace AlgoRhythm.Game.Config
         [Header("Shield")]
         [Min(0.0f)] public double shieldTransitMs = 320.0;
 
+        [Header("Paddle (Beatblock) [U]")]
+        [Tooltip("Setengah busur paddle dalam derajat; penuh = 2x nilai ini (contoh wiki 70).")]
+        [Range(5f, 90f)] public float paddleHalfArcDeg = 35f;
+        [Tooltip("Setengah lebar sudut note dalam derajat.")]
+        [Range(1f, 45f)] public float noteHalfWidthDeg = 10f;
+        [Tooltip("SpawnBeat = ImpactBeat - approachBeats untuk angleMode Free.")]
+        [Min(1)] public int approachBeats = 8;
+        [Tooltip("0 = Linear mulus, 1 = Stepped per-beat (default: diam-gerak sesuai beat).")]
+        public int noteMotionMode = 1;
+        [Tooltip("Radius tahan sudut di sekitar Core (px layar).")]
+        [Min(0f)] public float aimDeadZonePx = 40f;
+        [Tooltip("Lookback aim untuk klik kiri (ms).")]
+        [Min(0f)] public float clickAimLookbackMs = 10f;
+        [Tooltip("Batas kecepatan paddle derajat/detik; 0 = tak terbatas (snap instan).")]
+        [Min(0f)] public float paddleMaxDegPerSec = 0f;
+        [Tooltip("Radius spawn radial (world) untuk mode paddle; kecepatan sama semua sudut.")]
+        [Min(1f)] public float radialSpawnDistance = 8.2f;
+
         [Header("Code Panel")]
         public bool enableCodePanel = false;
+
+        [Header("Shop [U] — harga PTS, efek bisa di-stack")]
+        [Tooltip("Besar heal per pembelian.")]
+        [Min(0)] public int shopHealAmount = 25;
+        [Min(0)] public int shopHealCost = 20;
+        [Tooltip("Akurasi AIDA per pembelian.")]
+        [Min(0)] public int shopAccCost = 25;
+        [Tooltip("Kecepatan tembak AIDA per pembelian.")]
+        [Min(0)] public int shopRateCost = 25;
+        [Tooltip("Batas akurasi: hitEvery minimal (tiap N tembakan kena 1).")]
+        [Min(2)] public int shopAccMinHitEvery = 2;
+        [Tooltip("Batas kecepatan: fireEvery minimal (tembak tiap N beat).")]
+        [Min(1)] public int shopRateMinFireEvery = 2;
 
         [Header("New archetypes [U] — owner decision 2026-10-22")]
         [Tooltip("Hold-note sustain length in beats (Holder).")]

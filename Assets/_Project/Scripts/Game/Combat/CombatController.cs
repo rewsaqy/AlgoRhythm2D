@@ -13,11 +13,10 @@ using UnityEngine.InputSystem;
 namespace AlgoRhythm.Game.Combat
 {
     /// <summary>
-    /// I-002 combat driver. Manual shield keeps I-001 behavior; at each
-    /// impact the controller then offers the threat to the rule runtime
-    /// (auto-shield, max Good, Set A edge rules). One final result per
-    /// threat, by input, by rule, or by timeout. Integrity 0 retries the
-    /// current sub-wave (A5); clearing a wave advances the director (1A→1B).
+    /// Beatblock combat driver. Paddle sudut kontinu mengikuti mouse;
+    /// tap (Z/X/klik) dinilai bila paddle menutupi note saat tap.
+    /// Satu hasil final per threat, oleh input atau timeout. Integrity 0
+    /// retry sub-wave (A5); clear wave memajukan director (1A→1B).
     /// </summary>
     public sealed class CombatController : IDisposable
     {
@@ -34,7 +33,10 @@ namespace AlgoRhythm.Game.Combat
         private readonly AidaTower _aida;
         private readonly InputRouter _input;
         private readonly RuleRuntime _rules;
-        private readonly ShieldController _shield;
+        private readonly PaddleController _paddle;
+        private readonly PaddleHistory _history;
+        private readonly PaddleView _paddleView;
+        private readonly ShopView _shop;
         private readonly DemoConfig _config;
         private readonly List<ActiveThreat> _active = new List<ActiveThreat>();
         private readonly ThreatEvent[] _spawnBuffer = new ThreatEvent[8];
@@ -48,7 +50,15 @@ namespace AlgoRhythm.Game.Combat
         private int _flavorIndex;
         private bool _clearAnnounced;
         private float _calDebounceUntil;
+        private double _lastPaddleDsp = double.NegativeInfinity;
         private readonly List<AidaShotView> _arrivedShots = new List<AidaShotView>();
+
+        // Shop run state (stackable, reset only on full run restart — never here).
+        private bool _inShop;
+        private int _accBought;
+        private int _rateBought;
+        private int _aidaHitEvery;
+        private int _aidaFireEvery;
 
         private sealed class ActiveThreat
         {
@@ -56,10 +66,12 @@ namespace AlgoRhythm.Game.Combat
             public bool Resolved;
             public bool ImpactEvaluated;
             public double? BufferedInputDsp;
+            public TapSource? BufferedSource;
             public int HitsTaken;
             public bool Holding;
             public TimingGrade HoldGrade;
             public double HoldStartDsp;
+            public TapSource HoldSource;
         }
 
         public CombatController(
@@ -76,7 +88,10 @@ namespace AlgoRhythm.Game.Combat
             AidaTower aida,
             InputRouter input,
             RuleRuntime rules,
-            ShieldController shield,
+            PaddleController paddle,
+            PaddleHistory history,
+            PaddleView paddleView,
+            ShopView shop,
             DemoConfig config)
         {
             _clockSource = clockSource ?? throw new ArgumentNullException(nameof(clockSource));
@@ -92,12 +107,11 @@ namespace AlgoRhythm.Game.Combat
             _aida = aida ?? throw new ArgumentNullException(nameof(aida));
             _input = input ?? throw new ArgumentNullException(nameof(input));
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
-            _shield = shield ?? throw new ArgumentNullException(nameof(shield));
+            _paddle = paddle ?? throw new ArgumentNullException(nameof(paddle));
+            _history = history ?? throw new ArgumentNullException(nameof(history));
+            _paddleView = paddleView;
+            _shop = shop;
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            // Rule/energy 3-slot system is temporarily OFF until the final
-            // AIDA form (owner decision 2026-10-21). DemoConfig.enableCodePanel
-            // is the reversible master switch: panel hidden, no auto-fire,
-            // no energy spend/regen. Manual shield stays the only route.
             _rulesEnabled = config.enableCodePanel;
         }
 
@@ -112,12 +126,21 @@ namespace AlgoRhythm.Game.Combat
 
             _started = true;
             _lastBeat = int.MinValue;
+            _aidaHitEvery = Mathf.Max(2, _config.aidaHitEveryShots);
+            _aidaFireEvery = Mathf.Max(1, _config.aidaFireEveryBeats);
 
-            _input.ShieldPressed += HandleShieldPressed;
-            _input.ShieldReleased += HandleShieldReleased;
+            _input.TapPressed += HandleTapPressed;
+            _input.TapReleased += HandleTapReleased;
             _input.PausePressed += TogglePause;
             _rules.RuleCommitted += HandleRuleCommitted;
             _director.WaveStarted += OnWaveStarted;
+            if (_shop != null)
+            {
+                _shop.Confirmed += OnShopConfirmed;
+                _shop.Hide();
+            }
+            _paddleView?.Initialize();
+            try { Cursor.lockState = CursorLockMode.Confined; } catch { }
             _director.StartWave(0);
         }
 
@@ -128,9 +151,6 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            // Calibration stays adjustable even while paused so players can
-            // dial it in from the pause overlay. Pure presentation/judge
-            // offset; beat authority and judging windows are untouched.
             PollCalibration();
 
             if (_paused)
@@ -138,14 +158,12 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
+            UpdatePaddleAim();
+
             int beat = _clock.CurrentBeatIndex;
             if (beat != _lastBeat)
             {
                 _lastBeat = beat;
-
-                // A3: staged rule commits activate on the next beat. Without
-                // this the code-panel commit would stay pending forever and
-                // auto-shield could never fire.
                 _rules.OnBeat(beat, new BeatContext(beat, _clockSource.NowDsp));
                 PushRuleGuards();
                 SpawnDue(beat);
@@ -163,13 +181,14 @@ namespace AlgoRhythm.Game.Combat
                 beatPhase += 1.0;
             }
 
-            if (beat > 0 && _config.aidaFireEveryBeats > 0
-                && beat % _config.aidaFireEveryBeats == 0 && beat != _lastAidaFireBeat)
+            if (beat > 0 && _aidaFireEvery > 0
+                && beat % _aidaFireEvery == 0 && beat != _lastAidaFireBeat)
             {
                 _lastAidaFireBeat = beat;
                 TryAidaFire(beat, now);
             }
 
+            var motionMode = _config.noteMotionMode == 1 ? NoteMotionMode.Stepped : NoteMotionMode.Linear;
             for (int index = _active.Count - 1; index >= 0; index--)
             {
                 ActiveThreat active = _active[index];
@@ -180,13 +199,10 @@ namespace AlgoRhythm.Game.Combat
                 }
 
                 double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
-                // Beat-quantized glide: one tile per beat, smoothstepped
-                // inside the beat, frozen between beats and on pause. Pure
-                // DSP function; judging is untouched.
-                float progress = BeatGlideProgress(
-                    active.Threat.SpawnBeat,
-                    active.Threat.ImpactBeat,
-                    now);
+                double spawnDsp = _clock.BeatTime(active.Threat.SpawnBeat);
+                float progress = NoteMotion.Progress(
+                    spawnDsp, impactDsp, now,
+                    _clock.SecondsPerBeat, motionMode, _config.noteStepAttack);
                 _arena.UpdateThreat(
                     active.Threat,
                     progress,
@@ -196,10 +212,6 @@ namespace AlgoRhythm.Game.Combat
 
                 if (now >= impactDsp && !active.ImpactEvaluated)
                 {
-                    // The auto-shield decision runs exactly once, at impact;
-                    // later manual presses use the immediate input path.
-                    // Hold notes skip impact judging: the press starts the
-                    // hold and the tail beat finishes it.
                     active.ImpactEvaluated = true;
                     if (active.Threat.Kind != ThreatKind.Holder)
                     {
@@ -237,8 +249,6 @@ namespace AlgoRhythm.Game.Combat
                 ActiveThreat target = FindActiveById(targetId);
                 if (target == null || target.Resolved)
                 {
-                    // E006: the shot was aimed true but its target is gone
-                    // (resolved or retried away before arrival).
                     _rules.ReportTargetNotFound();
                     continue;
                 }
@@ -257,9 +267,11 @@ namespace AlgoRhythm.Game.Combat
                 AnnounceWaveClear();
             }
 
-            _arena.SetShieldPose(
-                _shield.CurrentAngle(now),
-                ArenaPresenter.DirectionCode(_shield.NearestSlot(now)));
+            // Satu-satunya model: Paddle berputar 360° mengikuti sudut aim.
+            // Shields/Shield orbiter lawas sudah dihapus dari scene.
+            _paddleView?.Park(
+                ArenaPresenter.AngleToLocal(_paddle.CurrentAngle, _arena.RingRadius),
+                _paddle.CurrentAngle);
             _arena.SetBeatPulse(beatPhase);
         }
 
@@ -294,6 +306,7 @@ namespace AlgoRhythm.Game.Combat
             for (int index = 0; index < _active.Count; index++)
             {
                 _active[index].BufferedInputDsp = null;
+                _active[index].BufferedSource = null;
             }
 
             _hud.SetStatus("PAUSED — press ESC to resume");
@@ -314,11 +327,15 @@ namespace AlgoRhythm.Game.Combat
 
         public void Dispose()
         {
-            _input.ShieldPressed -= HandleShieldPressed;
-            _input.ShieldReleased -= HandleShieldReleased;
+            _input.TapPressed -= HandleTapPressed;
+            _input.TapReleased -= HandleTapReleased;
             _input.PausePressed -= TogglePause;
             _rules.RuleCommitted -= HandleRuleCommitted;
             _director.WaveStarted -= OnWaveStarted;
+            if (_shop != null)
+            {
+                _shop.Confirmed -= OnShopConfirmed;
+            }
         }
 
         private void OnWaveStarted(int index)
@@ -329,35 +346,28 @@ namespace AlgoRhythm.Game.Combat
             _hud.SetStatus($"WAVE {waveId} START");
             DemoDialogue.LineForWaveStart(index, out string textId, out string line);
             _hud.ShowDialogue(textId, line);
-            // WaveDirector restarts the DSP clock origin here; without a
-            // resync _nextBeat still points into the old timeline and all
-            // future BeatTime() calls land beyond the schedule window,
-            // so the metronome goes silent after 1A→1B.
             _metronome.Resync();
+
+            // Fase 0: validasi pool — fail keras di Editor bila note bisa
+            // aktif bersamaan melebihi view pool.
+            int need = ArenaPresenter.MaxConcurrentThreats(_director.ActiveRunner.Data.Threats);
+            int have = _arena.PooledViewCount;
+            if (need > have)
+            {
+#if UNITY_EDITOR
+                Debug.LogError($"AlgoRhythm: wave {waveId} butuh {need} ThreatView bersamaan, pool hanya {have}. Tambah view di SampleScene.");
+#else
+                Debug.LogWarning($"AlgoRhythm: wave {waveId} butuh {need} ThreatView bersamaan, pool hanya {have}.");
+#endif
+            }
         }
 
-        /// <summary>
-        /// Z/X nudge the judge calibration in 5 ms steps, clamped to ±150 ms
-        /// and persisted to PlayerPrefs. Read directly from the keyboard so no
-        /// input-map change is needed; shield and code-panel bindings win on
-        /// their own keys and are unaffected.
-        /// </summary>
-        /// <summary>
-        /// Commit confirmation without HUD text: a pew tick, the code-panel
-        /// log, and a blinking rule guard in the covered lane(s). Committing
-        /// is a player decision, so it must be unmistakable in the arena.
-        /// </summary>
         private void HandleRuleCommitted()
         {
             _sfx.PlayPew();
             PushRuleGuards();
         }
 
-        /// <summary>
-        /// Pushes active + pending rule coverage to the arena guards so the
-        /// player sees where the rules are. Nearest covers all four lanes.
-        /// No-op (clears guards) while the rule system is disabled.
-        /// </summary>
         private void PushRuleGuards()
         {
             if (!_rulesEnabled)
@@ -381,10 +391,13 @@ namespace AlgoRhythm.Game.Combat
                 return 0b1111;
             }
 
-            // Target order mirrors Direction North through West.
             return 1 << (int)target.Value;
         }
 
+        /// <summary>
+        /// Kalibrasi di [ dan ] (5 ms, clamp ±150, PlayerPrefs).
+        /// Dipindah dari Z/X agar tap tidak menggeser offset.
+        /// </summary>
         private void PollCalibration()
         {
             Keyboard keyboard = Keyboard.current;
@@ -394,12 +407,12 @@ namespace AlgoRhythm.Game.Combat
             }
 
             int step = 0;
-            if (keyboard.zKey.wasPressedThisFrame)
+            if (keyboard.leftBracketKey.wasPressedThisFrame)
             {
                 step -= 5;
             }
 
-            if (keyboard.xKey.wasPressedThisFrame)
+            if (keyboard.rightBracketKey.wasPressedThisFrame)
             {
                 step += 5;
             }
@@ -418,36 +431,50 @@ namespace AlgoRhythm.Game.Combat
         }
 
         /// <summary>
-        /// Maps DSP time to stepped travel progress: the threat holds still
-        /// for most of each beat, then steps quickly in the last attack
-        /// fraction and lands exactly on the beat. Frozen on pause. Pure DSP
-        /// function; judging is untouched.
+        /// Aim paddle dari posisi kursor → sudut terhadap Core.
+        /// Dead zone di sekitar Core menahan sudut terakhir (anti jitter atan2).
         /// </summary>
-        private float BeatGlideProgress(int spawnBeat, int impactBeat, double nowDsp)
+        private void UpdatePaddleAim()
         {
-            int travelBeats = impactBeat - spawnBeat;
-            if (travelBeats <= 0)
+            double now = _clockSource.NowDsp;
+            Vector2 cursor = _input.AimPosition;
+            if (cursor == Vector2.zero)
             {
-                return 1.0f;
+                cursor = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f + 100f);
             }
 
-            double beatsSinceSpawn = (nowDsp - _clock.BeatTime(spawnBeat)) / _clock.SecondsPerBeat;
-            if (beatsSinceSpawn <= 0.0)
+            Camera cam = Camera.main;
+            Vector3 coreWorld = _arena.transform.position;
+            Vector3 coreScreen = cam != null ? cam.WorldToScreenPoint(coreWorld) : new Vector3(Screen.width * 0.5f, Screen.height * 0.5f);
+            float dx = cursor.x - coreScreen.x;
+            float dy = cursor.y - coreScreen.y;
+            float distPx = Mathf.Sqrt(dx * dx + dy * dy);
+            if (distPx >= _config.aimDeadZonePx)
             {
-                return 0.0f;
+                float angle = AngleMath.AngleFromVector(dx, dy);
+                _paddle.SetTarget(angle);
             }
 
-            float attack = Mathf.Clamp(_config.noteStepAttack, 0.05f, 0.9f);
-            double tile = Math.Floor(beatsSinceSpawn);
-            double frac = beatsSinceSpawn - tile;
-            double eased = tile;
-            if (frac >= 1.0 - attack)
+            _paddle.Update(now, double.IsNegativeInfinity(_lastPaddleDsp) ? now : _lastPaddleDsp);
+            _lastPaddleDsp = now;
+            _history.Record(now, _paddle.CurrentAngle);
+            if (_paddleView != null)
             {
-                double u = (frac - (1.0 - attack)) / attack;
-                eased = tile + u * u * (3.0 - 2.0 * u);
+                _paddleView.SetHalfArc(_config.paddleHalfArcDeg);
             }
+        }
 
-            return (float)(eased / travelBeats);
+        private float PaddleAngleAt(double dsp, TapSource source)
+        {
+            // Konsisten dengan TimingJudge.ErrorMs = (input-impact)*1000 - offset:
+            // offset positif menganggap input terjadi lebih awal, jadi sampel
+            // paddle juga digeser lebih awal dengan -offset.
+            double query = dsp - _judge.CalibrationOffsetMs / 1000.0;
+            if (source == TapSource.Click)
+            {
+                query -= _config.clickAimLookbackMs / 1000.0;
+            }
+            return _history.AngleAt(query);
         }
 
         private void SpawnDue(int beat)
@@ -457,10 +484,14 @@ namespace AlgoRhythm.Game.Combat
             for (int index = 0; index < count; index++)
             {
                 ThreatEvent threat = _spawnBuffer[index];
-                _active.Add(new ActiveThreat { Threat = threat });
                 float travelMs = (float)((_clock.BeatTime(threat.ImpactBeat)
                                           - _clock.BeatTime(threat.SpawnBeat)) * 1000.0);
-                _arena.SpawnThreat(threat, travelMs);
+                // Perbaiki urutan: note hanya masuk _active bila ada view.
+                if (!_arena.SpawnThreat(threat, travelMs))
+                {
+                    continue;
+                }
+                _active.Add(new ActiveThreat { Threat = threat });
             }
 
             if (wave.AllSpawned && wave.IsCleared)
@@ -469,14 +500,8 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        /// <summary>
-        /// Impact order: buffered manual non-Miss wins (precedence); a
-        /// buffered Miss never blocks the rule; otherwise the rule may fire.
-        /// </summary>
         private void ResolveAtImpact(ActiveThreat active)
         {
-            // Already resolved by direct manual input: no second evaluation,
-            // no energy spend, no cooldown. One final result per threat.
             if (active.Resolved)
             {
                 return;
@@ -494,8 +519,6 @@ namespace AlgoRhythm.Game.Combat
                 }
             }
 
-            // Rule system temporarily OFF: manual shield is the only route.
-            // Buffered Miss falls through to the timeout path (Miss).
             if (!_rulesEnabled)
             {
                 return;
@@ -525,7 +548,7 @@ namespace AlgoRhythm.Game.Combat
             Resolve(active, TimingGrade.Miss, "timeout");
         }
 
-        private void HandleShieldPressed(Direction direction, double inputDsp)
+        private void HandleTapPressed(TapSource source, double inputDsp)
         {
             if (!_started)
             {
@@ -538,20 +561,9 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            ActiveThreat candidate = FindNearestThreat(direction, inputDsp);
-            _shield.RequestDirection(direction, inputDsp);
+            float paddleAngle = PaddleAngleAt(inputDsp, source);
+            ActiveThreat candidate = FindBestTapCandidate(paddleAngle, inputDsp);
             if (candidate == null)
-            {
-                // Pure repositioning move: no threat in this lane, so no
-                // grade text. The shield bar itself moving is the feedback;
-                // grade text is reserved for real threat events.
-                return;
-            }
-
-            // The press always moves the shield; the block lands only when the
-            // shield actually covers the lane at press moment. No grade text
-            // here either: transit misses are silent, like pure moves.
-            if (!_shield.CoversDirection(direction, inputDsp))
             {
                 return;
             }
@@ -578,9 +590,10 @@ namespace AlgoRhythm.Game.Combat
                     || Math.Abs(deltaMs) < Math.Abs((candidate.BufferedInputDsp.Value - impactDsp) * 1000.0))
                 {
                     candidate.BufferedInputDsp = inputDsp;
+                    candidate.BufferedSource = source;
                 }
 
-                _arena.PulseShield();
+                _paddleView?.Pulse();
                 return;
             }
 
@@ -588,35 +601,33 @@ namespace AlgoRhythm.Game.Combat
             if (candidate.Threat.Kind == ThreatKind.AdwareDecoy && grade != TimingGrade.Miss)
             {
                 candidate.Resolved = true;
-                _arena.FlashShieldBlock(direction, 1.6f, 0.35f);
+                _arena.FlashAtAngle(candidate.Threat.AngleDeg, 1.6f, 0.35f);
                 ResolveDecoy(candidate, shielded: true, fromRule: false);
                 return;
             }
 
             if (candidate.Threat.Kind == ThreatKind.Holder && grade != TimingGrade.Miss)
             {
-                StartHold(candidate, grade, inputDsp);
+                StartHold(candidate, grade, inputDsp, source);
                 return;
             }
 
-            _arena.PulseShield();
+            _paddleView?.Pulse();
             ApplyHit(candidate, grade, "input", blockFlash: true);
         }
 
-        private void HandleShieldReleased(Direction direction, double inputDsp)
+        private void HandleTapReleased(TapSource source, double inputDsp)
         {
             if (!_started || _paused)
             {
                 return;
             }
 
-            // Only the matching lane ends its hold; other releases are
-            // ignored. A hold broken before the tail is a Miss.
             for (int index = 0; index < _active.Count; index++)
             {
                 ActiveThreat active = _active[index];
                 if (active.Resolved || !active.Holding
-                    || active.Threat.Direction != direction)
+                    || active.HoldSource != source)
                 {
                     continue;
                 }
@@ -627,11 +638,6 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        /// <summary>
-        /// One successful hit on a threat. Heavy armor absorbs hits until
-        /// the configured count, then resolves normally; everything else
-        /// resolves immediately. One final result per threat either way.
-        /// </summary>
         private void ApplyHit(ActiveThreat active, TimingGrade grade, string reason, bool blockFlash)
         {
             int armor = active.Threat.Kind == ThreatKind.Heavy
@@ -641,27 +647,23 @@ namespace AlgoRhythm.Game.Combat
             if (active.HitsTaken < armor)
             {
                 _arena.SetArmorVisual(active.Threat.Id, cracked: true);
-                _arena.PulseShield();
+                _paddleView?.Pulse();
                 return;
             }
 
             Resolve(active, grade, reason, blockFlash);
         }
 
-        /// <summary>Begins a hold note: shield must stay held until the tail.</summary>
-        private void StartHold(ActiveThreat active, TimingGrade grade, double inputDsp)
+        private void StartHold(ActiveThreat active, TimingGrade grade, double inputDsp, TapSource source)
         {
             active.Holding = true;
             active.HoldGrade = grade;
             active.HoldStartDsp = inputDsp;
-            _arena.PulseShield();
-            _arena.FlashShieldBlock(active.Threat.Direction, 1.2f, 0.25f);
+            active.HoldSource = source;
+            _paddleView?.Pulse();
+            _arena.FlashAtAngle(active.Threat.AngleDeg, 1.2f, 0.25f);
         }
 
-        /// <summary>
-        /// Per-tick archetype sync: sleeper armed state (2 beats before the
-        /// dash) and holder sustain progress + tail completion.
-        /// </summary>
         private void SyncArchetypeVisual(ActiveThreat active, double now, int beat)
         {
             if (active.Resolved)
@@ -694,35 +696,34 @@ namespace AlgoRhythm.Game.Combat
         private void ResolveManual(ActiveThreat active, TimingGrade grade)
         {
             _rules.TryLogManualPrecedence(active.Threat);
+            TapSource source = active.BufferedSource ?? TapSource.Z;
             if (active.Threat.Kind == ThreatKind.AdwareDecoy)
             {
                 active.Resolved = true;
-                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
+                _arena.FlashAtAngle(active.Threat.AngleDeg, 1.6f, 0.35f);
                 ResolveDecoy(active, shielded: true, fromRule: false);
                 return;
             }
 
             if (active.Threat.Kind == ThreatKind.Holder && grade != TimingGrade.Miss)
             {
-                StartHold(active, grade, _clockSource.NowDsp);
+                StartHold(active, grade, _clockSource.NowDsp, source);
                 return;
             }
 
-            _arena.PulseShield();
+            _paddleView?.Pulse();
             ApplyHit(active, grade, "input", blockFlash: true);
         }
 
         private void ResolveAuto(ActiveThreat active, RuleFired fired)
         {
             active.Resolved = true;
-            // The auto-shield drives the shield itself: it visibly swooshes to
-            // the lane as the block lands (Set A independence).
-            _shield.RequestDirection(active.Threat.Direction, _clockSource.NowDsp);
-            _arena.PulseShield();
+            _paddle.SetTarget(active.Threat.AngleDeg);
+            _paddleView?.Pulse();
 
             if (active.Threat.Kind == ThreatKind.AdwareDecoy)
             {
-                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
+                _arena.FlashAtAngle(active.Threat.AngleDeg, 1.6f, 0.35f);
                 ResolveDecoy(active, shielded: true, fromRule: true);
                 return;
             }
@@ -735,16 +736,14 @@ namespace AlgoRhythm.Game.Combat
             {
                 active.HitsTaken++;
                 _arena.SetArmorVisual(active.Threat.Id, cracked: true);
-                _arena.PulseShield();
+                _paddleView?.Pulse();
                 return;
             }
 
             active.HitsTaken++;
             if (_combat.ResolveThreat(active.Threat, TimingGrade.Good, fromRule: true, damage: 0))
             {
-                // Auto block: the lane shield GO pops (Set A independence
-                // reads here) alongside the grade text.
-                _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
+                _arena.FlashAtAngle(active.Threat.AngleDeg, 1.6f, 0.35f);
                 _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true, destroyed: true);
                 _sfx.PlayDestroy();
                 _shake.AddTrauma(_config.shakeDestroy);
@@ -769,14 +768,6 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        /// <summary>
-        /// AIDA fires on its cadence at the nearest shootable threat, one
-        /// shot per target. Aim is true only on the lucky shot of each hit
-        /// cycle (-1000 aura); other shots take an alternating angular error
-        /// and always miss harmlessly. Decoys are never targeted. Arrival
-        /// meets the threat where it really is at arrival time, not a
-        /// fixed ring point.
-        /// </summary>
         private void TryAidaFire(int beat, double now)
         {
             CycleAidaFlavor();
@@ -788,41 +779,52 @@ namespace AlgoRhythm.Game.Combat
             }
 
             double impactDsp = _clock.BeatTime(target.Threat.ImpactBeat);
-            int hitEvery = Mathf.Max(1, _config.aidaHitEveryShots);
+            int hitEvery = Mathf.Max(1, _aidaHitEvery);
             bool willHit = (_aidaShotCount % hitEvery) == hitEvery - 1;
-            float laneAngle = ShieldController.DirectionToAngle(target.Threat.Direction);
+            float laneAngle = target.Threat.AngleDeg;
             double arrivalDsp = impactDsp - _clock.SecondsPerBeat * 0.25;
             if (arrivalDsp <= now)
             {
                 arrivalDsp = now + 0.1;
             }
 
-            Vector3 to = _arena.transform.position
-                + _arena.ThreatLocalPosition(target.Threat.Direction, 1f);
+            var motionMode = _config.noteMotionMode == 1 ? NoteMotionMode.Stepped : NoteMotionMode.Linear;
+            Vector3 towerPos = _aida.transform.position;
+            // Titik temu bila tembakan tepat: posisi real note saat arrival.
+            double spawnDsp = _clock.BeatTime(target.Threat.SpawnBeat);
+            float arrivalProgress = NoteMotion.Progress(
+                spawnDsp, impactDsp, arrivalDsp,
+                _clock.SecondsPerBeat, motionMode, _config.noteStepAttack);
+            Vector3 meet = _arena.transform.position
+                + _arena.ThreatLocalPosition(target.Threat.AngleDeg, arrivalProgress);
             float aimAngle;
+            Vector3 to;
             if (willHit)
             {
-                // Hit the note where it really is at arrival (same travel
-                // math as the threat glide) instead of a fixed ring point,
-                // and point the barrel at that spot.
-                float arrivalProgress = BeatGlideProgress(
-                    target.Threat.SpawnBeat, target.Threat.ImpactBeat, arrivalDsp);
-                to = _arena.transform.position
-                    + _arena.ThreatLocalPosition(target.Threat.Direction, arrivalProgress);
-                Vector3 towerPos = _aida.transform.position;
+                to = meet;
                 aimAngle = Mathf.Atan2(to.x - towerPos.x, to.y - towerPos.y) * Mathf.Rad2Deg;
-                _aida.SetFlavor($"Awas {LaneName(target.Threat.Direction)}!");
+                _aida.SetFlavor($"Awas {LaneName(target.Threat.AngleDeg)}!");
             }
             else
             {
+                // Peluru ikut arah laras: error sudut yang sama dengan aim,
+                // jarak tempuh sama dengan skenario kena (balistik identik).
                 aimAngle = laneAngle + ((_aidaShotCount % 2 == 0) ? 25f : -25f);
+                float rad = aimAngle * Mathf.Deg2Rad;
+                Vector3 dir = new Vector3(Mathf.Sin(rad), Mathf.Cos(rad), 0f);
+                float dist = (meet - towerPos).magnitude;
+                if (dist <= 0.01f)
+                {
+                    dist = (_arena.transform.position - towerPos).magnitude;
+                }
+                to = towerPos + dir * dist;
             }
 
             _aidaShotCount++;
             _aida.SetAim(aimAngle);
 
             AidaShotView view = _aida.FireShot(
-                _aida.transform.position, to, target.Threat.Id, willHit, arrivalDsp);
+                _aida.MuzzleWorldPosition(), to, target.Threat.Id, willHit, arrivalDsp);
             if (view != null)
             {
                 _sfx.PlayAidaFire();
@@ -837,7 +839,8 @@ namespace AlgoRhythm.Game.Combat
             for (int index = 0; index < _active.Count; index++)
             {
                 ActiveThreat active = _active[index];
-                if (active.Resolved || active.Threat.Kind == ThreatKind.AdwareDecoy)
+                if (active.Resolved
+                    || active.Threat.Kind == ThreatKind.AdwareDecoy)
                 {
                     continue;
                 }
@@ -847,8 +850,7 @@ namespace AlgoRhythm.Game.Combat
                     continue;
                 }
 
-                double impactDsp = _clock.BeatTime(active.Threat.ImpactBeat);
-                double distanceMs = (impactDsp - now) * 1000.0;
+                double distanceMs = (_clock.BeatTime(active.Threat.ImpactBeat) - now) * 1000.0;
                 if (distanceMs < bestDistanceMs)
                 {
                     best = active;
@@ -872,20 +874,16 @@ namespace AlgoRhythm.Game.Combat
             return null;
         }
 
-        private static string LaneName(Direction direction)
+        private static string LaneName(float angleDeg)
         {
-            switch (direction)
+            Direction dir = ArenaPresenter.AngleToDirection(angleDeg);
+            switch (dir)
             {
-                case Direction.North:
-                    return "Utara";
-                case Direction.East:
-                    return "Timur";
-                case Direction.South:
-                    return "Selatan";
-                case Direction.West:
-                    return "Barat";
-                default:
-                    return "?";
+                case Direction.North: return "Utara";
+                case Direction.East: return "Timur";
+                case Direction.South: return "Selatan";
+                case Direction.West: return "Barat";
+                default: return "?";
             }
         }
 
@@ -902,15 +900,28 @@ namespace AlgoRhythm.Game.Combat
             _flavorIndex++;
         }
 
-        private ActiveThreat FindNearestThreat(Direction direction, double inputDsp)
+        /// <summary>
+        /// Kandidat tap: note aktif yang ditutupi paddle, dipilih yang
+        /// |inputDsp − impactDsp| paling kecil. Menggantikan FindNearestThreat per-lane.
+        /// </summary>
+        private ActiveThreat FindBestTapCandidate(float paddleAngleDeg, double inputDsp)
         {
             ActiveThreat best = null;
             double bestDistanceMs = double.MaxValue;
+            float paddleHalf = _config.paddleHalfArcDeg;
 
             for (int index = 0; index < _active.Count; index++)
             {
                 ActiveThreat active = _active[index];
-                if (active.Resolved || active.Threat.Direction != direction)
+                if (active.Resolved)
+                {
+                    continue;
+                }
+
+                float noteHalf = active.Threat.HalfWidthDeg > 0f
+                    ? active.Threat.HalfWidthDeg
+                    : _config.noteHalfWidthDeg;
+                if (!AngleMath.Overlaps(active.Threat.AngleDeg, noteHalf, paddleAngleDeg, paddleHalf))
                 {
                     continue;
                 }
@@ -951,11 +962,8 @@ namespace AlgoRhythm.Game.Combat
             bool success = grade != TimingGrade.Miss;
             if (success && blockFlash)
             {
-                // Successful shield: the lane shield GO pops alongside the
-                // grade text (Perfect biggest). Arena, sfx, shake and score
-                // tick reinforce the read.
-                _arena.FlashShieldBlock(
-                    active.Threat.Direction,
+                _arena.FlashAtAngle(
+                    active.Threat.AngleDeg,
                     grade == TimingGrade.Perfect ? 2.0f : 1.6f,
                     grade == TimingGrade.Perfect ? 0.45f : 0.35f);
             }
@@ -970,8 +978,6 @@ namespace AlgoRhythm.Game.Combat
             }
             else if (damage > 0)
             {
-                // Damage feedback: shake here; the red flash listens to
-                // CombatState.IntegrityChanged, so no new wiring is needed.
                 _shake.AddTrauma(_config.shakeDamage);
             }
         }
@@ -987,11 +993,12 @@ namespace AlgoRhythm.Game.Combat
             bool lastWave = _director.ActiveIndex + 1 >= _director.WaveCount;
             string counts =
                 $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}";
-            string energySuffix = _rulesEnabled ? "\n+1 Energy · lanjut..." : "\nlanjut...";
+            // Ringkasan skor hanya di wave paling terakhir; wave tengah
+            // langsung lanjut ke shop tanpa panel ringkasan.
             _hud.ShowWaveSummary(lastWave
                 ? $"RUN CLEAR — {waveId} selesai\nSCORE {_combat.Score} · {counts}\n" +
                   $"damage {_combat.DamageTaken} · decoy {_combat.DecoyPenaltyTotal}"
-                : $"WAVE CLEAR {waveId} — SCORE {_combat.Score}\n{counts}{energySuffix}");
+                : string.Empty);
             _hud.SetStatus(lastWave
                 ? "RUN CLEAR — semua wave selesai"
                 : $"WAVE CLEAR {waveId} — semua threat resolved");
@@ -999,7 +1006,115 @@ namespace AlgoRhythm.Game.Combat
             _hud.ShowDialogue(textId, line);
 
             _arena.ClearThreats();
-            _director.Advance();
+            if (lastWave)
+            {
+                _director.Advance();
+                return;
+            }
+
+            OpenShop();
+        }
+
+        /// <summary>
+        /// Between-wave shop: game idles on the cleared wave (clock keeps
+        /// running, metronome keeps playing, but nothing can spawn) until
+        /// the player confirms LANJUT. Stackable items, keyboard-only.
+        /// </summary>
+        private void OpenShop()
+        {
+            if (_shop == null)
+            {
+                _director.Advance();
+                return;
+            }
+
+            _inShop = true;
+            RenderShop();
+            _shop.Show();
+        }
+
+        private void OnShopConfirmed(int slot)
+        {
+            if (!_inShop)
+            {
+                return;
+            }
+
+            if (slot == 3)
+            {
+                _inShop = false;
+                _shop.Hide();
+                _director.Advance();
+                return;
+            }
+
+            BuyShopItem(slot);
+        }
+
+        private void BuyShopItem(int slot)
+        {
+            int cost = slot == 0 ? _config.shopHealCost
+                : slot == 1 ? _config.shopAccCost : _config.shopRateCost;
+            if (slot == 1 && _aidaHitEvery <= Mathf.Max(2, _config.shopAccMinHitEvery))
+            {
+                _hud.SetStatus("AKURASI AIDA sudah MAX");
+                RenderShop();
+                return;
+            }
+            if (slot == 2 && _aidaFireEvery <= Mathf.Max(1, _config.shopRateMinFireEvery))
+            {
+                _hud.SetStatus("TEMBAKAN AIDA sudah MAX");
+                RenderShop();
+                return;
+            }
+            if (!_combat.TrySpendPts(cost))
+            {
+                _hud.SetStatus("PTS tidak cukup");
+                RenderShop();
+                return;
+            }
+
+            if (slot == 0)
+            {
+                _combat.Heal(_config.shopHealAmount);
+                _sfx.PlayDestroy();
+            }
+            else if (slot == 1)
+            {
+                _aidaHitEvery = Math.Max(Mathf.Max(2, _config.shopAccMinHitEvery), _aidaHitEvery - 1);
+                _accBought++;
+                _sfx.PlayPew();
+            }
+            else
+            {
+                _aidaFireEvery = Math.Max(Mathf.Max(1, _config.shopRateMinFireEvery), _aidaFireEvery - 1);
+                _rateBought++;
+                _sfx.PlayPew();
+            }
+
+            RenderShop();
+        }
+
+        private void RenderShop()
+        {
+            if (_shop == null)
+            {
+                return;
+            }
+
+            string accRow = _aidaHitEvery <= Mathf.Max(2, _config.shopAccMinHitEvery)
+                ? $"AIDA AKURAT Lv{_accBought + 1} (MAX)"
+                : $"AIDA AKURAT Lv{_accBought + 1} — {_config.shopAccCost} PTS";
+            string rateRow = _aidaFireEvery <= Mathf.Max(1, _config.shopRateMinFireEvery)
+                ? $"AIDA CEPAT Lv{_rateBought + 1} (MAX)"
+                : $"AIDA CEPAT Lv{_rateBought + 1} — {_config.shopRateCost} PTS";
+            _shop.Render(_combat.CurrencyPts, new[]
+            {
+                $"HP +{_config.shopHealAmount} — {_config.shopHealCost} PTS",
+                accRow,
+                rateRow,
+                "LANJUT →",
+            });
         }
 
         private void RetryCurrentWave()

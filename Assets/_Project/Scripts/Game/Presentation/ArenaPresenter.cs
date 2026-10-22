@@ -21,6 +21,9 @@ namespace AlgoRhythm.Game.Presentation
         [Min(1f)] [SerializeField] private float spawnDistanceEastWest = 8.2f;
         [Tooltip("Jarak spawn vertikal (North/South).")]
         [Min(1f)] [SerializeField] private float spawnDistanceNorthSouth = 4.6f;
+        [Header("Radial (Beatblock) [U] — spawn lingkaran, kecepatan sama semua sudut.")]
+        [Tooltip("Radius spawn radial untuk note sudut bebas.")]
+        [Min(1f)] [SerializeField] private float radialSpawnDistance = 8.2f;
 
         [Header("Feel [U] — hentakan beat per threat")]
         [Tooltip("Amplitudo pop saat beat; makin dekat ring makin besar.")]
@@ -32,7 +35,6 @@ namespace AlgoRhythm.Game.Presentation
         private readonly Dictionary<int, ThreatView> _activeThreats = new Dictionary<int, ThreatView>();
         private readonly Dictionary<Direction, ShieldView> _blocks = new Dictionary<Direction, ShieldView>();
         private readonly Dictionary<Direction, GameObject> _ruleGuards = new Dictionary<Direction, GameObject>();
-        private ShieldView _shield;
         private int _ruleActiveMask;
         private int _rulePendingMask;
         private TextMesh _gradeLabel;
@@ -71,22 +73,12 @@ namespace AlgoRhythm.Game.Presentation
                 }
             }
 
-            Transform shieldObject = transform.Find("Shields/Shield");
-            if (shieldObject != null)
-            {
-                _shield = shieldObject.GetComponent<ShieldView>();
-                if (_shield != null)
-                {
-                    _shield.Initialize();
-                }
-            }
-
             Transform shieldsRoot = transform.Find("Shields");
             if (shieldsRoot != null)
             {
                 foreach (ShieldView block in shieldsRoot.GetComponentsInChildren<ShieldView>(true))
                 {
-                    if (block == null || block == _shield)
+                    if (block == null)
                     {
                         continue;
                     }
@@ -127,22 +119,50 @@ namespace AlgoRhythm.Game.Presentation
             }
         }
 
-        public void SpawnThreat(ThreatEvent threat, float travelMs)
+        public bool SpawnThreat(ThreatEvent threat, float travelMs)
         {
             if (_activeThreats.ContainsKey(threat.Id))
             {
-                return;
+                return true;
             }
 
             ThreatView view = FindAvailableView();
             if (view == null)
             {
-                return;
+                Debug.LogWarning($"AlgoRhythm: ThreatView pool habis untuk threat {threat.Id}; note ditahan, tidak dinilai.");
+                return false;
             }
 
             view.Show(threat, travelMs);
-            view.transform.localPosition = (Vector3)(DirectionVector(threat.Direction) * SpawnDistance(threat.Direction));
+            view.transform.localPosition = ThreatLocalPosition(threat.AngleDeg, 0f);
             _activeThreats[threat.Id] = view;
+            return true;
+        }
+
+        /// <summary>Jumlah view pool (untuk validasi wave).</summary>
+        public int PooledViewCount => _views.Count;
+
+        /// <summary>
+        /// Validasi pool: hitung maksimum note aktif bersamaan dari interval
+        /// spawn..impact. Fail keras di Editor bila pool kurang.
+        /// </summary>
+        public static int MaxConcurrentThreats(System.Collections.Generic.IReadOnlyList<ThreatEvent> threats)
+        {
+            int max = 0;
+            for (int i = 0; i < threats.Count; i++)
+            {
+                int overlap = 0;
+                for (int j = 0; j < threats.Count; j++)
+                {
+                    if (threats[j].SpawnBeat <= threats[i].ImpactBeat
+                        && threats[i].SpawnBeat <= threats[j].ImpactBeat)
+                    {
+                        overlap++;
+                    }
+                }
+                if (overlap > max) max = overlap;
+            }
+            return max;
         }
 
         public void UpdateThreat(
@@ -158,8 +178,8 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             float clamped = Mathf.Clamp01(progress);
-            Vector3 target = (Vector3)(DirectionVector(threat.Direction) * directionRadius);
-            Vector3 spawn = (Vector3)(DirectionVector(threat.Direction) * SpawnDistance(threat.Direction));
+            Vector3 target = AngleToLocal(threat.AngleDeg, directionRadius);
+            Vector3 spawn = AngleToLocal(threat.AngleDeg, radialSpawnDistance);
             view.transform.localPosition = Vector3.Lerp(spawn, target, clamped);
 
             // Beat-locked hentakan: the body pops on every DSP beat and the
@@ -206,6 +226,9 @@ namespace AlgoRhythm.Game.Presentation
             return _core != null ? _core.localPosition : Vector3.zero;
         }
 
+        /// <summary>Radius ring Core (world) untuk parkir paddle.</summary>
+        public float RingRadius => directionRadius;
+
         /// <summary>Hides every pooled view. Used on wave change and retry.</summary>
         public void ClearThreats()
         {
@@ -217,34 +240,10 @@ namespace AlgoRhythm.Game.Presentation
         }
 
         /// <summary>
-        /// Parks the single orbiting shield on the ring. Angle uses compass
-        /// degrees (North 0°, East 90°); the bar lies tangent to the ring.
-        /// </summary>
-        public void SetShieldPose(float angleDeg, string slotCode)
-        {
-            if (_shield == null)
-            {
-                return;
-            }
-
-            float radians = angleDeg * Mathf.Deg2Rad;
-            Vector3 position = new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f)
-                               * directionRadius;
-            _shield.Park(position, angleDeg, slotCode);
-        }
-
-        public void PulseShield()
-        {
-            if (_shield != null)
-            {
-                _shield.Pulse();
-            }
-        }
-
-        /// <summary>
-        /// Shows a real shield GO in the pressed lane: instant block flash
+        /// Shows a hit flash GO at the contacted angle: instant block flash
         /// that reads in the arena, not as HUD text. Perfect lands biggest,
-        /// Good/auto medium, plain presses small.
+        /// Good/auto medium, plain presses small. Lane GOs are flash-only;
+        /// the moving model is the single Paddle.
         /// </summary>
         public void FlashShieldBlock(Direction direction, float punch, float holdSeconds = 0.3f)
         {
@@ -252,6 +251,13 @@ namespace AlgoRhythm.Game.Presentation
             {
                 block.FlashBlock(punch, holdSeconds);
             }
+        }
+
+        /// <summary>Efek hit di sudut kontak bebas (Beatblock); fallback ke lane terdekat.</summary>
+        public void FlashAtAngle(float angleDeg, float punch, float holdSeconds = 0.3f)
+        {
+            Direction nearest = AngleToDirection(angleDeg);
+            FlashShieldBlock(nearest, punch, holdSeconds);
         }
 
         /// <summary>
@@ -442,9 +448,30 @@ namespace AlgoRhythm.Game.Presentation
         /// </summary>
         internal Vector3 ThreatLocalPosition(Direction direction, float progress)
         {
-            Vector3 target = (Vector3)(DirectionVector(direction) * directionRadius);
-            Vector3 spawn = (Vector3)(DirectionVector(direction) * SpawnDistance(direction));
+            return ThreatLocalPosition(AngleMath.DirectionToAngle(direction), progress);
+        }
+
+        /// <summary>Versi sudut bebas (Beatblock): radial konstan.</summary>
+        internal Vector3 ThreatLocalPosition(float angleDeg, float progress)
+        {
+            Vector3 target = AngleToLocal(angleDeg, directionRadius);
+            Vector3 spawn = AngleToLocal(angleDeg, radialSpawnDistance);
             return Vector3.Lerp(spawn, target, Mathf.Clamp01(progress));
+        }
+
+        internal static Vector3 AngleToLocal(float angleDeg, float radius)
+        {
+            float radians = angleDeg * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * radius;
+        }
+
+        internal static Direction AngleToDirection(float angleDeg)
+        {
+            float a = AngleMath.Normalize360(angleDeg);
+            if (a < 45f || a >= 315f) return Direction.North;
+            if (a < 135f) return Direction.East;
+            if (a < 225f) return Direction.South;
+            return Direction.West;
         }
 
         internal static Vector2 DirectionVector(Direction direction)

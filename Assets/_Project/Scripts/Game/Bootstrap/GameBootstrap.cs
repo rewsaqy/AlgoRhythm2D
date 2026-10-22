@@ -30,6 +30,7 @@ namespace AlgoRhythm.Game.Bootstrap
         [SerializeField] private AidaTower aidaTower;
         [SerializeField] private InputRouter input;
         [SerializeField] private CodePanelView codePanel;
+        [SerializeField] private ShopView shop;
         [SerializeField] private WaveDefinitionSO[] waveDefinitions;
         [Header("Typography [U] — nerd mono display font untuk semua label")]
         [SerializeField] private Font displayFont;
@@ -44,7 +45,7 @@ namespace AlgoRhythm.Game.Bootstrap
         {
             if (config == null || arena == null || hud == null || metronome == null
                 || sfx == null || cameraShake == null || aidaTower == null
-                || input == null || codePanel == null
+                || input == null || codePanel == null || shop == null
                 || waveDefinitions == null || waveDefinitions.Length == 0)
             {
                 Debug.LogError(
@@ -66,13 +67,21 @@ namespace AlgoRhythm.Game.Bootstrap
             var waves = new List<WaveData>(waveDefinitions.Length);
             foreach (WaveDefinitionSO definition in waveDefinitions)
             {
-                waves.Add(WaveMapper.ToWaveData(definition));
+                waves.Add(WaveMapper.ToWaveData(definition, config.approachBeats));
             }
 
             _director = new WaveDirector(waves, clock, _clockSource, config.startLeadInBeats);
             _combat = new CombatState(config.maxIntegrity, config.startingEnergy);
             _rules = new RuleRuntime();
-            var shield = new ShieldController(config.shieldTransitMs);
+            var paddle = new PaddleController(180f, config.paddleMaxDegPerSec);
+            var history = new PaddleHistory(256);
+            PaddleView paddleView = arena.GetComponentInChildren<PaddleView>(true);
+            if (paddleView == null)
+            {
+                Debug.LogError(
+                    "GameBootstrap: PaddleView missing under Arena — paddle model will not move.",
+                    arena);
+            }
             var validator = new RuleValidator(
                 RuleWhitelist.Demo, config.ruleEnergyCost, config.ruleCooldownMs);
 
@@ -104,6 +113,7 @@ namespace AlgoRhythm.Game.Bootstrap
                 codePanel.gameObject.SetActive(false);
             }
             _director.WaveStarted += OnWaveStarted;
+            shop.Initialize();
 
             _controller = new CombatController(
                 _clockSource,
@@ -119,7 +129,10 @@ namespace AlgoRhythm.Game.Bootstrap
                 aidaTower,
                 input,
                 _rules,
-                shield,
+                paddle,
+                history,
+                paddleView,
+                shop,
                 config);
             _controller.Start();
         }

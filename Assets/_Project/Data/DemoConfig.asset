@@ -25,9 +25,23 @@ MonoBehaviour:
   ruleCooldownMs: 1500
   energyRegenEveryBeats: 4
   shieldTransitMs: 320
+  paddleHalfArcDeg: 35
+  noteHalfWidthDeg: 10
+  approachBeats: 8
+  noteMotionMode: 1
+  aimDeadZonePx: 40
+  clickAimLookbackMs: 10
+  paddleMaxDegPerSec: 0
+  radialSpawnDistance: 8.2
   holdBeats: 4
   heavyArmorHits: 2
   enableCodePanel: 0
+  shopHealAmount: 25
+  shopHealCost: 20
+  shopAccCost: 25
+  shopRateCost: 25
+  shopAccMinHitEvery: 2
+  shopRateMinFireEvery: 2
   shakePerfect: 1
   shakeDestroy: 0.5
   shakeDamage: 0.8
@@ -39,3 +53,4 @@ MonoBehaviour:
   - Aku awasi langit. Fokus ritme.
   - Shield ikut beat, Operator.
   - Hemat gerakan. Pilih arah.
+  noteStepAttack: 0.25

@@ -42,7 +42,8 @@ namespace AlgoRhythm.Game.Presentation
             _ = slotCode;
             gameObject.SetActive(true);
             transform.localPosition = localPosition;
-            transform.localRotation = Quaternion.Euler(0f, 0f, angleDeg);
+            // Sama seperti PaddleView: negasi agar sumbu panjang tetap tangen.
+            transform.localRotation = Quaternion.Euler(0f, 0f, -angleDeg);
         }
 
         public void Pulse()

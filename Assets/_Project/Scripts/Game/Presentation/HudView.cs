@@ -158,10 +158,10 @@ namespace AlgoRhythm.Game.Presentation
                     ? $"ENERGY {_combat.Energy}   "
                     : "MANUAL ONLY   ";
                 _stats.text =
-                    $"{energySegment}SCORE {_combat.Score}\n" +
+                    $"{energySegment}SCORE {_combat.Score}  PTS {_combat.CurrencyPts}\n" +
                     $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
                     $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
-                    $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [Z/X]"
+                    $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [ ]"
                     + (_combat.Integrity <= max * 30 / 100 ? "\n!! LOW INTEGRITY" : string.Empty);
                 _stats.color = _combat.Integrity <= max * 30 / 100
                     ? UiTypography.Warn

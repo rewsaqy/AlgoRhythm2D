@@ -19,117 +19,117 @@ MonoBehaviour:
   spawnSequence:
   - kind: 0
     direction: 0
-    spawnBeat: 7
+    spawnBeat: 4
     impactBeat: 12
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 6
+    spawnBeat: 8
     impactBeat: 16
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 15
+    spawnBeat: 12
     impactBeat: 20
     baseDamage: 10
   - kind: 1
     direction: 3
-    spawnBeat: 14
+    spawnBeat: 16
     impactBeat: 24
     baseDamage: 0
   - kind: 0
     direction: 0
-    spawnBeat: 23
+    spawnBeat: 20
     impactBeat: 28
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 22
+    spawnBeat: 24
     impactBeat: 32
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 31
+    spawnBeat: 28
     impactBeat: 36
     baseDamage: 10
   - kind: 1
     direction: 1
-    spawnBeat: 30
+    spawnBeat: 32
     impactBeat: 40
     baseDamage: 0
   - kind: 0
     direction: 3
-    spawnBeat: 34
+    spawnBeat: 36
     impactBeat: 44
     baseDamage: 10
   - kind: 0
     direction: 0
-    spawnBeat: 43
+    spawnBeat: 40
     impactBeat: 48
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 47
+    spawnBeat: 44
     impactBeat: 52
     baseDamage: 10
   - kind: 0
     direction: 3
-    spawnBeat: 46
+    spawnBeat: 48
     impactBeat: 56
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 50
+    spawnBeat: 52
     impactBeat: 60
     baseDamage: 10
   - kind: 1
     direction: 0
-    spawnBeat: 59
+    spawnBeat: 56
     impactBeat: 64
     baseDamage: 0
   - kind: 0
     direction: 3
-    spawnBeat: 58
+    spawnBeat: 60
     impactBeat: 68
     baseDamage: 10
   - kind: 0
     direction: 2
-    spawnBeat: 67
+    spawnBeat: 64
     impactBeat: 72
     baseDamage: 10
   - kind: 0
     direction: 1
-    spawnBeat: 66
+    spawnBeat: 68
     impactBeat: 76
     baseDamage: 10
   - kind: 0
     direction: 0
-    spawnBeat: 75
+    spawnBeat: 72
     impactBeat: 80
     baseDamage: 10
   - kind: 1
     direction: 3
-    spawnBeat: 74
+    spawnBeat: 76
     impactBeat: 84
     baseDamage: 0
   - kind: 0
     direction: 2
-    spawnBeat: 83
+    spawnBeat: 80
     impactBeat: 88
     baseDamage: 10
   - kind: 2
     direction: 0
-    spawnBeat: 90
+    spawnBeat: 88
     impactBeat: 96
     baseDamage: 10
   - kind: 2
     direction: 0
-    spawnBeat: 93
+    spawnBeat: 91
     impactBeat: 99
     baseDamage: 10
   - kind: 2
     direction: 0
-    spawnBeat: 96
+    spawnBeat: 94
     impactBeat: 102
     baseDamage: 10
   - kind: 3
@@ -139,7 +139,7 @@ MonoBehaviour:
     baseDamage: 15
   - kind: 4
     direction: 2
-    spawnBeat: 100
+    spawnBeat: 102
     impactBeat: 110
     baseDamage: 10
   - kind: 5

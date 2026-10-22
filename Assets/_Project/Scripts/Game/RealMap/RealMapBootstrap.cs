@@ -36,7 +36,6 @@ namespace AlgoRhythm.Game.RealMap
         [SerializeField] private double bpm = 100.0;
         [SerializeField] private double perfectWindowMs = 70.0;
         [SerializeField] private double goodWindowMs = 130.0;
-        [SerializeField] private double shieldTransitMs = 320.0;
         [SerializeField] private int inputBufferMs = 120;
         [SerializeField] private int startLeadInBeats = 2;
         [SerializeField] private int energyRegenEveryBeats = 4;
@@ -47,7 +46,8 @@ namespace AlgoRhythm.Game.RealMap
         private BeatClock _clock;
         private TimingJudge _judge;
         private CombatState _combat;
-        private ShieldController _shield;
+        private PaddleController _paddle;
+        private PaddleHistory _history;
         private WaveDirector _director;
         private readonly List<ActiveThreat> _active = new List<ActiveThreat>();
         private readonly ThreatEvent[] _spawnBuffer = new ThreatEvent[8];
@@ -92,7 +92,8 @@ namespace AlgoRhythm.Game.RealMap
             _clock = new BeatClock(_clockSource, bpm);
             _judge = new TimingJudge(perfectWindowMs, goodWindowMs);
             _combat = new CombatState();
-            _shield = new ShieldController(shieldTransitMs);
+            _paddle = new PaddleController(180f, 0f);
+            _history = new PaddleHistory(256);
 
             var waves = new List<WaveData>(waveDefinitions.Length);
             foreach (WaveDefinitionSO definition in waveDefinitions)
@@ -110,7 +111,7 @@ namespace AlgoRhythm.Game.RealMap
             _director = new WaveDirector(waves, _clock, _clockSource, startLeadInBeats);
 
             input.Initialize(_clockSource);
-            input.ShieldPressed += HandleShieldPressed;
+            input.TapPressed += HandleTapPressed;
             input.PausePressed += TogglePause;
             _director.StartWave(0);
             HideAllEnemies();
@@ -131,7 +132,7 @@ namespace AlgoRhythm.Game.RealMap
         {
             if (input != null)
             {
-                input.ShieldPressed -= HandleShieldPressed;
+                input.TapPressed -= HandleTapPressed;
                 input.PausePressed -= TogglePause;
             }
         }
@@ -166,7 +167,7 @@ namespace AlgoRhythm.Game.RealMap
                 double spawnDsp = _clock.BeatTime(active.Threat.SpawnBeat);
                 Transform enemy = enemies[EnemyIndex(active.Threat.Id)];
                 enemy.position = Vector3.Lerp(
-                    SpawnPosition(active.Threat.Direction, corePos),
+                    SpawnPosition(active.Threat.AngleDeg, corePos),
                     corePos,
                     ProgressAt(spawnDsp, impactDsp, now));
 
@@ -200,10 +201,32 @@ namespace AlgoRhythm.Game.RealMap
                 HideAllEnemies();
             }
 
-            float angle = _shield.CurrentAngle(now);
+            float angle = _paddle.CurrentAngle;
+            double nowPaddle = now;
+            UpdatePaddleAim(nowPaddle);
+            angle = _paddle.CurrentAngle;
             float radians = angle * Mathf.Deg2Rad;
             shield.position = corePos + new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * orbitRadius;
             shield.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        private void UpdatePaddleAim(double nowDsp)
+        {
+            Vector2 cursor = input != null ? input.AimPosition : Vector2.zero;
+            if (cursor == Vector2.zero)
+            {
+                cursor = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f + 100f);
+            }
+            Camera cam = Camera.main;
+            Vector3 coreScreen = cam != null ? cam.WorldToScreenPoint(core.position) : new Vector3(Screen.width * 0.5f, Screen.height * 0.5f);
+            float dx = cursor.x - coreScreen.x;
+            float dy = cursor.y - coreScreen.y;
+            if (Mathf.Sqrt(dx * dx + dy * dy) >= 40f)
+            {
+                _paddle.SetTarget(AngleMath.AngleFromVector(dx, dy));
+            }
+            _paddle.SnapToTarget();
+            _history.Record(nowDsp, _paddle.CurrentAngle);
         }
 
         private void SpawnDue(int beat)
@@ -246,21 +269,16 @@ namespace AlgoRhythm.Game.RealMap
             Resolve(active, TimingGrade.Miss, active.Threat.BaseDamage);
         }
 
-        private void HandleShieldPressed(Direction direction, double inputDsp)
+        private void HandleTapPressed(TapSource source, double inputDsp)
         {
             if (!_started || _paused)
             {
                 return;
             }
 
-            _shield.RequestDirection(direction, inputDsp);
-            ActiveThreat candidate = FindNearest(direction, inputDsp);
+            float paddleAngle = PaddleAngleAt(inputDsp, source);
+            ActiveThreat candidate = FindBest(paddleAngle, inputDsp);
             if (candidate == null)
-            {
-                return;
-            }
-
-            if (!_shield.CoversDirection(direction, inputDsp))
             {
                 return;
             }
@@ -371,14 +389,31 @@ namespace AlgoRhythm.Game.RealMap
             }
         }
 
-        private ActiveThreat FindNearest(Direction direction, double inputDsp)
+        private float PaddleAngleAt(double inputDsp, TapSource source)
+        {
+            // Sama seperti CombatController: konsisten dengan
+            // TimingJudge.ErrorMs (offset positif = sampel lebih awal).
+            double query = inputDsp - _judge.CalibrationOffsetMs / 1000.0;
+            if (source == TapSource.Click)
+            {
+                query -= 10.0 / 1000.0;
+            }
+            return _history.AngleAt(query);
+        }
+
+        private ActiveThreat FindBest(float paddleAngleDeg, double inputDsp)
         {
             ActiveThreat best = null;
             double bestDistanceMs = double.MaxValue;
             for (int i = 0; i < _active.Count; i++)
             {
                 ActiveThreat active = _active[i];
-                if (active.Resolved || active.Threat.Direction != direction)
+                if (active.Resolved)
+                {
+                    continue;
+                }
+
+                if (!AngleMath.Overlaps(active.Threat.AngleDeg, active.Threat.HalfWidthDeg > 0f ? active.Threat.HalfWidthDeg : 10f, paddleAngleDeg, 35f))
                 {
                     continue;
                 }
@@ -412,20 +447,10 @@ namespace AlgoRhythm.Game.RealMap
             }
         }
 
-        private Vector3 SpawnPosition(Direction direction, Vector3 corePos)
+        private Vector3 SpawnPosition(float angleDeg, Vector3 corePos)
         {
-            return corePos + (Vector3)DirectionOffset(direction) * spawnDistance;
-        }
-
-        private static Vector2 DirectionOffset(Direction direction)
-        {
-            switch (direction)
-            {
-                case Direction.North: return Vector2.up;
-                case Direction.East: return Vector2.right;
-                case Direction.South: return Vector2.down;
-                default: return Vector2.left;
-            }
+            float rad = angleDeg * Mathf.Deg2Rad;
+            return corePos + new Vector3(Mathf.Sin(rad), Mathf.Cos(rad), 0f) * spawnDistance;
         }
 
         private static float ProgressAt(double spawnDsp, double impactDsp, double nowDsp)

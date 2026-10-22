@@ -3,6 +3,7 @@
     "rootNamespace": "AlgoRhythm.Tests.PlayMode",
     "references": [
         "AlgoRhythm.Game",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner"
     ],
     "includePlatforms": [],

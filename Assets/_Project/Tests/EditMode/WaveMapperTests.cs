@@ -93,5 +93,43 @@ namespace AlgoRhythm.Tests
         {
             Assert.Throws<System.ArgumentNullException>(() => WaveMapper.ToWaveData(null));
         }
+
+        [Test]
+        public void MapsFreeAngle_WithDerivedSpawnBeat()
+        {
+            var definition = ScriptableObject.CreateInstance<WaveDefinitionSO>();
+            definition.waveId = "W1X";
+            definition.tempoBpm = 100.0;
+            definition.idOffset = 0;
+            definition.spawnSequence = new[]
+            {
+                new WaveThreatEntry
+                {
+                    kind = ThreatKind.StraightShooter,
+                    direction = Direction.North,
+                    angleMode = WaveAngleMode.Free,
+                    angleDeg = 45f,
+                    halfWidthDeg = 12f,
+                    impactBeat = 10,
+                    spawnBeat = 0,
+                    baseDamage = 10
+                }
+            };
+
+            Core.Waves.WaveData data = WaveMapper.ToWaveData(definition, approachBeats: 4);
+
+            Assert.AreEqual(6, data.Threats[0].SpawnBeat);
+            Assert.AreEqual(45f, data.Threats[0].AngleDeg, 1e-4);
+            Assert.AreEqual(12f, data.Threats[0].HalfWidthDeg, 1e-4);
+        }
+
+        [Test]
+        public void MapsLane_PreservesLegacyAngles()
+        {
+            var definition = Definition();
+            Core.Waves.WaveData data = WaveMapper.ToWaveData(definition, approachBeats: 4);
+            Assert.AreEqual(90f, data.Threats[0].AngleDeg, 1e-4);
+            Assert.AreEqual(270f, data.Threats[1].AngleDeg, 1e-4);
+        }
     }
 }
