@@ -23,13 +23,11 @@ namespace AlgoRhythm.Game.Presentation
         private TimingJudge _judge;
         private TextMesh _stats;
         private TextMesh _status;
-        private TextMesh _dialogue;
         private TextMesh _pause;
         private TextMesh _clear;
         private string _statusText = string.Empty;
         private float _statusVisibleUntil;
         private string _clearSummary = string.Empty;
-        private string _dialogueLine = string.Empty;
         private bool _showEnergy = true;
         private IntegrityBarView _bar;
 
@@ -51,7 +49,6 @@ namespace AlgoRhythm.Game.Presentation
             _judge = judge;
             _stats = FindText("Stats");
             _status = FindText("Status");
-            _dialogue = FindText("Controls");
             _pause = FindText("Pause");
             _clear = FindText("Clear");
             _bar = GetComponentInChildren<IntegrityBarView>(true);
@@ -60,18 +57,10 @@ namespace AlgoRhythm.Game.Presentation
                 TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
             UiTypography.Style(_status, 30, 0.08f, UiTypography.Status,
                 TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
-            UiTypography.Style(_dialogue, 26, 0.07f, UiTypography.Ink,
-                TextAnchor.LowerCenter, TextAlignment.Center, 1.2f);
             UiTypography.Style(_pause, 30, 0.08f, UiTypography.Ink,
                 TextAnchor.MiddleRight, TextAlignment.Right, 1.25f);
             UiTypography.Style(_clear, 40, 0.08f, UiTypography.Good,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.25f);
-
-            if (_dialogue != null)
-            {
-                // Authored active in the scene; position is fixed there too.
-                _dialogue.text = string.Empty;
-            }
 
             if (_status != null)
             {
@@ -114,16 +103,6 @@ namespace AlgoRhythm.Game.Presentation
         public void ShowWaveSummary(string summary)
         {
             _clearSummary = summary ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Shows a dialogue subtitle addressed by text_id. Routing stays on
-        /// the id; only the line is shown (no debug id on screen).
-        /// </summary>
-        public void ShowDialogue(string textId, string line)
-        {
-            _ = textId;
-            _dialogueLine = line ?? string.Empty;
         }
 
         private void LateUpdate()
@@ -174,11 +153,6 @@ namespace AlgoRhythm.Game.Presentation
                     && Time.unscaledTime <= _statusVisibleUntil
                     ? _statusText
                     : string.Empty;
-            }
-
-            if (_dialogue != null)
-            {
-                _dialogue.text = _dialogueLine;
             }
 
             if (_pause != null)

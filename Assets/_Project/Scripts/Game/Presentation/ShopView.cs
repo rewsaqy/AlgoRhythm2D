@@ -21,9 +21,12 @@ namespace AlgoRhythm.Game.Presentation
         private TextMesh _hint;
         private readonly TextMesh[] _rows = new TextMesh[4];
         private readonly string[] _lastRows = new string[4];
+        private readonly Vector3[] _basePos = new Vector3[4];
         private int _lastBits;
         private int _selected;
         private bool _open;
+        private float _animStart;
+        private bool _animating;
 
         public bool IsOpen => _open;
 
@@ -44,13 +47,25 @@ namespace AlgoRhythm.Game.Presentation
             {
                 UiTypography.Style(_rows[i], 36, 0.075f, UiTypography.Ink,
                     TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
+                if (_rows[i] != null)
+                {
+                    _basePos[i] = _rows[i].transform.localPosition;
+                }
             }
             UiTypography.Style(_hint, 28, 0.065f, UiTypography.Dim,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
-            if (_title != null) _title.text = "SHOP PHASE";
-            if (_hint != null) _hint.text = "ATAS/BAWAH pilih dan ENTER beli / lanjut";
+            if (_title != null)
+            {
+                _title.text = " ###  # #  ###  ####\n"
+                    + "#     # #  #  # #  #\n"
+                    + " ###  ###  #  # ####\n"
+                    + "   #  # #  #  # #\n"
+                    + " ###  # #  ###  #";
+            }
+            if (_hint != null) _hint.text = "ATAS/BAWAH pilih · ENTER beli / lanjut";
             gameObject.SetActive(false);
             _open = false;
+            _animating = false;
         }
 
         public void Show()
@@ -58,12 +73,15 @@ namespace AlgoRhythm.Game.Presentation
             _open = true;
             _selected = 0;
             gameObject.SetActive(true);
+            _animStart = Time.unscaledTime;
+            _animating = true;
             Repaint();
         }
 
         public void Hide()
         {
             _open = false;
+            _animating = false;
             gameObject.SetActive(false);
         }
 
@@ -83,6 +101,8 @@ namespace AlgoRhythm.Game.Presentation
             {
                 return;
             }
+
+            UpdateEntrance();
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
@@ -107,6 +127,59 @@ namespace AlgoRhythm.Game.Presentation
             }
         }
 
+        private static readonly string[] SlotIcons = { "[+]", "(O)", "[>>]", "[->]" };
+
+        /// <summary>
+        /// Stepped slide-in per row (retro judder like the main menu):
+        /// odd rows sweep from the left, even from the right, staggered.
+        /// </summary>
+        private void UpdateEntrance()
+        {
+            if (!_animating)
+            {
+                return;
+            }
+
+            const float slideSeconds = 0.35f;
+            const int steps = 5;
+            const float stagger = 0.07f;
+            const float travel = 7f;
+
+            bool done = true;
+            float now = Time.unscaledTime;
+            for (int i = 0; i < _rows.Length; i++)
+            {
+                if (_rows[i] == null)
+                {
+                    continue;
+                }
+
+                float t = Mathf.Clamp01((now - _animStart - i * stagger) / slideSeconds);
+                if (t < 1f)
+                {
+                    done = false;
+                }
+
+                float stepped = Mathf.Floor(t * steps) / steps;
+                float side = (i % 2 == 0) ? -1f : 1f;
+                Vector3 basePos = _basePos[i];
+                basePos.x += side * (1f - stepped) * travel;
+                _rows[i].transform.localPosition = basePos;
+            }
+
+            if (done)
+            {
+                _animating = false;
+                for (int i = 0; i < _rows.Length; i++)
+                {
+                    if (_rows[i] != null)
+                    {
+                        _rows[i].transform.localPosition = _basePos[i];
+                    }
+                }
+            }
+        }
+
         private void Repaint()
         {
             if (_bits != null)
@@ -121,7 +194,7 @@ namespace AlgoRhythm.Game.Presentation
                     continue;
                 }
 
-                _rows[i].text = (i == _selected ? "▶ " : "  ") + _lastRows[i];
+                _rows[i].text = (i == _selected ? "▶ " : "  ") + SlotIcons[i] + " " + _lastRows[i];
                 _rows[i].color = i == _selected ? UiTypography.Info : UiTypography.Ink;
             }
         }

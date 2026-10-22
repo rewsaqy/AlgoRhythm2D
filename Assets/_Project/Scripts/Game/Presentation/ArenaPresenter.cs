@@ -261,17 +261,17 @@ namespace AlgoRhythm.Game.Presentation
         }
 
         /// <summary>
-        /// Armor feedback: cracked Heavy shrinks to normal size with a CRACK
-        /// callout. No-op for unknown or resolved ids.
+        /// Armor feedback: shows remaining pips (◆2 → ◆1) and shrinks the
+        /// Heavy to normal size once cracked. No-op for unknown/resolved ids.
         /// </summary>
-        public void SetArmorVisual(int threatId, bool cracked)
+        public void SetArmorVisual(int threatId, int remaining, int total)
         {
-            if (!cracked || !_activeThreats.TryGetValue(threatId, out ThreatView view))
+            if (!_activeThreats.TryGetValue(threatId, out ThreatView view))
             {
                 return;
             }
 
-            view.SetArmorCracked();
+            view.SetArmor(remaining, total);
         }
 
         /// <summary>

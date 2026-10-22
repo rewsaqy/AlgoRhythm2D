@@ -26,6 +26,8 @@ namespace AlgoRhythm.Game.Presentation
         private MeshFilter _markerMesh;
         private static readonly System.Collections.Generic.Dictionary<string, Mesh> MeshCache =
             new System.Collections.Generic.Dictionary<string, Mesh>();
+        private int _armorLeft = -1;
+        private int _armorTotal = 2;
         private ThreatEvent _threat;
         private bool _visible;
         private float _hideAt;
@@ -87,15 +89,6 @@ namespace AlgoRhythm.Game.Presentation
             _hideAt = 0f;
             gameObject.SetActive(true);
 
-            Transform marker = transform.Find("Marker");
-            if (marker != null)
-            {
-                // Decoys read as a diamond, never by colour alone.
-                marker.localRotation = threat.Kind == ThreatKind.AdwareDecoy
-                    ? Quaternion.Euler(0f, 0f, 45f)
-                    : Quaternion.identity;
-            }
-
             ApplyKindPose();
             SetRing(_travelMs, 70.0, 130.0);
             SetBuffered(false);
@@ -105,9 +98,32 @@ namespace AlgoRhythm.Game.Presentation
         private void ApplyKindPose()
         {
             // Distinct silhouettes from built-in meshes (no new assets):
-            // shooter = flat quad, marcher = capsule trooper, heavy = big
+            // shooter = flat quad, marcher = capsule trooper aligned to its
+            // lane (E/W lie flat so they never read upside-down), heavy = big
             // cube, sleeper = sphere pod, holder = long cube bar. Decoy stays
             // a rotated diamond quad; labels always spell the kind too.
+            Transform marker = transform.Find("Marker");
+            if (marker != null)
+            {
+                if (_threat.Kind == ThreatKind.AdwareDecoy)
+                {
+                    // Decoys read as a diamond, never by colour alone.
+                    marker.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                }
+                else if (_threat.Kind == ThreatKind.Marcher)
+                {
+                    bool sideways = _threat.Direction == Direction.East
+                        || _threat.Direction == Direction.West;
+                    marker.localRotation = sideways
+                        ? Quaternion.Euler(0f, 0f, 90f)
+                        : Quaternion.identity;
+                }
+                else
+                {
+                    marker.localRotation = Quaternion.identity;
+                }
+            }
+
             if (_markerMesh != null)
             {
                 string meshName = _threat.Kind switch
@@ -135,6 +151,8 @@ namespace AlgoRhythm.Game.Presentation
             {
                 case ThreatKind.Heavy:
                     transform.localScale = new Vector3(1.5f, 1.5f, 1f);
+                    _armorTotal = 2;
+                    _armorLeft = 2;
                     break;
                 case ThreatKind.Holder:
                     transform.localScale = new Vector3(2.2f, 0.8f, 1f);
@@ -145,9 +163,11 @@ namespace AlgoRhythm.Game.Presentation
                     break;
                 case ThreatKind.Marcher:
                     transform.localScale = new Vector3(0.7f, 1.3f, 1f);
+                    _armorLeft = -1;
                     break;
                 default:
                     transform.localScale = Vector3.one;
+                    _armorLeft = -1;
                     break;
             }
         }
@@ -198,7 +218,7 @@ namespace AlgoRhythm.Game.Presentation
             string prefix = _threat.Kind switch
             {
                 ThreatKind.Marcher => "≡",
-                ThreatKind.Heavy => "◆",
+                ThreatKind.Heavy => _armorLeft >= 0 ? $"◆{_armorLeft}" : "◆",
                 ThreatKind.Holder => "▬",
                 _ => string.Empty,
             };
@@ -214,11 +234,16 @@ namespace AlgoRhythm.Game.Presentation
             _bannerUntil = Time.unscaledTime + Mathf.Max(0.01f, seconds);
         }
 
-        /// <summary>Armor cracked: shrink to normal size + CRACK callout.</summary>
-        public void SetArmorCracked()
+        /// <summary>Armor state: shrink to normal when cracked + CRACK callout.</summary>
+        public void SetArmor(int remaining, int total)
         {
-            transform.localScale = Vector3.one;
-            SetBanner("CRACK", 0.8f);
+            _armorTotal = Mathf.Max(1, total);
+            _armorLeft = Mathf.Clamp(remaining, 0, _armorTotal);
+            transform.localScale = _armorLeft > 1 ? new Vector3(1.5f, 1.5f, 1f) : Vector3.one;
+            if (_armorLeft < _armorTotal)
+            {
+                SetBanner("CRACK", 0.8f);
+            }
         }
 
         /// <summary>Hold-note sustain readout, called every tick while held.</summary>

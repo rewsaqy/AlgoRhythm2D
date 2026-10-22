@@ -134,7 +134,19 @@ namespace AlgoRhythm.Game.Bootstrap
                 paddleView,
                 shop,
                 config);
+            TutorialDriver tutorial = GetComponentInChildren<TutorialDriver>(true);
+            if (tutorial != null)
+            {
+                tutorial.Initialize(
+                    _director, _combat, config.maxIntegrity, config.startingEnergy);
+                _controller.Tutorial = tutorial;
+                _controller.DeferFirstWave = true;
+            }
             _controller.Start();
+            if (tutorial != null)
+            {
+                tutorial.Begin();
+            }
         }
 
         private void Update()

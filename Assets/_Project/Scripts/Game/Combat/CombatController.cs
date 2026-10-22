@@ -117,6 +117,12 @@ namespace AlgoRhythm.Game.Combat
 
         public bool IsPaused => _paused;
 
+        /// <summary>When set, the tutorial owns boot + W1T (no auto StartWave).</summary>
+        public TutorialDriver Tutorial { get; set; }
+
+        /// <summary>When true, Start() subscribes but waits for an external StartWave.</summary>
+        public bool DeferFirstWave { get; set; }
+
         public void Start()
         {
             if (_started)
@@ -141,7 +147,10 @@ namespace AlgoRhythm.Game.Combat
             }
             _paddleView?.Initialize();
             try { Cursor.lockState = CursorLockMode.Confined; } catch { }
-            _director.StartWave(0);
+            if (!DeferFirstWave)
+            {
+                _director.StartWave(0);
+            }
         }
 
         public void Tick()
@@ -344,8 +353,8 @@ namespace AlgoRhythm.Game.Combat
             _hud.ShowWaveSummary(string.Empty);
             string waveId = _director.ActiveRunner.Data.WaveId;
             _hud.SetStatus($"WAVE {waveId} START");
-            DemoDialogue.LineForWaveStart(index, out string textId, out string line);
-            _hud.ShowDialogue(textId, line);
+            // Dialogue (typewriter panel + one-liners) is owned by the
+            // TutorialDriver through DialogueView; nothing to show here.
             _metronome.Resync();
 
             // Fase 0: validasi pool — fail keras di Editor bila note bisa
@@ -492,6 +501,11 @@ namespace AlgoRhythm.Game.Combat
                     continue;
                 }
                 _active.Add(new ActiveThreat { Threat = threat });
+                if (threat.Kind == ThreatKind.Heavy)
+                {
+                    int armor = ArmorFor(threat.Kind);
+                    _arena.SetArmorVisual(threat.Id, armor, armor);
+                }
             }
 
             if (wave.AllSpawned && wave.IsCleared)
@@ -640,18 +654,22 @@ namespace AlgoRhythm.Game.Combat
 
         private void ApplyHit(ActiveThreat active, TimingGrade grade, string reason, bool blockFlash)
         {
-            int armor = active.Threat.Kind == ThreatKind.Heavy
-                ? Mathf.Max(2, _config.heavyArmorHits)
-                : 1;
+            int armor = ArmorFor(active.Threat.Kind);
             active.HitsTaken++;
             if (active.HitsTaken < armor)
             {
-                _arena.SetArmorVisual(active.Threat.Id, cracked: true);
+                _arena.SetArmorVisual(active.Threat.Id, armor - active.HitsTaken, armor);
                 _paddleView?.Pulse();
                 return;
             }
 
             Resolve(active, grade, reason, blockFlash);
+        }
+
+        /// <summary>Hits to resolve a threat: armor for Heavies, 1 otherwise.</summary>
+        private int ArmorFor(ThreatKind kind)
+        {
+            return kind == ThreatKind.Heavy ? Mathf.Max(2, _config.heavyArmorHits) : 1;
         }
 
         private void StartHold(ActiveThreat active, TimingGrade grade, double inputDsp, TapSource source)
@@ -729,13 +747,11 @@ namespace AlgoRhythm.Game.Combat
             }
 
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
-            int armor = active.Threat.Kind == ThreatKind.Heavy
-                ? Mathf.Max(2, _config.heavyArmorHits)
-                : 1;
+            int armor = ArmorFor(active.Threat.Kind);
             if (active.HitsTaken + 1 < armor)
             {
                 active.HitsTaken++;
-                _arena.SetArmorVisual(active.Threat.Id, cracked: true);
+                _arena.SetArmorVisual(active.Threat.Id, armor - active.HitsTaken, armor);
                 _paddleView?.Pulse();
                 return;
             }
@@ -770,6 +786,13 @@ namespace AlgoRhythm.Game.Combat
 
         private void TryAidaFire(int beat, double now)
         {
+            // The tutorial drill belongs to the player: AIDA holds fire
+            // while the driver owns the active wave.
+            if (Tutorial != null && Tutorial.OwnsWave(_director.ActiveRunner.Data.WaveId))
+            {
+                return;
+            }
+
             CycleAidaFlavor();
 
             ActiveThreat target = FindAidaTarget(beat, now);
@@ -1002,10 +1025,15 @@ namespace AlgoRhythm.Game.Combat
             _hud.SetStatus(lastWave
                 ? "RUN CLEAR — semua wave selesai"
                 : $"WAVE CLEAR {waveId} — semua threat resolved");
-            DemoDialogue.LineForWaveClear(waveId, lastWave, out string textId, out string line);
-            _hud.ShowDialogue(textId, line);
+            // Dialogue (typewriter panel) is owned by the TutorialDriver.
 
             _arena.ClearThreats();
+            if (Tutorial != null && Tutorial.OwnsWave(waveId))
+            {
+                Tutorial.OnWaveCleared();
+                return;
+            }
+
             if (lastWave)
             {
                 _director.Advance();
