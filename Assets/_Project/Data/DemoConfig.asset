@@ -28,6 +28,7 @@ MonoBehaviour:
   enableCodePanel: 0
   shakePerfect: 1
   shakeDestroy: 0.5
+  shakeDamage: 0.8
   shakeDecayPerSecond: 2.5
   shakeMaxOffset: 0.2
   aidaFireEveryBeats: 4

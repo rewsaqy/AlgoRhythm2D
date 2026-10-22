@@ -241,6 +241,7 @@ namespace AlgoRhythm.Game.Combat
             _arena.SetShieldPose(
                 _shield.CurrentAngle(now),
                 ArenaPresenter.DirectionCode(_shield.NearestSlot(now)));
+            _arena.SetBeatPulse(beatPhase);
         }
 
         public void TogglePause()
@@ -834,6 +835,12 @@ namespace AlgoRhythm.Game.Combat
                 _shake.AddTrauma(grade == TimingGrade.Perfect
                     ? _config.shakePerfect
                     : _config.shakeDestroy);
+            }
+            else if (damage > 0)
+            {
+                // Damage feedback: shake here; the red flash listens to
+                // CombatState.IntegrityChanged, so no new wiring is needed.
+                _shake.AddTrauma(_config.shakeDamage);
             }
         }
 

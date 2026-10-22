@@ -79,6 +79,17 @@ namespace AlgoRhythm.Game.Bootstrap
             metronome.Initialize(clock);
             sfx.Initialize(clock);
             cameraShake.Initialize(config.shakeDecayPerSecond, config.shakeMaxOffset);
+            DamageFlashView damageFlash = cameraShake.GetComponentInChildren<DamageFlashView>(true);
+            if (damageFlash != null)
+            {
+                damageFlash.Initialize(_combat);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "DamageFlashView missing on Main Camera; damage flash is silent.",
+                    cameraShake);
+            }
             aidaTower.Initialize(clock, _clockSource);
             input.Initialize(_clockSource);
             if (config.enableCodePanel)

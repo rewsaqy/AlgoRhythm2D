@@ -36,6 +36,7 @@ namespace AlgoRhythm.Game.Config
         [Header("Camera Shake")]
         [Min(0.0f)] public float shakePerfect = 1.0f;
         [Min(0.0f)] public float shakeDestroy = 0.5f;
+        [Min(0.0f)] public float shakeDamage = 0.8f;
         [Min(0.0f)] public float shakeDecayPerSecond = 2.5f;
         [Min(0.0f)] public float shakeMaxOffset = 0.2f;
 

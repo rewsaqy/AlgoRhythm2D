@@ -41,11 +41,25 @@ namespace AlgoRhythm.Game.Presentation
         private double _perfectMs = 70.0;
         private double _goodMs = 130.0;
 
+        [Header("Beat pulse [U] — Core breathes on the DSP beat")]
+        [Tooltip("Skala denyut Core tepat di beat; 0 = mati.")]
+        [Range(0f, 0.2f)] [SerializeField] private float beatPulseAmp = 0.04f;
+
+        private Transform _core;
+        private Vector3 _coreBaseScale = Vector3.one;
+
         public void Initialize(double perfectMs, double goodMs)
         {
             _perfectMs = perfectMs;
             _goodMs = goodMs;
             _gradeLabel = FindText("Grade");
+
+            Transform core = transform.Find("Core");
+            if (core != null)
+            {
+                _core = core;
+                _coreBaseScale = core.localScale;
+            }
 
             Transform threatsRoot = transform.Find("Threats");
             if (threatsRoot != null)
@@ -247,6 +261,23 @@ namespace AlgoRhythm.Game.Presentation
             _ruleActiveMask = activeMask;
             _rulePendingMask = pendingMask;
             ApplyRuleGuards(Time.unscaledTime);
+        }
+
+        /// <summary>
+        /// Global beat pulse: the Core breathes exactly on the DSP beat
+        /// (same decay math as the threat approach pop). Called every tick
+        /// with the DSP beat phase; frozen while paused. Pure presentation.
+        /// </summary>
+        public void SetBeatPulse(double beatPhase)
+        {
+            if (_core == null || beatPulseAmp <= 0f)
+            {
+                return;
+            }
+
+            float pop = Mathf.Exp(-6f * Mathf.Clamp01((float)beatPhase));
+            float scale = 1f + beatPulseAmp * pop;
+            _core.localScale = _coreBaseScale * scale;
         }
 
         public void ShowInputRejected(string reason)
