@@ -23,6 +23,12 @@ namespace AlgoRhythm.Game.Input
 
         public event Action<Direction, double> ShieldPressed;
 
+        /// <summary>
+        /// Fired on release (InputAction canceled), timestamped on the same
+        /// single DSP path. Used by hold notes; press-only play ignores it.
+        /// </summary>
+        public event Action<Direction, double> ShieldReleased;
+
         public event Action PausePressed;
 
         public bool IsBound => _bound;
@@ -70,10 +76,14 @@ namespace AlgoRhythm.Game.Input
             _shieldWest = _rhythmMap.FindAction("ShieldWest", throwIfNotFound: true);
             _pause = _rhythmMap.FindAction("Pause", throwIfNotFound: true);
 
-            _shieldNorth.performed += OnShieldNorth;
-            _shieldEast.performed += OnShieldEast;
-            _shieldSouth.performed += OnShieldSouth;
-            _shieldWest.performed += OnShieldWest;
+            _shieldNorth.performed += OnShieldNorthPressed;
+            _shieldEast.performed += OnShieldEastPressed;
+            _shieldSouth.performed += OnShieldSouthPressed;
+            _shieldWest.performed += OnShieldWestPressed;
+            _shieldNorth.canceled += OnShieldNorthReleased;
+            _shieldEast.canceled += OnShieldEastReleased;
+            _shieldSouth.canceled += OnShieldSouthReleased;
+            _shieldWest.canceled += OnShieldWestReleased;
             _pause.performed += OnPause;
 
             _rhythmMap.Enable();
@@ -87,26 +97,38 @@ namespace AlgoRhythm.Game.Input
                 return;
             }
 
-            _shieldNorth.performed -= OnShieldNorth;
-            _shieldEast.performed -= OnShieldEast;
-            _shieldSouth.performed -= OnShieldSouth;
-            _shieldWest.performed -= OnShieldWest;
+            _shieldNorth.performed -= OnShieldNorthPressed;
+            _shieldEast.performed -= OnShieldEastPressed;
+            _shieldSouth.performed -= OnShieldSouthPressed;
+            _shieldWest.performed -= OnShieldWestPressed;
+            _shieldNorth.canceled -= OnShieldNorthReleased;
+            _shieldEast.canceled -= OnShieldEastReleased;
+            _shieldSouth.canceled -= OnShieldSouthReleased;
+            _shieldWest.canceled -= OnShieldWestReleased;
             _pause.performed -= OnPause;
             _rhythmMap.Disable();
             _bound = false;
         }
 
-        private void OnShieldNorth(InputAction.CallbackContext context) => Fire(Direction.North);
+        private void OnShieldNorthPressed(InputAction.CallbackContext context) => FirePressed(Direction.North);
 
-        private void OnShieldEast(InputAction.CallbackContext context) => Fire(Direction.East);
+        private void OnShieldEastPressed(InputAction.CallbackContext context) => FirePressed(Direction.East);
 
-        private void OnShieldSouth(InputAction.CallbackContext context) => Fire(Direction.South);
+        private void OnShieldSouthPressed(InputAction.CallbackContext context) => FirePressed(Direction.South);
 
-        private void OnShieldWest(InputAction.CallbackContext context) => Fire(Direction.West);
+        private void OnShieldWestPressed(InputAction.CallbackContext context) => FirePressed(Direction.West);
+
+        private void OnShieldNorthReleased(InputAction.CallbackContext context) => FireReleased(Direction.North);
+
+        private void OnShieldEastReleased(InputAction.CallbackContext context) => FireReleased(Direction.East);
+
+        private void OnShieldSouthReleased(InputAction.CallbackContext context) => FireReleased(Direction.South);
+
+        private void OnShieldWestReleased(InputAction.CallbackContext context) => FireReleased(Direction.West);
 
         private void OnPause(InputAction.CallbackContext context) => PausePressed?.Invoke();
 
-        private void Fire(Direction direction)
+        private void FirePressed(Direction direction)
         {
             if (_clock == null)
             {
@@ -115,6 +137,17 @@ namespace AlgoRhythm.Game.Input
 
             double inputDsp = _clock.NowDsp;
             ShieldPressed?.Invoke(direction, inputDsp);
+        }
+
+        private void FireReleased(Direction direction)
+        {
+            if (_clock == null)
+            {
+                return;
+            }
+
+            double inputDsp = _clock.NowDsp;
+            ShieldReleased?.Invoke(direction, inputDsp);
         }
     }
 }

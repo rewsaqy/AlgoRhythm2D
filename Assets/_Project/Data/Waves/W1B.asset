@@ -117,6 +117,36 @@ MonoBehaviour:
     spawnBeat: 83
     impactBeat: 88
     baseDamage: 10
+  - kind: 2
+    direction: 0
+    spawnBeat: 90
+    impactBeat: 96
+    baseDamage: 10
+  - kind: 2
+    direction: 0
+    spawnBeat: 93
+    impactBeat: 99
+    baseDamage: 10
+  - kind: 2
+    direction: 0
+    spawnBeat: 96
+    impactBeat: 102
+    baseDamage: 10
+  - kind: 3
+    direction: 1
+    spawnBeat: 96
+    impactBeat: 104
+    baseDamage: 15
+  - kind: 4
+    direction: 2
+    spawnBeat: 100
+    impactBeat: 110
+    baseDamage: 10
+  - kind: 5
+    direction: 3
+    spawnBeat: 104
+    impactBeat: 112
+    baseDamage: 12
   ruleUnlocks:
   - WHEN_PROJECTILE
   - WHEN_BEAT

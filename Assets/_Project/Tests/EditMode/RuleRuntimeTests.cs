@@ -207,5 +207,25 @@ namespace AlgoRhythm.Tests
             Assert.IsFalse(runtime.HasPendingRule);
             Assert.IsTrue(runtime.HasActiveRule);
         }
+
+        [Test]
+        public void NewDangerousKinds_CountAsProjectiles()
+        {
+            var runtime = CommittedAtBeat(EastRule());
+            var kinds = new[]
+            {
+                ThreatKind.Marcher, ThreatKind.Heavy,
+                ThreatKind.Sleeper, ThreatKind.Holder,
+            };
+
+            foreach (ThreatKind kind in kinds)
+            {
+                // Fresh runtime per kind: a fire starts the cooldown clock.
+                var fresh = CommittedAtBeat(EastRule());
+                RuleFireDecision decision = fresh.EvaluateThreat(
+                    Threat(id: (int)kind + 10, kind: kind), 3.6, 6, false, out RuleFired fired);
+                Assert.AreEqual(RuleFireDecision.Fire, decision, kind.ToString());
+            }
+        }
     }
 }

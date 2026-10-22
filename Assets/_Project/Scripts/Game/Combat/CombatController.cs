@@ -56,6 +56,10 @@ namespace AlgoRhythm.Game.Combat
             public bool Resolved;
             public bool ImpactEvaluated;
             public double? BufferedInputDsp;
+            public int HitsTaken;
+            public bool Holding;
+            public TimingGrade HoldGrade;
+            public double HoldStartDsp;
         }
 
         public CombatController(
@@ -110,6 +114,7 @@ namespace AlgoRhythm.Game.Combat
             _lastBeat = int.MinValue;
 
             _input.ShieldPressed += HandleShieldPressed;
+            _input.ShieldReleased += HandleShieldReleased;
             _input.PausePressed += TogglePause;
             _rules.RuleCommitted += HandleRuleCommitted;
             _director.WaveStarted += OnWaveStarted;
@@ -193,11 +198,25 @@ namespace AlgoRhythm.Game.Combat
                 {
                     // The auto-shield decision runs exactly once, at impact;
                     // later manual presses use the immediate input path.
+                    // Hold notes skip impact judging: the press starts the
+                    // hold and the tail beat finishes it.
                     active.ImpactEvaluated = true;
-                    ResolveAtImpact(active);
+                    if (active.Threat.Kind != ThreatKind.Holder)
+                    {
+                        ResolveAtImpact(active);
+                    }
                 }
 
-                if (!active.Resolved && now > impactDsp + _judge.GoodWindowMs / 1000.0)
+                SyncArchetypeVisual(active, now, beat);
+
+                double timeoutDsp = impactDsp + _judge.GoodWindowMs / 1000.0;
+                if (active.Threat.Kind == ThreatKind.Holder)
+                {
+                    timeoutDsp = _clock.BeatTime(
+                        active.Threat.ImpactBeat + Mathf.Max(1, _config.holdBeats));
+                }
+
+                if (!active.Resolved && now > timeoutDsp)
                 {
                     ResolveTimeout(active);
                 }
@@ -224,7 +243,7 @@ namespace AlgoRhythm.Game.Combat
                     continue;
                 }
 
-                Resolve(target, TimingGrade.Good, "aida", blockFlash: false);
+                ApplyHit(target, TimingGrade.Good, "aida", blockFlash: false);
             }
 
             if (_combat.Integrity <= 0)
@@ -296,6 +315,7 @@ namespace AlgoRhythm.Game.Combat
         public void Dispose()
         {
             _input.ShieldPressed -= HandleShieldPressed;
+            _input.ShieldReleased -= HandleShieldReleased;
             _input.PausePressed -= TogglePause;
             _rules.RuleCommitted -= HandleRuleCommitted;
             _director.WaveStarted -= OnWaveStarted;
@@ -573,8 +593,102 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
+            if (candidate.Threat.Kind == ThreatKind.Holder && grade != TimingGrade.Miss)
+            {
+                StartHold(candidate, grade, inputDsp);
+                return;
+            }
+
             _arena.PulseShield();
-            Resolve(candidate, grade, "input");
+            ApplyHit(candidate, grade, "input", blockFlash: true);
+        }
+
+        private void HandleShieldReleased(Direction direction, double inputDsp)
+        {
+            if (!_started || _paused)
+            {
+                return;
+            }
+
+            // Only the matching lane ends its hold; other releases are
+            // ignored. A hold broken before the tail is a Miss.
+            for (int index = 0; index < _active.Count; index++)
+            {
+                ActiveThreat active = _active[index];
+                if (active.Resolved || !active.Holding
+                    || active.Threat.Direction != direction)
+                {
+                    continue;
+                }
+
+                active.Holding = false;
+                Resolve(active, TimingGrade.Miss, "released");
+                return;
+            }
+        }
+
+        /// <summary>
+        /// One successful hit on a threat. Heavy armor absorbs hits until
+        /// the configured count, then resolves normally; everything else
+        /// resolves immediately. One final result per threat either way.
+        /// </summary>
+        private void ApplyHit(ActiveThreat active, TimingGrade grade, string reason, bool blockFlash)
+        {
+            int armor = active.Threat.Kind == ThreatKind.Heavy
+                ? Mathf.Max(2, _config.heavyArmorHits)
+                : 1;
+            active.HitsTaken++;
+            if (active.HitsTaken < armor)
+            {
+                _arena.SetArmorVisual(active.Threat.Id, cracked: true);
+                _arena.PulseShield();
+                return;
+            }
+
+            Resolve(active, grade, reason, blockFlash);
+        }
+
+        /// <summary>Begins a hold note: shield must stay held until the tail.</summary>
+        private void StartHold(ActiveThreat active, TimingGrade grade, double inputDsp)
+        {
+            active.Holding = true;
+            active.HoldGrade = grade;
+            active.HoldStartDsp = inputDsp;
+            _arena.PulseShield();
+            _arena.FlashShieldBlock(active.Threat.Direction, 1.2f, 0.25f);
+        }
+
+        /// <summary>
+        /// Per-tick archetype sync: sleeper armed state (2 beats before the
+        /// dash) and holder sustain progress + tail completion.
+        /// </summary>
+        private void SyncArchetypeVisual(ActiveThreat active, double now, int beat)
+        {
+            if (active.Resolved)
+            {
+                return;
+            }
+
+            if (active.Threat.Kind == ThreatKind.Sleeper)
+            {
+                bool armed = active.Threat.ImpactBeat - beat <= 2;
+                _arena.SetSleeperVisual(active.Threat.Id, armed);
+                return;
+            }
+
+            if (active.Threat.Kind == ThreatKind.Holder && active.Holding)
+            {
+                int tailBeat = active.Threat.ImpactBeat + Mathf.Max(1, _config.holdBeats);
+                double tailDsp = _clock.BeatTime(tailBeat);
+                double span = Math.Max(0.01, tailDsp - active.HoldStartDsp);
+                float progress = Mathf.Clamp01((float)((now - active.HoldStartDsp) / span));
+                _arena.SetHoldVisual(active.Threat.Id, true, progress);
+                if (now >= tailDsp)
+                {
+                    active.Holding = false;
+                    Resolve(active, active.HoldGrade, "hold");
+                }
+            }
         }
 
         private void ResolveManual(ActiveThreat active, TimingGrade grade)
@@ -588,8 +702,14 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
+            if (active.Threat.Kind == ThreatKind.Holder && grade != TimingGrade.Miss)
+            {
+                StartHold(active, grade, _clockSource.NowDsp);
+                return;
+            }
+
             _arena.PulseShield();
-            Resolve(active, grade, "input");
+            ApplyHit(active, grade, "input", blockFlash: true);
         }
 
         private void ResolveAuto(ActiveThreat active, RuleFired fired)
@@ -608,12 +728,24 @@ namespace AlgoRhythm.Game.Combat
             }
 
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
+            int armor = active.Threat.Kind == ThreatKind.Heavy
+                ? Mathf.Max(2, _config.heavyArmorHits)
+                : 1;
+            if (active.HitsTaken + 1 < armor)
+            {
+                active.HitsTaken++;
+                _arena.SetArmorVisual(active.Threat.Id, cracked: true);
+                _arena.PulseShield();
+                return;
+            }
+
+            active.HitsTaken++;
             if (_combat.ResolveThreat(active.Threat, TimingGrade.Good, fromRule: true, damage: 0))
             {
                 // Auto block: the lane shield GO pops (Set A independence
                 // reads here) alongside the grade text.
                 _arena.FlashShieldBlock(active.Threat.Direction, 1.6f, 0.35f);
-                _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true);
+                _arena.ResolveThreat(active.Threat.Id, TimingGrade.Good, correctDirection: true, destroyed: true);
                 _sfx.PlayDestroy();
                 _shake.AddTrauma(_config.shakeDestroy);
             }
@@ -629,7 +761,7 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            _arena.ResolveDecoyView(active.Threat.Id, shielded);
+            _arena.ResolveDecoyView(active.Threat.Id, shielded, destroyed: shielded);
             if (shielded)
             {
                 _sfx.PlayDestroy();
@@ -705,7 +837,7 @@ namespace AlgoRhythm.Game.Combat
             for (int index = 0; index < _active.Count; index++)
             {
                 ActiveThreat active = _active[index];
-                if (active.Resolved || active.Threat.Kind != ThreatKind.StraightShooter)
+                if (active.Resolved || active.Threat.Kind == ThreatKind.AdwareDecoy)
                 {
                     continue;
                 }
@@ -804,7 +936,7 @@ namespace AlgoRhythm.Game.Combat
             }
 
             int damage = 0;
-            if (grade == TimingGrade.Miss && active.Threat.Kind == ThreatKind.StraightShooter)
+            if (grade == TimingGrade.Miss && active.Threat.Kind != ThreatKind.AdwareDecoy)
             {
                 damage = active.Threat.BaseDamage;
             }
@@ -828,7 +960,7 @@ namespace AlgoRhythm.Game.Combat
                     grade == TimingGrade.Perfect ? 0.45f : 0.35f);
             }
 
-            _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: success);
+            _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: success, destroyed: grade != TimingGrade.Miss);
             if (grade != TimingGrade.Miss)
             {
                 _sfx.PlayDestroy();

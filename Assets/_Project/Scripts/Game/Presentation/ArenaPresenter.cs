@@ -142,7 +142,6 @@ namespace AlgoRhythm.Game.Presentation
 
             view.Show(threat, travelMs);
             view.transform.localPosition = (Vector3)(DirectionVector(threat.Direction) * SpawnDistance(threat.Direction));
-            view.transform.localScale = Vector3.one;
             _activeThreats[threat.Id] = view;
         }
 
@@ -175,7 +174,7 @@ namespace AlgoRhythm.Game.Presentation
             view.SetRing(msToImpact, _perfectMs, _goodMs);
         }
 
-        public void ResolveThreat(int threatId, TimingGrade grade, bool correctDirection)
+        public void ResolveThreat(int threatId, TimingGrade grade, bool correctDirection, bool destroyed)
         {
             if (!_activeThreats.TryGetValue(threatId, out ThreatView view))
             {
@@ -184,11 +183,11 @@ namespace AlgoRhythm.Game.Presentation
 
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
-            view.Resolve(grade, CoreLocalPosition(), destroyed: grade != TimingGrade.Miss);
+            view.Resolve(grade, CoreLocalPosition(), destroyed);
             ShowGrade(grade, null);
         }
 
-        public void ResolveDecoyView(int threatId, bool shielded)
+        public void ResolveDecoyView(int threatId, bool shielded, bool destroyed)
         {
             if (!_activeThreats.TryGetValue(threatId, out ThreatView view))
             {
@@ -196,8 +195,7 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             _activeThreats.Remove(threatId);
-            view.transform.localScale = Vector3.one;
-            view.ResolveDecoy(shielded, CoreLocalPosition(), destroyed: shielded);
+            view.ResolveDecoy(shielded, CoreLocalPosition(), destroyed);
             // Notes carry no text, so the decoy outcome reads here instead.
             ShowDecoyFeedback(shielded);
         }
@@ -254,6 +252,46 @@ namespace AlgoRhythm.Game.Presentation
             {
                 block.FlashBlock(punch, holdSeconds);
             }
+        }
+
+        /// <summary>
+        /// Armor feedback: cracked Heavy shrinks to normal size with a CRACK
+        /// callout. No-op for unknown or resolved ids.
+        /// </summary>
+        public void SetArmorVisual(int threatId, bool cracked)
+        {
+            if (!cracked || !_activeThreats.TryGetValue(threatId, out ThreatView view))
+            {
+                return;
+            }
+
+            view.SetArmorCracked();
+        }
+
+        /// <summary>
+        /// Hold-note sustain readout, driven every tick while held.
+        /// </summary>
+        public void SetHoldVisual(int threatId, bool holding, float progress)
+        {
+            if (!holding || !_activeThreats.TryGetValue(threatId, out ThreatView view))
+            {
+                return;
+            }
+
+            view.SetHolding(progress);
+        }
+
+        /// <summary>
+        /// Sleeper telegraph state; shape + text change, never colour alone.
+        /// </summary>
+        public void SetSleeperVisual(int threatId, bool armed)
+        {
+            if (!_activeThreats.TryGetValue(threatId, out ThreatView view))
+            {
+                return;
+            }
+
+            view.SetSleeperArmed(armed);
         }
 
         /// <summary>

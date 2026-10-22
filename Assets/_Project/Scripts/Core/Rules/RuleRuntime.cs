@@ -220,9 +220,10 @@ namespace AlgoRhythm.Core.Rules
             {
                 case Condition.WhenProjectile:
                     // Anything flying counts as a projectile, which is exactly
-                    // why a decoy fools the rule (Set A).
-                    return threat.Kind == ThreatKind.StraightShooter
-                           || threat.Kind == ThreatKind.AdwareDecoy;
+                    // why a decoy fools the rule (Set A). All live kinds —
+                    // shooters, marchers, heavies, sleepers, holders and the
+                    // decoy itself — are incoming threats.
+                    return true;
                 case Condition.WhenBeat:
                     return true;
                 default:

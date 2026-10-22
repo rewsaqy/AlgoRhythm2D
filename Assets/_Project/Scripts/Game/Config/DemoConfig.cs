@@ -33,6 +33,12 @@ namespace AlgoRhythm.Game.Config
         [Header("Code Panel")]
         public bool enableCodePanel = false;
 
+        [Header("New archetypes [U] — owner decision 2026-10-22")]
+        [Tooltip("Hold-note sustain length in beats (Holder).")]
+        [Min(1)] public int holdBeats = 4;
+        [Tooltip("Successful hits to crack a Heavy (first cracks armor, last resolves).")]
+        [Min(2)] public int heavyArmorHits = 2;
+
         [Header("Camera Shake")]
         [Min(0.0f)] public float shakePerfect = 1.0f;
         [Min(0.0f)] public float shakeDestroy = 0.5f;

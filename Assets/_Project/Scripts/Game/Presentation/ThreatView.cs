@@ -44,8 +44,13 @@ namespace AlgoRhythm.Game.Presentation
         private float _dashUntil;
         private Vector3 _dashFrom;
         private Vector3 _dashTarget;
+        private Vector3 _dashFromScale;
         private bool _shattering;
         private float _shatterUntil;
+        private Vector3 _shatterFrom;
+        private string _banner = string.Empty;
+        private float _bannerUntil;
+        private bool _sleeperArmed;
 
         public bool IsAvailable => !gameObject.activeSelf;
 
@@ -86,8 +91,30 @@ namespace AlgoRhythm.Game.Presentation
                     : Quaternion.identity;
             }
 
+            ApplyKindPose();
             SetRing(_travelMs, 70.0, 130.0);
             SetBuffered(false);
+        }
+
+        /// <summary>Base pose per archetype; pooled views reset here.</summary>
+        private void ApplyKindPose()
+        {
+            switch (_threat.Kind)
+            {
+                case ThreatKind.Heavy:
+                    transform.localScale = new Vector3(1.5f, 1.5f, 1f);
+                    break;
+                case ThreatKind.Holder:
+                    transform.localScale = new Vector3(2.2f, 0.8f, 1f);
+                    break;
+                case ThreatKind.Sleeper:
+                    transform.localScale = Vector3.one * 0.9f;
+                    SetSleeperArmed(false);
+                    break;
+                default:
+                    transform.localScale = Vector3.one;
+                    break;
+            }
         }
 
         public void SetBuffered(bool buffered)
@@ -97,6 +124,15 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            if (!string.IsNullOrEmpty(_banner) && Time.unscaledTime < _bannerUntil)
+            {
+                _label.text = _banner;
+                _label.color = UiTypography.Info;
+                return;
+            }
+
+            _banner = string.Empty;
+
             if (_threat.Kind == ThreatKind.AdwareDecoy)
             {
                 _label.text = buffered ? "? DECOY\n+BUFFER" : "? DECOY";
@@ -104,10 +140,64 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            if (_threat.Kind == ThreatKind.Sleeper)
+            {
+                // Shape + text differ per state, never colour alone.
+                Transform marker = transform.Find("Marker");
+                if (marker != null)
+                {
+                    marker.localRotation = _sleeperArmed
+                        ? Quaternion.Euler(0f, 0f, 45f)
+                        : Quaternion.identity;
+                }
+
+                _label.text = _sleeperArmed
+                    ? (buffered ? "▲ !! DASH\n+BUFFER" : "▲ !! DASH")
+                    : (buffered ? "○ Zzz\n+BUFFER" : "○ Zzz");
+                _label.color = _sleeperArmed ? UiTypography.Warn : UiTypography.Dim;
+                return;
+            }
+
             string code = ArenaPresenter.DirectionCode(_threat.Direction);
             string glyph = ArenaPresenter.DirectionGlyph(_threat.Direction);
-            _label.text = buffered ? $"{glyph} {code}\n+BUFFER" : $"{glyph} {code}";
+            string prefix = _threat.Kind switch
+            {
+                ThreatKind.Marcher => "≡",
+                ThreatKind.Heavy => "◆",
+                ThreatKind.Holder => "▬",
+                _ => string.Empty,
+            };
+            string head = string.IsNullOrEmpty(prefix) ? $"{glyph} {code}" : $"{prefix} {glyph} {code}";
+            _label.text = buffered ? $"{head}\n+BUFFER" : head;
             _label.color = buffered ? UiTypography.Info : UiTypography.Ink;
+        }
+
+        /// <summary>Transient banner (CRACK/HOLD) that wins over the label.</summary>
+        public void SetBanner(string text, float seconds)
+        {
+            _banner = text ?? string.Empty;
+            _bannerUntil = Time.unscaledTime + Mathf.Max(0.01f, seconds);
+        }
+
+        /// <summary>Armor cracked: shrink to normal size + CRACK callout.</summary>
+        public void SetArmorCracked()
+        {
+            transform.localScale = Vector3.one;
+            SetBanner("CRACK", 0.8f);
+        }
+
+        /// <summary>Hold-note sustain readout, called every tick while held.</summary>
+        public void SetHolding(float progress)
+        {
+            float p = Mathf.Clamp01(progress);
+            transform.localScale = new Vector3(Mathf.Lerp(2.2f, 1f, p), 0.8f, 1f);
+            SetBanner($"HOLD {(int)(p * 100f)}%", 0.3f);
+        }
+
+        /// <summary>Sleeper telegraph state; shape + text change with colour.</summary>
+        public void SetSleeperArmed(bool armed)
+        {
+            _sleeperArmed = armed;
         }
 
         public void Resolve(TimingGrade grade, Vector3 coreLocalPosition, bool destroyed)
@@ -192,10 +282,12 @@ namespace AlgoRhythm.Game.Presentation
         /// </summary>
         private void StartDash(Vector3 coreLocalPosition)
         {
+            _dashing = true;
+            _shattering = false;
             _dashFrom = transform.localPosition;
+            _dashFromScale = transform.localScale;
             _dashTarget = coreLocalPosition;
             _dashUntil = Time.unscaledTime + Mathf.Max(0.01f, dashSeconds);
-            _dashing = true;
         }
 
         /// <summary>
@@ -207,6 +299,7 @@ namespace AlgoRhythm.Game.Presentation
         {
             _dashing = false;
             _shattering = true;
+            _shatterFrom = transform.localScale;
             _shatterUntil = Time.unscaledTime + Mathf.Max(0.01f, shatterSeconds);
         }
 
@@ -223,8 +316,7 @@ namespace AlgoRhythm.Game.Presentation
 
                 float progress = 1f - remaining / Mathf.Max(0.01f, shatterSeconds);
                 float eased = 1f - (1f - progress) * (1f - progress);
-                float scale = Mathf.Lerp(1f, shatterPeakScale, eased);
-                transform.localScale = new Vector3(scale, scale, 1f);
+                transform.localScale = _shatterFrom * Mathf.Lerp(1f, shatterPeakScale, eased);
             }
             else if (_dashing)
             {
@@ -233,7 +325,7 @@ namespace AlgoRhythm.Game.Presentation
                 {
                     _dashing = false;
                     transform.localPosition = _dashTarget;
-                    transform.localScale = Vector3.one * dashEndScale;
+                    transform.localScale = _dashFromScale * dashEndScale;
                 }
                 else
                 {
@@ -242,7 +334,7 @@ namespace AlgoRhythm.Game.Presentation
                     float eased = progress * progress;
                     transform.localPosition = Vector3.Lerp(_dashFrom, _dashTarget, eased);
                     float scale = Mathf.Lerp(1f, dashEndScale, eased);
-                    transform.localScale = new Vector3(scale, scale, 1f);
+                    transform.localScale = _dashFromScale * scale;
                 }
             }
 

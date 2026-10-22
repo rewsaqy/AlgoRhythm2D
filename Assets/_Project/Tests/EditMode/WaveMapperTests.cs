@@ -51,6 +51,44 @@ namespace AlgoRhythm.Tests
         }
 
         [Test]
+        public void MapsNewKinds_PreservingKindAndBeats()
+        {
+            var definition = Definition();
+            definition.spawnSequence = new[]
+            {
+                new WaveThreatEntry
+                {
+                    kind = ThreatKind.Marcher, direction = Direction.North,
+                    spawnBeat = 90, impactBeat = 96, baseDamage = 10,
+                },
+                new WaveThreatEntry
+                {
+                    kind = ThreatKind.Heavy, direction = Direction.East,
+                    spawnBeat = 96, impactBeat = 104, baseDamage = 15,
+                },
+                new WaveThreatEntry
+                {
+                    kind = ThreatKind.Sleeper, direction = Direction.South,
+                    spawnBeat = 100, impactBeat = 110, baseDamage = 10,
+                },
+                new WaveThreatEntry
+                {
+                    kind = ThreatKind.Holder, direction = Direction.West,
+                    spawnBeat = 104, impactBeat = 112, baseDamage = 12,
+                },
+            };
+
+            Core.Waves.WaveData data = WaveMapper.ToWaveData(definition);
+
+            Assert.AreEqual(4, data.Count);
+            Assert.AreEqual(ThreatKind.Marcher, data.Threats[0].Kind);
+            Assert.AreEqual(ThreatKind.Heavy, data.Threats[1].Kind);
+            Assert.AreEqual(ThreatKind.Sleeper, data.Threats[2].Kind);
+            Assert.AreEqual(ThreatKind.Holder, data.Threats[3].Kind);
+            Assert.AreEqual(112, data.Threats[3].ImpactBeat);
+        }
+
+        [Test]
         public void NullDefinition_Throws()
         {
             Assert.Throws<System.ArgumentNullException>(() => WaveMapper.ToWaveData(null));

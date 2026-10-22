@@ -25,6 +25,8 @@ MonoBehaviour:
   ruleCooldownMs: 1500
   energyRegenEveryBeats: 4
   shieldTransitMs: 320
+  holdBeats: 4
+  heavyArmorHits: 2
   enableCodePanel: 0
   shakePerfect: 1
   shakeDestroy: 0.5
