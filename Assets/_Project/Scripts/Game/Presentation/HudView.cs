@@ -77,6 +77,13 @@ namespace AlgoRhythm.Game.Presentation
             {
                 _status.text = string.Empty;
             }
+
+            if (_stats != null)
+            {
+                // Clear the baked placeholder so stale scene text never
+                // shows on the first frame; LateUpdate rewrites it anyway.
+                _stats.text = string.Empty;
+            }
         }
 
         public void SetStatus(string status)
