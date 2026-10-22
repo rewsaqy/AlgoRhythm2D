@@ -51,18 +51,17 @@ namespace AlgoRhythm.Game.Config
         [Header("Code Panel")]
         public bool enableCodePanel = false;
 
-        [Header("Shop [U] — harga PTS, efek bisa di-stack")]
-        [Tooltip("Besar heal per pembelian.")]
-        [Min(0)] public int shopHealAmount = 25;
-        [Min(0)] public int shopHealCost = 20;
-        [Tooltip("Akurasi AIDA per pembelian.")]
-        [Min(0)] public int shopAccCost = 25;
-        [Tooltip("Kecepatan tembak AIDA per pembelian.")]
-        [Min(0)] public int shopRateCost = 25;
-        [Tooltip("Batas akurasi: hitEvery minimal (tiap N tembakan kena 1).")]
-        [Min(2)] public int shopAccMinHitEvery = 2;
-        [Tooltip("Batas kecepatan: fireEvery minimal (tembak tiap N beat).")]
-        [Min(1)] public int shopRateMinFireEvery = 2;
+        [Header("Shop [U] — popup 2-track, Lv1-5 (owner 2026-10-23)")]
+        [Tooltip("Biaya PTS untuk naik ke level berikutnya. Index = level saat ini (regen 0-4, AIDA 0-4 sebagai level-1).")]
+        public int[] shopUpgradeCosts = { 30, 55, 85, 120, 160 };
+        [Tooltip("Heal tiap wave clear per level regen 0-5. Lv0 = tidak regen.")]
+        public int[] shopRegenPerClear = { 0, 10, 15, 20, 25, 40 };
+        [Tooltip("Akurasi AIDA per level 1-5: tiap N tembakan kena 1.")]
+        public int[] shopAidaHitEvery = { 8, 8, 7, 6, 5, 4 };
+        [Tooltip("Tempo AIDA per level 1-5: tembak tiap N beat.")]
+        public int[] shopAidaFireEvery = { 4, 4, 4, 3, 3, 2 };
+        [Tooltip("Level maksimum tiap track.")]
+        [Min(1)] public int shopMaxLevel = 5;
 
         [Header("New archetypes [U] — owner decision 2026-10-22")]
         [Tooltip("Hold-note sustain length in beats (Holder).")]

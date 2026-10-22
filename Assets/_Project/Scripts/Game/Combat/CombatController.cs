@@ -53,12 +53,21 @@ namespace AlgoRhythm.Game.Combat
         private double _lastPaddleDsp = double.NegativeInfinity;
         private readonly List<AidaShotView> _arrivedShots = new List<AidaShotView>();
 
-        // Shop run state (stackable, reset only on full run restart — never here).
+        // Shop run state: two tracks, Lv1-5 (regen 0-5). PERSISTENT for the
+        // whole run including tutorial/retry; reset only on full restart.
+        // _aidaLevel doubles as the hidden dependency marker the future
+        // boss reads to scale its rhythm (harder if you fed AIDA a lot).
         private bool _inShop;
-        private int _accBought;
-        private int _rateBought;
+        private int _regenLevel;
+        private int _aidaLevel = 1;
         private int _aidaHitEvery;
         private int _aidaFireEvery;
+
+        /// <summary>Hidden dependency marker for the future AIDA boss.</summary>
+        public int AidaLevel => _aidaLevel;
+
+        /// <summary>Player regen level (0 = none).</summary>
+        public int RegenLevel => _regenLevel;
 
         private sealed class ActiveThreat
         {
@@ -132,8 +141,8 @@ namespace AlgoRhythm.Game.Combat
 
             _started = true;
             _lastBeat = int.MinValue;
-            _aidaHitEvery = Mathf.Max(2, _config.aidaHitEveryShots);
-            _aidaFireEvery = Mathf.Max(1, _config.aidaFireEveryBeats);
+            _aidaHitEvery = AidaTable(_config.shopAidaHitEvery, 1, 8);
+            _aidaFireEvery = AidaTable(_config.shopAidaFireEvery, 1, 4);
 
             _input.TapPressed += HandleTapPressed;
             _input.TapReleased += HandleTapReleased;
@@ -1012,6 +1021,13 @@ namespace AlgoRhythm.Game.Combat
             {
                 _combat.AddEnergy(1);
             }
+
+            // Regen track: heal on every wave clear (Lv0 = none).
+            int regen = RegenForLevel(_regenLevel);
+            if (regen > 0)
+            {
+                _combat.Heal(regen);
+            }
             string waveId = _director.ActiveRunner.Data.WaveId;
             bool lastWave = _director.ActiveIndex + 1 >= _director.WaveCount;
             string counts =
@@ -1068,7 +1084,7 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            if (slot == 3)
+            if (slot == ShopView.SlotContinue)
             {
                 _inShop = false;
                 _shop.Hide();
@@ -1079,22 +1095,38 @@ namespace AlgoRhythm.Game.Combat
             BuyShopItem(slot);
         }
 
+        /// <summary>
+        /// Two upgrade tracks, Lv1-5 each. Regen heals on wave clear;
+        /// AIDA gains accuracy + fire rate (and secretly raises the
+        /// dependency marker the future boss will read).
+        /// </summary>
         private void BuyShopItem(int slot)
         {
-            int cost = slot == 0 ? _config.shopHealCost
-                : slot == 1 ? _config.shopAccCost : _config.shopRateCost;
-            if (slot == 1 && _aidaHitEvery <= Mathf.Max(2, _config.shopAccMinHitEvery))
+            int maxLevel = Mathf.Max(1, _config.shopMaxLevel);
+            int cost;
+            bool maxed;
+            if (slot == ShopView.SlotRegen)
             {
-                _hud.SetStatus("AKURASI AIDA sudah MAX");
+                cost = UpgradeCost(_regenLevel);
+                maxed = _regenLevel >= maxLevel;
+            }
+            else if (slot == ShopView.SlotAida)
+            {
+                cost = UpgradeCost(_aidaLevel - 1);
+                maxed = _aidaLevel >= maxLevel;
+            }
+            else
+            {
+                return;
+            }
+
+            if (maxed)
+            {
+                _hud.SetStatus("Sudah MAX");
                 RenderShop();
                 return;
             }
-            if (slot == 2 && _aidaFireEvery <= Mathf.Max(1, _config.shopRateMinFireEvery))
-            {
-                _hud.SetStatus("TEMBAKAN AIDA sudah MAX");
-                RenderShop();
-                return;
-            }
+
             if (!_combat.TrySpendPts(cost))
             {
                 _hud.SetStatus("PTS tidak cukup");
@@ -1102,25 +1134,52 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            if (slot == 0)
+            if (slot == ShopView.SlotRegen)
             {
-                _combat.Heal(_config.shopHealAmount);
+                _regenLevel = Mathf.Min(maxLevel, _regenLevel + 1);
                 _sfx.PlayDestroy();
-            }
-            else if (slot == 1)
-            {
-                _aidaHitEvery = Math.Max(Mathf.Max(2, _config.shopAccMinHitEvery), _aidaHitEvery - 1);
-                _accBought++;
-                _sfx.PlayPew();
             }
             else
             {
-                _aidaFireEvery = Math.Max(Mathf.Max(1, _config.shopRateMinFireEvery), _aidaFireEvery - 1);
-                _rateBought++;
+                _aidaLevel = Mathf.Min(maxLevel, _aidaLevel + 1);
+                _aidaHitEvery = AidaTable(_config.shopAidaHitEvery, _aidaLevel, 8);
+                _aidaFireEvery = AidaTable(_config.shopAidaFireEvery, _aidaLevel, 4);
                 _sfx.PlayPew();
             }
 
             RenderShop();
+        }
+
+        private int UpgradeCost(int currentLevel)
+        {
+            int[] costs = _config.shopUpgradeCosts;
+            if (costs == null || costs.Length == 0)
+            {
+                return int.MaxValue;
+            }
+
+            return Mathf.Max(0, costs[Mathf.Clamp(currentLevel, 0, costs.Length - 1)]);
+        }
+
+        private int AidaTable(int[] table, int level, int fallback)
+        {
+            if (table == null || table.Length == 0)
+            {
+                return fallback;
+            }
+
+            return Mathf.Max(1, table[Mathf.Clamp(level - 1, 0, table.Length - 1)]);
+        }
+
+        private int RegenForLevel(int level)
+        {
+            int[] table = _config.shopRegenPerClear;
+            if (table == null || table.Length == 0)
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, table[Mathf.Clamp(level, 0, table.Length - 1)]);
         }
 
         private void RenderShop()
@@ -1130,17 +1189,18 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-            string accRow = _aidaHitEvery <= Mathf.Max(2, _config.shopAccMinHitEvery)
-                ? $"AIDA AKURAT Lv{_accBought + 1} (MAX)"
-                : $"AIDA AKURAT Lv{_accBought + 1}: {_config.shopAccCost} PTS";
-            string rateRow = _aidaFireEvery <= Mathf.Max(1, _config.shopRateMinFireEvery)
-                ? $"AIDA CEPAT Lv{_rateBought + 1} (MAX)"
-                : $"AIDA CEPAT Lv{_rateBought + 1}: {_config.shopRateCost} PTS";
+            int maxLevel = Mathf.Max(1, _config.shopMaxLevel);
+            string regenRow = _regenLevel >= maxLevel
+                ? $"REGEN Lv{maxLevel} (MAX)"
+                : $"REGEN Lv{_regenLevel + 1} +{RegenForLevel(_regenLevel + 1)}HP/clear: {UpgradeCost(_regenLevel)} PTS";
+            int nextAida = Mathf.Min(maxLevel, _aidaLevel + 1);
+            string aidaRow = _aidaLevel >= maxLevel
+                ? $"AIDA Lv{maxLevel} (MAX)"
+                : $"AIDA Lv{nextAida} {AidaTable(_config.shopAidaHitEvery, nextAida, 8)}r/{AidaTable(_config.shopAidaFireEvery, nextAida, 4)}b: {UpgradeCost(_aidaLevel - 1)} PTS";
             _shop.Render(_combat.CurrencyPts, new[]
             {
-                $"HP +{_config.shopHealAmount}: {_config.shopHealCost} PTS",
-                accRow,
-                rateRow,
+                regenRow,
+                aidaRow,
                 "LANJUT →",
             });
         }

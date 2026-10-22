@@ -36,12 +36,34 @@ MonoBehaviour:
   holdBeats: 4
   heavyArmorHits: 2
   enableCodePanel: 0
-  shopHealAmount: 25
-  shopHealCost: 20
-  shopAccCost: 25
-  shopRateCost: 25
-  shopAccMinHitEvery: 2
-  shopRateMinFireEvery: 2
+  shopUpgradeCosts:
+  - 30
+  - 55
+  - 85
+  - 120
+  - 160
+  shopRegenPerClear:
+  - 0
+  - 10
+  - 15
+  - 20
+  - 25
+  - 40
+  shopAidaHitEvery:
+  - 8
+  - 8
+  - 7
+  - 6
+  - 5
+  - 4
+  shopAidaFireEvery:
+  - 4
+  - 4
+  - 4
+  - 3
+  - 3
+  - 2
+  shopMaxLevel: 5
   shakePerfect: 1
   shakeDestroy: 0.5
   shakeDamage: 0.8

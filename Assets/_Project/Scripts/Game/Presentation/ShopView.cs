@@ -16,6 +16,12 @@ namespace AlgoRhythm.Game.Presentation
     {
         public event Action<int> Confirmed;
 
+        /// <summary>Slot ids: regen track, AIDA track, continue.</summary>
+        public const int SlotRegen = 0;
+        public const int SlotAida = 1;
+        public const int SlotContinue = 2;
+        public const int SlotCount = 3;
+
         private TextMesh _title;
         private TextMesh _bits;
         private TextMesh _hint;
@@ -50,6 +56,8 @@ namespace AlgoRhythm.Game.Presentation
                 if (_rows[i] != null)
                 {
                     _basePos[i] = _rows[i].transform.localPosition;
+                    // Slot 3 is unused in the 2-track + LANJUT layout.
+                    _rows[i].gameObject.SetActive(i < SlotCount);
                 }
             }
             UiTypography.Style(_hint, 28, 0.065f, UiTypography.Dim,
@@ -105,12 +113,12 @@ namespace AlgoRhythm.Game.Presentation
 
             if (keyboard.upArrowKey.wasPressedThisFrame)
             {
-                _selected = (_selected + _rows.Length - 1) % _rows.Length;
+                _selected = (_selected + SlotCount - 1) % SlotCount;
                 Repaint();
             }
             else if (keyboard.downArrowKey.wasPressedThisFrame)
             {
-                _selected = (_selected + 1) % _rows.Length;
+                _selected = (_selected + 1) % SlotCount;
                 Repaint();
             }
             else if (keyboard.enterKey.wasPressedThisFrame
@@ -120,7 +128,7 @@ namespace AlgoRhythm.Game.Presentation
             }
         }
 
-        private static readonly string[] SlotIcons = { "[+]", "(O)", "[>>]", "[->]" };
+        private static readonly string[] SlotIcons = { "[+]", "(O)", "[→]" };
 
         /// <summary>
         /// Stepped slide-in per row (retro judder like the main menu):
@@ -180,7 +188,7 @@ namespace AlgoRhythm.Game.Presentation
                 _bits.text = $"PTS {_lastBits}";
             }
 
-            for (int i = 0; i < _rows.Length; i++)
+            for (int i = 0; i < SlotCount && i < _rows.Length; i++)
             {
                 if (_rows[i] == null)
                 {
