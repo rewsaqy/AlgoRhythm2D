@@ -28,16 +28,24 @@ namespace AlgoRhythm.Game.Presentation
         private float _hideAt;
         private float _travelMs = 1f;
 
-        [Header("Kamikaze [U] — nyeruduk ke Core saat resolve")]
-        [Tooltip("Durasi dash ke Core setelah impact.")]
+        [Header("Kamikaze [U] — nyeruduk ke Core saat lolos")]
+        [Tooltip("Durasi dash ke Core saat threat TIDAK dihancurkan (Miss).")]
         [Min(0.05f)] [SerializeField] private float dashSeconds = 0.28f;
         [Tooltip("Skala akhir saat menabrak Core (pecahan dari skala awal).")]
         [Range(0.1f, 1f)] [SerializeField] private float dashEndScale = 0.35f;
+
+        [Header("Shatter [U] — pecah di tempat saat dihancurkan")]
+        [Tooltip("Durasi pop membesar saat threat dihancurkan pemain/AIDA.")]
+        [Min(0.05f)] [SerializeField] private float shatterSeconds = 0.22f;
+        [Tooltip("Skala puncak pop shatter.")]
+        [Min(1f)] [SerializeField] private float shatterPeakScale = 1.55f;
 
         private bool _dashing;
         private float _dashUntil;
         private Vector3 _dashFrom;
         private Vector3 _dashTarget;
+        private bool _shattering;
+        private float _shatterUntil;
 
         public bool IsAvailable => !gameObject.activeSelf;
 
@@ -63,6 +71,7 @@ namespace AlgoRhythm.Game.Presentation
         {
             _threat = threat;
             _dashing = false;
+            _shattering = false;
             _travelMs = Mathf.Max(1f, travelMs);
             _visible = true;
             _hideAt = 0f;
@@ -101,11 +110,18 @@ namespace AlgoRhythm.Game.Presentation
             _label.color = buffered ? UiTypography.Info : UiTypography.Ink;
         }
 
-        public void Resolve(TimingGrade grade, Vector3 coreLocalPosition)
+        public void Resolve(TimingGrade grade, Vector3 coreLocalPosition, bool destroyed)
         {
             _visible = true;
             _hideAt = Time.unscaledTime + resolveHideSeconds;
-            StartDash(coreLocalPosition);
+            if (destroyed)
+            {
+                StartShatter();
+            }
+            else
+            {
+                StartDash(coreLocalPosition);
+            }
 
             if (_label == null)
             {
@@ -117,11 +133,15 @@ namespace AlgoRhythm.Game.Presentation
             _label.color = ArenaPresenter.GradeColor(grade);
         }
 
-        public void ResolveDecoy(bool shielded, Vector3 coreLocalPosition)
+        public void ResolveDecoy(bool shielded, Vector3 coreLocalPosition, bool destroyed)
         {
             _visible = true;
             _hideAt = Time.unscaledTime + resolveHideSeconds;
-            StartDash(coreLocalPosition);
+            if (destroyed)
+            {
+                StartShatter();
+            }
+            // Ignored decoy: correct play, just expires in place.
 
             if (_label == null)
             {
@@ -136,6 +156,7 @@ namespace AlgoRhythm.Game.Presentation
         {
             _visible = false;
             _dashing = false;
+            _shattering = false;
             _hideAt = 0f;
             gameObject.SetActive(false);
         }
@@ -177,9 +198,35 @@ namespace AlgoRhythm.Game.Presentation
             _dashing = true;
         }
 
+        /// <summary>
+        /// Shatter pop in place when the player (or AIDA) destroys the
+        /// threat: quick ease-out expand, then Hide cuts it. The grade text
+        /// stays on the arena label. Pure presentation.
+        /// </summary>
+        private void StartShatter()
+        {
+            _dashing = false;
+            _shattering = true;
+            _shatterUntil = Time.unscaledTime + Mathf.Max(0.01f, shatterSeconds);
+        }
+
         private void Update()
         {
-            if (_dashing)
+            if (_shattering)
+            {
+                float remaining = _shatterUntil - Time.unscaledTime;
+                if (remaining <= 0f)
+                {
+                    Hide();
+                    return;
+                }
+
+                float progress = 1f - remaining / Mathf.Max(0.01f, shatterSeconds);
+                float eased = 1f - (1f - progress) * (1f - progress);
+                float scale = Mathf.Lerp(1f, shatterPeakScale, eased);
+                transform.localScale = new Vector3(scale, scale, 1f);
+            }
+            else if (_dashing)
             {
                 float remaining = _dashUntil - Time.unscaledTime;
                 if (remaining <= 0f)

@@ -21,6 +21,13 @@ namespace AlgoRhythm.Game.Presentation
         public static readonly Color Warn = new Color(1.0f, 0.76f, 0.32f, 1.0f);
         public static readonly Color Status = new Color(1.0f, 0.93f, 0.70f, 1.0f);
 
+        /// <summary>
+        /// Display font for every scene TextMesh. Assigned by GameBootstrap
+        /// from a serialized Inspector reference; when null, labels keep
+        /// their baked font. Set once at boot, read by <see cref="Style"/>.
+        /// </summary>
+        public static Font DisplayFont { get; set; }
+
         public static void Style(
             TextMesh label,
             int fontSize,
@@ -33,6 +40,11 @@ namespace AlgoRhythm.Game.Presentation
             if (label == null)
             {
                 return;
+            }
+
+            if (DisplayFont != null)
+            {
+                label.font = DisplayFont;
             }
 
             label.fontSize = fontSize;

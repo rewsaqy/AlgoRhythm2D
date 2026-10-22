@@ -184,7 +184,7 @@ namespace AlgoRhythm.Game.Presentation
 
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
-            view.Resolve(grade, CoreLocalPosition());
+            view.Resolve(grade, CoreLocalPosition(), destroyed: grade != TimingGrade.Miss);
             ShowGrade(grade, null);
         }
 
@@ -197,7 +197,7 @@ namespace AlgoRhythm.Game.Presentation
 
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
-            view.ResolveDecoy(shielded, CoreLocalPosition());
+            view.ResolveDecoy(shielded, CoreLocalPosition(), destroyed: shielded);
             // Notes carry no text, so the decoy outcome reads here instead.
             ShowDecoyFeedback(shielded);
         }

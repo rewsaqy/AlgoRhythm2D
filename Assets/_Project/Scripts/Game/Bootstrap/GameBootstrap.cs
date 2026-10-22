@@ -31,6 +31,8 @@ namespace AlgoRhythm.Game.Bootstrap
         [SerializeField] private InputRouter input;
         [SerializeField] private CodePanelView codePanel;
         [SerializeField] private WaveDefinitionSO[] waveDefinitions;
+        [Header("Typography [U] — nerd mono display font untuk semua label")]
+        [SerializeField] private Font displayFont;
 
         private CombatController _controller;
         private WaveDirector _director;
@@ -54,6 +56,7 @@ namespace AlgoRhythm.Game.Bootstrap
             }
 
             _clockSource = new DspClockSource();
+            UiTypography.DisplayFont = displayFont;
             var clock = new BeatClock(_clockSource, config.bpm);
             var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs);
             float savedCalibration = PlayerPrefs.GetFloat(
