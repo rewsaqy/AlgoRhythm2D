@@ -67,13 +67,26 @@ namespace AlgoRhythm.Game.Presentation
                     return;
                 case "W1D":
                     textId = "AIDA2_D";
-                    line = "Ronde terakhir pemanasan — semua yang tadi, keluar bareng. Gas!";
-                    return;
-                default:
-                    textId = "AIDA2_01";
-                    line = "Naikin tempo dikit. Jaga ritmemu!";
+                    line = "Gauntlet! Semua yang kau pelajari, keluar bareng. Gas!";
                     return;
             }
+
+            if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W2"))
+            {
+                textId = "AIDA2_W2";
+                line = "Gelombang 2 — tempo naik ke 115. Jangan kasih kendor!";
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W3"))
+            {
+                textId = "AIDA2_W3";
+                line = "Gelombang 3 — 130 BPM. Ini ujian beneran. Tahan!";
+                return;
+            }
+
+            textId = "AIDA2_01";
+            line = "Naikin tempo dikit. Jaga ritmemu!";
         }
     }
 }

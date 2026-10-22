@@ -81,6 +81,9 @@ namespace AlgoRhythm.Game.Combat
 
             _activeIndex = index;
             _runners[index].Reset();
+            // Per-wave BPM (demo decision: W1 100, W2 115, W3 130). Retune
+            // before the lead-in offset so it uses the new spacing.
+            _clock.SetBpm(_runners[index].Data.Bpm);
             _clock.Start(_clockSource.NowDsp + _leadInBeats * _clock.SecondsPerBeat);
             WaveStarted?.Invoke(index);
         }

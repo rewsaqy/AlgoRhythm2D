@@ -9,7 +9,7 @@ namespace AlgoRhythm.Core.Rhythm
     public sealed class BeatClock
     {
         private readonly IClockSource _source;
-        private readonly double _secondsPerBeat;
+        private double _secondsPerBeat;
         private double _originDsp;
         private double _pauseStartedDsp;
         private bool _started;
@@ -32,9 +32,24 @@ namespace AlgoRhythm.Core.Rhythm
             _secondsPerBeat = 60.0 / bpm;
         }
 
-        public double Bpm { get; }
+        public double Bpm { get; private set; }
 
         public double SecondsPerBeat => _secondsPerBeat;
+
+        /// <summary>
+        /// Retunes the clock mid-run (per-wave BPM). Safe to call before
+        /// Start; never call mid-wave (beat map would shear).
+        /// </summary>
+        public void SetBpm(double bpm)
+        {
+            if (bpm <= 0 || double.IsNaN(bpm) || double.IsInfinity(bpm))
+            {
+                throw new ArgumentOutOfRangeException(nameof(bpm));
+            }
+
+            Bpm = bpm;
+            _secondsPerBeat = 60.0 / bpm;
+        }
 
         public double OriginDsp => _originDsp;
 

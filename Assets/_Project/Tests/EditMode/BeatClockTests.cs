@@ -82,5 +82,23 @@ namespace AlgoRhythm.Tests
 
             Assert.AreEqual(-1, clock.BeatIndexAt(9.5));
         }
+
+        [Test]
+        public void SetBpm_RetunesSecondsPerBeat_AndRejectsInvalid()
+        {
+            var source = new FakeClock { NowDsp = 10.0 };
+            var clock = new BeatClock(source, 100.0);
+            clock.Start(10.0);
+
+            Assert.AreEqual(0.6, clock.SecondsPerBeat, 1e-9);
+
+            clock.SetBpm(120.0);
+            Assert.AreEqual(120.0, clock.Bpm);
+            Assert.AreEqual(0.5, clock.SecondsPerBeat, 1e-9);
+            Assert.AreEqual(10.5, clock.BeatTime(1), 1e-9);
+
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => clock.SetBpm(0));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => clock.SetBpm(double.NaN));
+        }
     }
 }

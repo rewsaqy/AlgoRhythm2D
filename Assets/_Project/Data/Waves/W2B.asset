@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0ee5645becd9f7ce91bd7bd78712afa, type: 3}
+  m_Name: W2B
+  m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Data.WaveDefinitionSO
+  waveId: W2B
+  tempoBpm: 115
+  difficultyTier: Normal
+  idOffset: 500
+  spawnSequence:
+  - kind: 4
+    direction: 0
+    spawnBeat: 2
+    impactBeat: 8
+    baseDamage: 10
+  - kind: 1
+    direction: 2
+    spawnBeat: 6
+    impactBeat: 12
+    baseDamage: 0
+  - kind: 4
+    direction: 1
+    spawnBeat: 12
+    impactBeat: 18
+    baseDamage: 10
+  - kind: 0
+    direction: 3
+    spawnBeat: 16
+    impactBeat: 22
+    baseDamage: 10
+  - kind: 4
+    direction: 2
+    spawnBeat: 22
+    impactBeat: 28
+    baseDamage: 10
+  - kind: 2
+    direction: 0
+    spawnBeat: 26
+    impactBeat: 32
+    baseDamage: 10
+  - kind: 1
+    direction: 3
+    spawnBeat: 30
+    impactBeat: 36
+    baseDamage: 0
+  ruleUnlocks:
+  - WHEN_PROJECTILE
+  - WHEN_BEAT
+  - NORTH
+  - EAST
+  - SOUTH
+  - WEST
+  - NEAREST
+  - RAISE_SHIELD
+  dialogueTrigger: OnStart
