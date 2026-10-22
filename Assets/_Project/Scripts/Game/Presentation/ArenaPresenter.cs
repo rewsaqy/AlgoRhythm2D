@@ -184,8 +184,8 @@ namespace AlgoRhythm.Game.Presentation
 
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
-            view.Resolve(grade);
-            ShowGrade(grade, correctDirection ? "shield" : "wrong direction");
+            view.Resolve(grade, CoreLocalPosition());
+            ShowGrade(grade, null);
         }
 
         public void ResolveDecoyView(int threatId, bool shielded)
@@ -197,9 +197,15 @@ namespace AlgoRhythm.Game.Presentation
 
             _activeThreats.Remove(threatId);
             view.transform.localScale = Vector3.one;
-            view.ResolveDecoy(shielded);
+            view.ResolveDecoy(shielded, CoreLocalPosition());
             // Notes carry no text, so the decoy outcome reads here instead.
             ShowDecoyFeedback(shielded);
+        }
+
+        /// <summary>Core position in Arena space; dash target on resolve.</summary>
+        private Vector3 CoreLocalPosition()
+        {
+            return _core != null ? _core.localPosition : Vector3.zero;
         }
 
         /// <summary>Hides every pooled view. Used on wave change and retry.</summary>

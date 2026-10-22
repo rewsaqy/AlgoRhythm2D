@@ -62,8 +62,8 @@ namespace AlgoRhythm.Game.Presentation
                 TextAnchor.UpperLeft, TextAlignment.Left, 1.15f);
             UiTypography.Style(_dialogue, 26, 0.07f, UiTypography.Ink,
                 TextAnchor.LowerCenter, TextAlignment.Center, 1.2f);
-            UiTypography.Style(_pause, 52, 0.085f, UiTypography.Ink,
-                TextAnchor.MiddleCenter, TextAlignment.Center, 1.25f);
+            UiTypography.Style(_pause, 30, 0.08f, UiTypography.Ink,
+                TextAnchor.MiddleRight, TextAlignment.Right, 1.25f);
             UiTypography.Style(_clear, 40, 0.08f, UiTypography.Good,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.25f);
 
@@ -184,7 +184,7 @@ namespace AlgoRhythm.Game.Presentation
             if (_pause != null)
             {
                 _pause.text = _clock.IsPaused
-                    ? "II PAUSED\nESC / P lanjutkan\nWASD shield · Z/X kalibrasi\n1/2/3 slot · Q/E ganti · ENTER pasang · R reset"
+                    ? "II PAUSED · ESC"
                     : string.Empty;
             }
 

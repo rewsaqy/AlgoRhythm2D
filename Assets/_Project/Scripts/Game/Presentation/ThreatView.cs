@@ -28,6 +28,17 @@ namespace AlgoRhythm.Game.Presentation
         private float _hideAt;
         private float _travelMs = 1f;
 
+        [Header("Kamikaze [U] — nyeruduk ke Core saat resolve")]
+        [Tooltip("Durasi dash ke Core setelah impact.")]
+        [Min(0.05f)] [SerializeField] private float dashSeconds = 0.28f;
+        [Tooltip("Skala akhir saat menabrak Core (pecahan dari skala awal).")]
+        [Range(0.1f, 1f)] [SerializeField] private float dashEndScale = 0.35f;
+
+        private bool _dashing;
+        private float _dashUntil;
+        private Vector3 _dashFrom;
+        private Vector3 _dashTarget;
+
         public bool IsAvailable => !gameObject.activeSelf;
 
         public void Initialize()
@@ -51,6 +62,7 @@ namespace AlgoRhythm.Game.Presentation
         public void Show(ThreatEvent threat, float travelMs)
         {
             _threat = threat;
+            _dashing = false;
             _travelMs = Mathf.Max(1f, travelMs);
             _visible = true;
             _hideAt = 0f;
@@ -89,10 +101,11 @@ namespace AlgoRhythm.Game.Presentation
             _label.color = buffered ? UiTypography.Info : UiTypography.Ink;
         }
 
-        public void Resolve(TimingGrade grade)
+        public void Resolve(TimingGrade grade, Vector3 coreLocalPosition)
         {
             _visible = true;
             _hideAt = Time.unscaledTime + resolveHideSeconds;
+            StartDash(coreLocalPosition);
 
             if (_label == null)
             {
@@ -104,10 +117,11 @@ namespace AlgoRhythm.Game.Presentation
             _label.color = ArenaPresenter.GradeColor(grade);
         }
 
-        public void ResolveDecoy(bool shielded)
+        public void ResolveDecoy(bool shielded, Vector3 coreLocalPosition)
         {
             _visible = true;
             _hideAt = Time.unscaledTime + resolveHideSeconds;
+            StartDash(coreLocalPosition);
 
             if (_label == null)
             {
@@ -121,6 +135,7 @@ namespace AlgoRhythm.Game.Presentation
         public void Hide()
         {
             _visible = false;
+            _dashing = false;
             _hideAt = 0f;
             gameObject.SetActive(false);
         }
@@ -149,8 +164,41 @@ namespace AlgoRhythm.Game.Presentation
                     : new Color(0.85f, 0.9f, 1f, 0.55f);
         }
 
+        /// <summary>
+        /// Kamikaze dive into the Core on resolve: eases from the impact
+        /// spot to the Core while shrinking, then lingers the grade text
+        /// until Hide. Pure presentation; judging already happened.
+        /// </summary>
+        private void StartDash(Vector3 coreLocalPosition)
+        {
+            _dashFrom = transform.localPosition;
+            _dashTarget = coreLocalPosition;
+            _dashUntil = Time.unscaledTime + Mathf.Max(0.01f, dashSeconds);
+            _dashing = true;
+        }
+
         private void Update()
         {
+            if (_dashing)
+            {
+                float remaining = _dashUntil - Time.unscaledTime;
+                if (remaining <= 0f)
+                {
+                    _dashing = false;
+                    transform.localPosition = _dashTarget;
+                    transform.localScale = Vector3.one * dashEndScale;
+                }
+                else
+                {
+                    // Ease-in dive: lambat di awal, menghujam ke Core.
+                    float progress = 1f - remaining / Mathf.Max(0.01f, dashSeconds);
+                    float eased = progress * progress;
+                    transform.localPosition = Vector3.Lerp(_dashFrom, _dashTarget, eased);
+                    float scale = Mathf.Lerp(1f, dashEndScale, eased);
+                    transform.localScale = new Vector3(scale, scale, 1f);
+                }
+            }
+
             if (_visible && _hideAt > 0f && Time.unscaledTime >= _hideAt)
             {
                 Hide();
