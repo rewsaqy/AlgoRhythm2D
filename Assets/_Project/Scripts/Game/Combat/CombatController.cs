@@ -692,7 +692,7 @@ namespace AlgoRhythm.Game.Combat
                 _aida.transform.position, to, target.Threat.Id, willHit, arrivalDsp);
             if (view != null)
             {
-                _sfx.PlayPew();
+                _sfx.PlayAidaFire();
             }
         }
 

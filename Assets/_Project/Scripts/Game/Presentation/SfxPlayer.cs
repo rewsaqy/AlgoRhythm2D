@@ -22,6 +22,11 @@ namespace AlgoRhythm.Game.Presentation
 
         [SerializeField] private AudioClip destroyClip;
         [SerializeField] private AudioClip pewClip;
+        [Header("AIDA [U] — own voice so shots never read as UI/commit feedback.")]
+        [SerializeField] private AudioClip aidaFireClip;
+        [Range(0f, 1f)] [SerializeField] private float destroyVolume = 0.5f;
+        [Range(0f, 1f)] [SerializeField] private float pewVolume = 0.5f;
+        [Range(0f, 1f)] [SerializeField] private float aidaFireVolume = 0.35f;
 
         private AudioSource[] _sources;
         private BeatClock _clock;
@@ -68,6 +73,7 @@ namespace AlgoRhythm.Game.Presentation
             _sourceCursor = (_sourceCursor + 1) % _sources.Length;
             source.Stop();
             source.clip = destroyClip;
+            source.volume = destroyVolume;
             source.pitch = PitchLadder[step];
             source.PlayScheduled(AudioSettings.dspTime);
         }
@@ -83,7 +89,36 @@ namespace AlgoRhythm.Game.Presentation
             _sourceCursor = (_sourceCursor + 1) % _sources.Length;
             source.Stop();
             source.clip = pewClip;
+            source.volume = pewVolume;
             source.pitch = 1.15f;
+            source.PlayScheduled(AudioSettings.dspTime);
+        }
+
+        /// <summary>
+        /// AIDA tower shot: its own clip and a lower volume so the frequent
+        /// every-4-beat fire never masks the metronome (the rhythm authority,
+        /// §11). Falls back to the commit pew when no clip is wired, so a
+        /// missing reference degrades to the old sound instead of silence.
+        /// </summary>
+        public void PlayAidaFire()
+        {
+            if (!_audioAvailable || _clock == null || !_clock.IsStarted)
+            {
+                return;
+            }
+
+            AudioClip clip = aidaFireClip != null ? aidaFireClip : pewClip;
+            if (clip == null)
+            {
+                return;
+            }
+
+            AudioSource source = _sources[_sourceCursor];
+            _sourceCursor = (_sourceCursor + 1) % _sources.Length;
+            source.Stop();
+            source.clip = clip;
+            source.volume = aidaFireClip != null ? aidaFireVolume : pewVolume;
+            source.pitch = 1.0f;
             source.PlayScheduled(AudioSettings.dspTime);
         }
 
