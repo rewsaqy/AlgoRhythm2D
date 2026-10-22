@@ -23,6 +23,9 @@ namespace AlgoRhythm.Game.Presentation
 
         private TextMesh _label;
         private SpriteRenderer _ring;
+        private MeshFilter _markerMesh;
+        private static readonly System.Collections.Generic.Dictionary<string, Mesh> MeshCache =
+            new System.Collections.Generic.Dictionary<string, Mesh>();
         private ThreatEvent _threat;
         private bool _visible;
         private float _hideAt;
@@ -59,6 +62,8 @@ namespace AlgoRhythm.Game.Presentation
             _label = FindText("Label");
             Transform ring = transform.Find("Ring");
             _ring = ring != null ? ring.GetComponent<SpriteRenderer>() : null;
+            Transform markerRoot = transform.Find("Marker");
+            _markerMesh = markerRoot != null ? markerRoot.GetComponent<MeshFilter>() : null;
             UiTypography.Style(_label, 40, 0.08f, UiTypography.Ink,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
             if (_label != null)
@@ -99,6 +104,33 @@ namespace AlgoRhythm.Game.Presentation
         /// <summary>Base pose per archetype; pooled views reset here.</summary>
         private void ApplyKindPose()
         {
+            // Distinct silhouettes from built-in meshes (no new assets):
+            // shooter = flat quad, marcher = capsule trooper, heavy = big
+            // cube, sleeper = sphere pod, holder = long cube bar. Decoy stays
+            // a rotated diamond quad; labels always spell the kind too.
+            if (_markerMesh != null)
+            {
+                string meshName = _threat.Kind switch
+                {
+                    ThreatKind.Marcher => "Capsule.fbx",
+                    ThreatKind.Heavy => "Cube.fbx",
+                    ThreatKind.Sleeper => "Sphere.fbx",
+                    ThreatKind.Holder => "Cube.fbx",
+                    _ => "Quad.fbx",
+                };
+                Mesh mesh;
+                if (!MeshCache.TryGetValue(meshName, out mesh) || mesh == null)
+                {
+                    mesh = Resources.GetBuiltinResource<Mesh>(meshName);
+                    MeshCache[meshName] = mesh;
+                }
+
+                if (mesh != null)
+                {
+                    _markerMesh.sharedMesh = mesh;
+                }
+            }
+
             switch (_threat.Kind)
             {
                 case ThreatKind.Heavy:
@@ -110,6 +142,9 @@ namespace AlgoRhythm.Game.Presentation
                 case ThreatKind.Sleeper:
                     transform.localScale = Vector3.one * 0.9f;
                     SetSleeperArmed(false);
+                    break;
+                case ThreatKind.Marcher:
+                    transform.localScale = new Vector3(0.7f, 1.3f, 1f);
                     break;
                 default:
                     transform.localScale = Vector3.one;

@@ -993,7 +993,7 @@ namespace AlgoRhythm.Game.Combat
                   $"damage {_combat.DamageTaken} · decoy {_combat.DecoyPenaltyTotal}"
                 : $"WAVE CLEAR {waveId} — SCORE {_combat.Score}\n{counts}{energySuffix}");
             _hud.SetStatus(lastWave
-                ? "RUN CLEAR — 1A dan 1B selesai"
+                ? "RUN CLEAR — semua wave selesai"
                 : $"WAVE CLEAR {waveId} — semua threat resolved");
             DemoDialogue.LineForWaveClear(waveId, lastWave, out string textId, out string line);
             _hud.ShowDialogue(textId, line);

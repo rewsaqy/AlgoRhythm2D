@@ -32,7 +32,7 @@ namespace AlgoRhythm.Game.Presentation
             if (runDone)
             {
                 textId = "RUN_CLEAR";
-                line = "A.I.D.A 2.0: run selesai — 1A dan 1B clear. Bagus!";
+                line = "A.I.D.A 2.0: run selesai — semua wave clear. Bagus!";
                 return;
             }
 
