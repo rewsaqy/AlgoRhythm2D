@@ -83,5 +83,5 @@ MonoBehaviour:
     halfWidthDeg: 0
   ruleUnlocks: []
   dialogueTrigger: OnStart
-  songClip: {fileID: 0}
+  songClip: {fileID: 8300000, guid: 1693f133087a058e79f2082b4aee715d, type: 3}
   songLoop: 0

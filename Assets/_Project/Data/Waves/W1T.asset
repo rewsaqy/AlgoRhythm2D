@@ -19,13 +19,13 @@ MonoBehaviour:
   spawnSequence:
   - kind: 0
     direction: 0
-    spawnBeat: 2
-    impactBeat: 10
+    spawnBeat: 1
+    impactBeat: 5
     baseDamage: 0
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   ruleUnlocks: []
   dialogueTrigger: Tutorial
-  songClip: {fileID: 0}
+  songClip: {fileID: 8300000, guid: 7d65716a82c31ae7b898dfd064b54a0a, type: 3}
   songLoop: 1
