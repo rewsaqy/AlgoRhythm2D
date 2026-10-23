@@ -66,5 +66,21 @@ namespace AlgoRhythm.Core.Waves
             _nextIndex = 0;
             _resolvedThreatIds.Clear();
         }
+
+        /// <summary>
+        /// Dev/test helper: marks every threat resolved and drains the spawn
+        /// cursor so Due() stays empty. Used by the editor-only finish-all
+        /// shortcut; without draining, threats marked resolved before their
+        /// spawn beat would still spawn as unresolvable ghosts.
+        /// </summary>
+        public void ForceResolveAll()
+        {
+            for (int index = 0; index < _data.Count; index++)
+            {
+                _resolvedThreatIds.Add(_data.Threats[index].Id);
+            }
+
+            _nextIndex = _data.Count;
+        }
     }
 }

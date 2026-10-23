@@ -179,6 +179,14 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
+#if UNITY_EDITOR
+            if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
+            {
+                DevFinishAllWaves();
+                return;
+            }
+#endif
+
             UpdatePaddleAim();
 
             int beat = _clock.CurrentBeatIndex;
@@ -1018,6 +1026,79 @@ namespace AlgoRhythm.Game.Combat
                 _shake.AddTrauma(_config.shakeDamage);
             }
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Dev-only (F9): instantly finishes the whole run through the
+        /// natural clear path — tutorial graduates, each wave resolves all
+        /// threats as Perfect, shop LANJUT auto-confirms. Stripped from
+        /// builds; demo acceptance runs never see it.
+        /// </summary>
+        public void DevFinishAllWaves()
+        {
+            if (!_started || _paused)
+            {
+                return;
+            }
+
+            int guard = 0;
+            while (!_director.AllWavesCleared && guard++ < 32)
+            {
+                if (_inShop)
+                {
+                    _inShop = false;
+                    if (_shop != null)
+                    {
+                        _shop.Hide();
+                    }
+
+                    _director.Advance();
+                    continue;
+                }
+
+                if (Tutorial != null
+                    && Tutorial.OwnsWave(_director.ActiveRunner.Data.WaveId))
+                {
+                    Tutorial.DevGraduate();
+                    continue;
+                }
+
+                DevClearCurrentWave();
+                AnnounceWaveClear();
+            }
+        }
+
+        /// <summary>
+        /// Dev-only: resolves every threat of the active wave as Perfect —
+        /// spawned ones through the normal Resolve path, not-yet-spawned
+        /// ones directly in combat state. The runner cursor is drained too,
+        /// so no resolved threat can spawn later as a stuck ghost.
+        /// </summary>
+        private void DevClearCurrentWave()
+        {
+            WaveRunner runner = _director.ActiveRunner;
+            for (int index = _active.Count - 1; index >= 0; index--)
+            {
+                ActiveThreat active = _active[index];
+                if (!active.Resolved)
+                {
+                    Resolve(active, TimingGrade.Perfect, "devskip", blockFlash: false);
+                }
+            }
+
+            foreach (ThreatEvent threat in runner.Data.Threats)
+            {
+                if (runner.IsResolved(threat.Id) || threat.Kind == ThreatKind.AdwareDecoy)
+                {
+                    continue;
+                }
+
+                _combat.ResolveThreat(threat, TimingGrade.Perfect, fromRule: false, damage: 0);
+            }
+
+            runner.ForceResolveAll();
+        }
+#endif
 
         private void AnnounceWaveClear()
         {

@@ -97,6 +97,26 @@ namespace AlgoRhythm.Tests
         }
 
         [Test]
+        public void ForceResolveAllClearsAndDrainsSpawnCursor()
+        {
+            var clock = new BeatClock(new FakeClock(), 120.0);
+            clock.Start(0.0);
+            var runner = new WaveRunner(BuildWave(Threat(1, 5), Threat(2, 6)), clock);
+            var buffer = new ThreatEvent[2];
+
+            runner.ForceResolveAll();
+
+            Assert.IsTrue(runner.AllSpawned);
+            Assert.IsTrue(runner.IsCleared);
+            Assert.AreEqual(0, runner.Due(100, buffer));
+
+            runner.Reset();
+            Assert.IsFalse(runner.AllSpawned);
+            Assert.IsFalse(runner.IsCleared);
+            Assert.AreEqual(2, runner.Due(100, buffer));
+        }
+
+        [Test]
         public void WaveDataSortsBySpawnBeatThenId()
         {
             var wave = BuildWave(Threat(3, 2), Threat(2, 1), Threat(1, 1));

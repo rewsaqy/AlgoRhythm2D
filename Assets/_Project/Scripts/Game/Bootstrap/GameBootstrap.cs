@@ -151,6 +151,23 @@ namespace AlgoRhythm.Game.Bootstrap
                 _controller.Tutorial = tutorial;
                 _controller.DeferFirstWave = true;
             }
+
+            OutroDriver outroDriver = GetComponentInChildren<OutroDriver>(true);
+            if (outroDriver != null)
+            {
+                BlackoutView blackout = cameraShake.GetComponentInChildren<BlackoutView>(true);
+                if (blackout == null)
+                {
+                    Debug.LogWarning(
+                        "BlackoutView missing under Main Camera; outro runs dialogue-only.",
+                        cameraShake);
+                }
+
+                DialogueView outroDialogue = tutorial != null
+                    ? tutorial.GetComponent<DialogueView>()
+                    : GetComponentInChildren<DialogueView>(true);
+                outroDriver.Initialize(_director, outroDialogue, blackout, clock);
+            }
             _controller.Start();
             if (tutorial != null)
             {
@@ -209,9 +226,18 @@ namespace AlgoRhythm.Game.Bootstrap
 
         private void OnWaveCleared(int index)
         {
-            if (_director != null && _director.AllWavesCleared && songPlayer != null)
+            if (_director != null && _director.AllWavesCleared)
             {
-                songPlayer.StopSong();
+                if (songPlayer != null)
+                {
+                    songPlayer.StopSong();
+                }
+
+                OutroDriver outroDriver = GetComponentInChildren<OutroDriver>(true);
+                if (outroDriver != null)
+                {
+                    outroDriver.Begin();
+                }
             }
         }
 
