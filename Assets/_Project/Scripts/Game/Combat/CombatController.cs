@@ -29,6 +29,7 @@ namespace AlgoRhythm.Game.Combat
         private readonly HudView _hud;
         private readonly MetronomePlayer _metronome;
         private readonly SfxPlayer _sfx;
+        private readonly SongPlayer _song;
         private readonly CameraShake _shake;
         private readonly AidaTower _aida;
         private readonly InputRouter _input;
@@ -101,7 +102,8 @@ namespace AlgoRhythm.Game.Combat
             PaddleHistory history,
             PaddleView paddleView,
             ShopView shop,
-            DemoConfig config)
+            DemoConfig config,
+            SongPlayer song = null)
         {
             _clockSource = clockSource ?? throw new ArgumentNullException(nameof(clockSource));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
@@ -121,6 +123,7 @@ namespace AlgoRhythm.Game.Combat
             _paddleView = paddleView;
             _shop = shop;
             _config = config ?? throw new ArgumentNullException(nameof(config));
+            _song = song;
             _rulesEnabled = config.enableCodePanel;
         }
 
@@ -320,6 +323,7 @@ namespace AlgoRhythm.Game.Combat
             _clock.Pause();
             _metronome.Pause();
             _sfx.Pause();
+            _song?.Pause();
             _paused = true;
             for (int index = 0; index < _active.Count; index++)
             {
@@ -339,6 +343,7 @@ namespace AlgoRhythm.Game.Combat
 
             _clock.Resume();
             _metronome.Resume();
+            _song?.Resume();
             _paused = false;
             _hud.SetStatus("RESUMED");
         }
@@ -1073,6 +1078,11 @@ namespace AlgoRhythm.Game.Combat
             }
 
             _inShop = true;
+            if (_song != null)
+            {
+                _song.StopSong();
+            }
+
             RenderShop();
             _shop.Show();
         }

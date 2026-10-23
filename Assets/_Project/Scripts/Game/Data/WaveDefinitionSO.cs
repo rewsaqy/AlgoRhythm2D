@@ -49,5 +49,11 @@ namespace AlgoRhythm.Game.Data
 
         [Header("Flow")]
         public string dialogueTrigger = "OnStart";
+
+        [Header("Song [U]")]
+        [Tooltip("Klip lagu wave ini. Kosong = senyap (metronome tetap jalan).")]
+        public AudioClip songClip;
+        [Tooltip("Aktif = loop selama wave (tutorial). Mati = sekali putar (wave lagu).")]
+        public bool songLoop;
     }
 }

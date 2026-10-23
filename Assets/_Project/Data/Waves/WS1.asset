@@ -10,78 +10,78 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a0ee5645becd9f7ce91bd7bd78712afa, type: 3}
-  m_Name: W1A
+  m_Name: WS1
   m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Data.WaveDefinitionSO
-  waveId: W1A
+  waveId: WS1
   tempoBpm: 100
-  difficultyTier: Tutorial
-  idOffset: 0
+  difficultyTier: Song
+  idOffset: 100
   spawnSequence:
   - kind: 0
     direction: 0
     spawnBeat: 2
     impactBeat: 10
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 1
     spawnBeat: 10
     impactBeat: 18
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 2
     spawnBeat: 18
     impactBeat: 26
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 3
     spawnBeat: 26
     impactBeat: 34
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 0
     spawnBeat: 34
     impactBeat: 42
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 1
     spawnBeat: 42
     impactBeat: 50
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 2
     spawnBeat: 50
     impactBeat: 58
     baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   - kind: 0
     direction: 3
     spawnBeat: 58
     impactBeat: 66
     baseDamage: 10
-  - kind: 0
-    direction: 0
-    spawnBeat: 66
-    impactBeat: 74
-    baseDamage: 10
-  - kind: 0
-    direction: 1
-    spawnBeat: 74
-    impactBeat: 82
-    baseDamage: 10
-  - kind: 0
-    direction: 2
-    spawnBeat: 82
-    impactBeat: 90
-    baseDamage: 10
-  - kind: 0
-    direction: 3
-    spawnBeat: 90
-    impactBeat: 98
-    baseDamage: 10
-  ruleUnlocks:
-  - WHEN_PROJECTILE
-  - NORTH
-  - EAST
-  - SOUTH
-  - WEST
-  - RAISE_SHIELD
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  ruleUnlocks: []
   dialogueTrigger: OnStart
+  songClip: {fileID: 0}
+  songLoop: 0

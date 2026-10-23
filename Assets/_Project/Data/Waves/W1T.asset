@@ -22,5 +22,10 @@ MonoBehaviour:
     spawnBeat: 2
     impactBeat: 10
     baseDamage: 0
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
   ruleUnlocks: []
   dialogueTrigger: Tutorial
+  songClip: {fileID: 0}
+  songLoop: 1

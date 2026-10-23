@@ -69,6 +69,14 @@ namespace AlgoRhythm.Game.Presentation
                     textId = "AIDA2_D";
                     line = "Gauntlet! Semua yang kau pelajari, keluar bareng. Gas!";
                     return;
+                case "WS1":
+                    textId = "SONG_01";
+                    line = "Oke, musik nyala. Ikutin ketukannya, hadap ancamannya, tap pas nempel ring.";
+                    return;
+                case "WS2":
+                    textId = "SONG_02";
+                    line = "Lanjut lagu kedua. Lebih rame, tetap tenang, jaga ritmemu!";
+                    return;
             }
 
             if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W2"))

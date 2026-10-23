@@ -31,12 +31,14 @@ namespace AlgoRhythm.Game.Bootstrap
         [SerializeField] private InputRouter input;
         [SerializeField] private CodePanelView codePanel;
         [SerializeField] private ShopView shop;
+        [SerializeField] private SongPlayer songPlayer;
         [SerializeField] private WaveDefinitionSO[] waveDefinitions;
         [Header("Typography [U] — nerd mono display font untuk semua label")]
         [SerializeField] private Font displayFont;
 
         private CombatController _controller;
         private WaveDirector _director;
+        private BeatClock _clock;
         private RuleRuntime _rules;
         private CombatState _combat;
         private DspClockSource _clockSource;
@@ -59,6 +61,7 @@ namespace AlgoRhythm.Game.Bootstrap
             _clockSource = new DspClockSource();
             UiTypography.DisplayFont = displayFont;
             var clock = new BeatClock(_clockSource, config.bpm);
+            _clock = clock;
             var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs);
             float savedCalibration = PlayerPrefs.GetFloat(
                 DemoDialogue.CalibrationPrefKey, (float)config.calibrationOffsetMs);
@@ -90,6 +93,10 @@ namespace AlgoRhythm.Game.Bootstrap
             hud.SetRuleSystemEnabled(config.enableCodePanel);
             metronome.Initialize(clock);
             sfx.Initialize(clock);
+            if (songPlayer != null)
+            {
+                songPlayer.Initialize();
+            }
             cameraShake.Initialize(config.shakeDecayPerSecond, config.shakeMaxOffset);
             DamageFlashView damageFlash = cameraShake.GetComponentInChildren<DamageFlashView>(true);
             if (damageFlash != null)
@@ -113,6 +120,7 @@ namespace AlgoRhythm.Game.Bootstrap
                 codePanel.gameObject.SetActive(false);
             }
             _director.WaveStarted += OnWaveStarted;
+            _director.WaveCleared += OnWaveCleared;
             shop.Initialize();
 
             _controller = new CombatController(
@@ -133,7 +141,8 @@ namespace AlgoRhythm.Game.Bootstrap
                 history,
                 paddleView,
                 shop,
-                config);
+                config,
+                songPlayer);
             TutorialDriver tutorial = GetComponentInChildren<TutorialDriver>(true);
             if (tutorial != null)
             {
@@ -160,11 +169,13 @@ namespace AlgoRhythm.Game.Bootstrap
             if (_director != null)
             {
                 _director.WaveStarted -= OnWaveStarted;
+                _director.WaveCleared -= OnWaveCleared;
             }
         }
 
         private void OnWaveStarted(int index)
         {
+            PlayWaveSong(index);
             if (!config.enableCodePanel)
             {
                 return;
@@ -174,6 +185,33 @@ namespace AlgoRhythm.Game.Bootstrap
                 && waveDefinitions[index] != null)
             {
                 codePanel.SetUnlocks(waveDefinitions[index].ruleUnlocks);
+            }
+        }
+
+        /// <summary>Starts the wave song at beat 0 (after the lead-in).</summary>
+        private void PlayWaveSong(int index)
+        {
+            if (songPlayer == null || _clock == null)
+            {
+                return;
+            }
+
+            if (index < 0 || index >= waveDefinitions.Length
+                || waveDefinitions[index] == null)
+            {
+                songPlayer.StopSong();
+                return;
+            }
+
+            WaveDefinitionSO definition = waveDefinitions[index];
+            songPlayer.PlayWaveSong(definition.songClip, definition.songLoop, _clock.BeatTime(0));
+        }
+
+        private void OnWaveCleared(int index)
+        {
+            if (_director != null && _director.AllWavesCleared && songPlayer != null)
+            {
+                songPlayer.StopSong();
             }
         }
 

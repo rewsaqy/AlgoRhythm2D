@@ -37,9 +37,20 @@ namespace AlgoRhythm.Game.Presentation
         [SerializeField] private Key advanceKeyA = Key.Enter;
         [SerializeField] private Key advanceKeyB = Key.Space;
 
+        [Header("Layout [U]")]
+        [Min(8)] [SerializeField] private int maxCharsPerLine = 56;
+        [Min(1)] [SerializeField] private int maxLines = 5;
+
+        [Header("Advance prompt [U]")]
+        [SerializeField] private TextMesh advancePrompt;
+        [SerializeField] private string advancePromptText = "[ENTER]";
+        [Min(8)] [SerializeField] private int promptFontSize = 24;
+        [Min(0.01f)] [SerializeField] private float promptCharacterSize = 0.07f;
+
         private TextMesh _label;
         private readonly List<DialogueLine> _script = new List<DialogueLine>();
         private int _index;
+        private string _wrappedBody = string.Empty;
         private float _shown;
         private bool _playing;
         private bool _autoHideAtEnd = true;
@@ -54,8 +65,9 @@ namespace AlgoRhythm.Game.Presentation
             // TutorialDriver.Begin can fire before it too — so every public
             // entry re-resolves the label lazily via EnsureLabel().
             EnsureLabel();
-            UiTypography.Style(_label, 34, 0.085f, UiTypography.Ink,
+            UiTypography.Style(_label, 28, 0.07f, UiTypography.Ink,
                 TextAnchor.LowerCenter, TextAlignment.Center, 1.2f);
+            EnsurePrompt();
         }
 
         /// <summary>Finds the Controls label on demand; the scene bake may
@@ -85,6 +97,59 @@ namespace AlgoRhythm.Game.Presentation
             return true;
         }
 
+        /// <summary>Finds the dedicated advance-prompt label on demand.
+        /// The prompt lives in its own scene object so it never shifts
+        /// the body layout; when absent the body still works.</summary>
+        private bool EnsurePrompt()
+        {
+            if (advancePrompt == null)
+            {
+                GameObject prompt = GameObject.Find("AlgoRhythm/HUD/AdvancePrompt");
+                if (prompt != null)
+                {
+                    advancePrompt = prompt.GetComponent<TextMesh>();
+                }
+            }
+
+            if (advancePrompt == null)
+            {
+                return false;
+            }
+
+            UiTypography.Style(advancePrompt, promptFontSize, promptCharacterSize,
+                UiTypography.Ink, TextAnchor.UpperCenter, TextAlignment.Center, 1.1f);
+
+            // A freshly created TextMesh may carry no font material, so a
+            // runtime font swap alone leaves the renderer sampling the wrong
+            // texture and the prompt stays invisible. Sync the material.
+            var meshRenderer = advancePrompt.GetComponent<MeshRenderer>();
+            if (meshRenderer != null && advancePrompt.font != null)
+            {
+                meshRenderer.sharedMaterial = advancePrompt.font.material;
+            }
+
+            return true;
+        }
+
+        private static string SpeakerPrefix(DialogueLine line)
+        {
+            return string.IsNullOrEmpty(line.Speaker) ? string.Empty : line.Speaker + " : ";
+        }
+
+        private void RewrapCurrent()
+        {
+            if (_index < 0 || _index >= _script.Count)
+            {
+                _wrappedBody = string.Empty;
+                return;
+            }
+
+            DialogueLine line = _script[_index];
+            _wrappedBody = DialogueLayout.WrapBody(
+                SpeakerPrefix(line), line.Text ?? string.Empty,
+                maxCharsPerLine, maxLines);
+        }
+
         /// <summary>Plays a manual script; confirm each line to continue.</summary>
         public void Play(IReadOnlyList<DialogueLine> script)
         {
@@ -103,6 +168,7 @@ namespace AlgoRhythm.Game.Presentation
             _shown = 0f;
             _playing = _script.Count > 0;
             _autoHideAtEnd = false;
+            RewrapCurrent();
             gameObject.SetActive(true);
             Render();
         }
@@ -123,6 +189,7 @@ namespace AlgoRhythm.Game.Presentation
             _autoHideAtEnd = true;
             _autoHideDelay = Mathf.Max(0.5f, hideAfterSeconds);
             _autoHideAt = -1f;
+            RewrapCurrent();
             gameObject.SetActive(true);
             Render();
         }
@@ -134,6 +201,8 @@ namespace AlgoRhythm.Game.Presentation
             {
                 _label.text = string.Empty;
             }
+
+            SetPromptVisible(false);
         }
 
         /// <summary>
@@ -152,7 +221,9 @@ namespace AlgoRhythm.Game.Presentation
             _script.Clear();
             _script.Add(new DialogueLine(string.Empty, text ?? string.Empty));
             _index = 0;
-            _shown = (text ?? string.Empty).Length;
+            RewrapCurrent();
+            _shown = _wrappedBody.Length;
+            SetPromptVisible(false);
             gameObject.SetActive(true);
             RenderStatic();
         }
@@ -164,7 +235,7 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            _label.text = _script[0].Text;
+            _label.text = _wrappedBody;
         }
 
         private void Update()
@@ -174,10 +245,9 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            string full = CurrentText();
-            if (_shown < full.Length)
+            if (_shown < _wrappedBody.Length)
             {
-                _shown = Math.Min(full.Length, _shown + charsPerSecond * Time.unscaledDeltaTime);
+                _shown = Math.Min(_wrappedBody.Length, _shown + charsPerSecond * Time.unscaledDeltaTime);
                 Render();
             }
             else if (_autoHideAtEnd)
@@ -213,10 +283,9 @@ namespace AlgoRhythm.Game.Presentation
 
         private void Advance()
         {
-            string full = CurrentText();
-            if (_shown < full.Length)
+            if (_shown < _wrappedBody.Length)
             {
-                _shown = full.Length;
+                _shown = _wrappedBody.Length;
                 Render();
                 return;
             }
@@ -232,22 +301,38 @@ namespace AlgoRhythm.Game.Presentation
             if (_index >= _script.Count)
             {
                 _playing = false;
+                SetPromptVisible(false);
                 Finished?.Invoke();
                 return;
             }
 
             _shown = 0f;
+            RewrapCurrent();
             Render();
         }
 
-        private string CurrentText()
+        private void SetPromptVisible(bool visible)
         {
-            if (_index < 0 || _index >= _script.Count)
+            if (!EnsurePrompt())
             {
-                return string.Empty;
+                return;
             }
 
-            return _script[_index].Text ?? string.Empty;
+            if (!visible)
+            {
+                if (!string.IsNullOrEmpty(advancePrompt.text))
+                {
+                    advancePrompt.text = string.Empty;
+                }
+
+                return;
+            }
+
+            string blink = (Time.unscaledTime % 1f) < 0.6f ? advancePromptText : string.Empty;
+            if (advancePrompt.text != blink)
+            {
+                advancePrompt.text = blink;
+            }
         }
 
         private void Render()
@@ -257,18 +342,11 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            DialogueLine line = _script[_index];
-            int count = Mathf.Clamp(Mathf.FloorToInt(_shown), 0, line.Text.Length);
-            string partial = line.Text.Substring(0, count);
-            // Template "NAMA : dialog". Hint berkedip hanya saat menunggu konfirmasi.
-            string hint = string.Empty;
-            if (count >= line.Text.Length)
-            {
-                hint = (Time.unscaledTime % 1f) < 0.6f ? "\n[ENTER]" : string.Empty;
-            }
-
-            string speaker = string.IsNullOrEmpty(line.Speaker) ? string.Empty : line.Speaker + " : ";
-            _label.text = $"{speaker}{partial}{hint}";
+            int count = Mathf.Clamp(Mathf.FloorToInt(_shown), 0, _wrappedBody.Length);
+            string partial = _wrappedBody.Substring(0, count);
+            string speaker = SpeakerPrefix(_script[_index]);
+            _label.text = $"{speaker}{partial}";
+            SetPromptVisible(count >= _wrappedBody.Length && !_autoHideAtEnd && _playing);
         }
     }
 }
