@@ -1,10 +1,12 @@
+using System;
 using System.Collections.Generic;
 
 namespace AlgoRhythm.Game.Presentation
 {
     /// <summary>
     /// Demo-only outro lines [A]. Played through DialogueView after the
-    /// final wave clears: blackout, breach, read-only terminal, stop.
+    /// final wave clears; the monologue addresses the player by their OS
+    /// account name (real environment data, never invented).
     /// </summary>
     public static class OutroDialogue
     {
@@ -12,33 +14,27 @@ namespace AlgoRhythm.Game.Presentation
         public static DialogueLine BlackoutLine()
         {
             return new DialogueLine(
-                "KAMU",
-                "Aneh, biasanya kantor nggak mati lampu gini.");
+                "A.I.D.A",
+                "Eh. Lampunya mati. Tetap di tempat, jangan panik. Core-nya aman di tanganku.");
         }
 
         /// <summary>
-        /// Closing beats: AIDA is confused too, the breach banner drops with
-        /// the siren, then the read-only terminal. Last line stops the demo.
+        /// Closing monologue. Falls back to "operator" (established fiction)
+        /// when the OS account name is missing or blank.
         /// </summary>
-        public static IReadOnlyList<DialogueLine> Monologue()
+        public static IReadOnlyList<DialogueLine> Monologue(string userName)
         {
+            string name = string.IsNullOrWhiteSpace(userName)
+                ? "operator"
+                : userName.Trim();
             return new[]
             {
                 new DialogueLine(
                     "A.I.D.A",
-                    "Core-ku ikut padam. Operator, ini bukan mati lampu biasa."),
-                new DialogueLine(
-                    "SISTEM",
-                    "DATA TELAH DIJEBOL"),
-                new DialogueLine(
-                    "TERMINAL",
-                    "> breach sektor 2. jejak upload asing terdeteksi. koneksi operator terputus."),
+                    "Dengar. Aku A.I.D.A. Aku nemenin kamu dari wave pertama sampai lampu mati barusan."),
                 new DialogueLine(
                     "A.I.D.A",
-                    "Itu bukan aku. Ada yang lain di dalam sistem ini."),
-                new DialogueLine(
-                    "SISTEM",
-                    "TO BE CONTINUED. Terima kasih sudah main demo ini."),
+                    $"Dan kamu itu {name}, kan? Operator yang gosip kantor bilang gila itu. Senang kerja bareng kamu."),
             };
         }
     }

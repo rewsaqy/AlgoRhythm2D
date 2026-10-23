@@ -32,7 +32,6 @@ namespace AlgoRhythm.Game.Presentation
         private BeatClock _clock;
         private int _sourceCursor;
         private bool _audioAvailable;
-        private AudioClip _sirenClip;
 
         public void Initialize(BeatClock clock)
         {
@@ -126,61 +125,6 @@ namespace AlgoRhythm.Game.Presentation
         public void Pause()
         {
             StopAllSources();
-        }
-
-        /// <summary>
-        /// Ending-teaser siren: procedural two-tone wail, generated at
-        /// runtime so no audio asset or scene change is needed. One voice
-        /// from the shared pool; safe to call when the clock never started.
-        /// </summary>
-        public void PlaySiren(float seconds = 5f)
-        {
-            if (_sources == null || _sources.Length == 0)
-            {
-                return;
-            }
-
-            if (_sirenClip == null)
-            {
-                _sirenClip = MakeSirenClip(Mathf.Max(1f, seconds));
-                if (_sirenClip == null)
-                {
-                    return;
-                }
-            }
-
-            AudioSource source = _sources[_sourceCursor];
-            _sourceCursor = (_sourceCursor + 1) % _sources.Length;
-            source.Stop();
-            source.clip = _sirenClip;
-            source.volume = 0.4f;
-            source.pitch = 1f;
-            source.PlayScheduled(AudioSettings.dspTime);
-        }
-
-        private static AudioClip MakeSirenClip(float seconds)
-        {
-            const int rate = 22050;
-            int samples = Mathf.Max(1, Mathf.RoundToInt(rate * seconds));
-            float[] data = new float[samples];
-            // Two-tone wail: 660 Hz / 880 Hz alternating every half second,
-            // short fades at both ends so it never clicks.
-            for (int i = 0; i < samples; i++)
-            {
-                float t = (float)i / rate;
-                float freq = ((int)(t * 2f) % 2 == 0) ? 660f : 880f;
-                float env = Mathf.Min(1f, t / 0.15f, (seconds - t) / 0.3f);
-                data[i] = Mathf.Sin(2f * Mathf.PI * freq * t) * 0.5f * Mathf.Max(0f, env);
-            }
-
-            AudioClip clip = AudioClip.Create("TeaserSiren", samples, 1, rate, false);
-            if (clip == null)
-            {
-                return null;
-            }
-
-            clip.SetData(data, 0);
-            return clip;
         }
 
         private void StopAllSources()

@@ -2,17 +2,14 @@ using AlgoRhythm.Core.Rhythm;
 using AlgoRhythm.Game.Combat;
 using AlgoRhythm.Game.Presentation;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace AlgoRhythm.Game.Combat
 {
     /// <summary>
-    /// Run-clear outro: black fade in, KAMU blackout line, 4 black-white
-    /// flicker cycles, black fade in again, breach monologue (AIDA confused,
-    /// DATA TELAH DIJEBOL + siren, read-only terminal, TO BE CONTINUED),
-    /// then back to the main menu where the demo stops. Pure presentation
-    /// over the idle run-clear state; judging already ended. Lines confirm
-    /// with ENTER like the tutorial.
+    /// Run-clear outro: black fade in, AIDA blackout line, 4 black-white
+    /// flicker cycles, black fade in again, AIDA monologue naming the OS
+    /// account, fade out. Pure presentation over the idle run-clear state;
+    /// judging already ended. Lines confirm with ENTER like the tutorial.
     /// </summary>
     public sealed class OutroDriver : MonoBehaviour
     {
@@ -40,7 +37,6 @@ namespace AlgoRhythm.Game.Combat
         private WaveDirector _director;
         private DialogueView _dialogue;
         private BlackoutView _blackout;
-        private SfxPlayer _sfx;
         private BeatClock _clock;
         private Phase _phase = Phase.Idle;
         private float _phaseAt;
@@ -52,17 +48,12 @@ namespace AlgoRhythm.Game.Combat
         public bool IsActive => _phase != Phase.Idle && _phase != Phase.Done;
 
         public void Initialize(
-            WaveDirector director,
-            DialogueView dialogue,
-            BlackoutView blackout,
-            BeatClock clock,
-            SfxPlayer sfx = null)
+            WaveDirector director, DialogueView dialogue, BlackoutView blackout, BeatClock clock)
         {
             _director = director;
             _dialogue = dialogue;
             _blackout = blackout;
             _clock = clock;
-            _sfx = sfx;
             if (_dialogue != null)
             {
                 _dialogue.Finished -= OnDialogueFinished;
@@ -160,7 +151,9 @@ namespace AlgoRhythm.Game.Combat
                             _dialogue.Stop();
                         }
 
-                        FinishToMenu();
+                        SetSceneVisible(true);
+                        _keepOff.Clear();
+                        _phase = Phase.Done;
                     }
 
                     break;
@@ -226,14 +219,19 @@ namespace AlgoRhythm.Game.Combat
         {
             _phase = Phase.Monologue;
             _dialogueDone = false;
-            if (_sfx != null)
-            {
-                _sfx.PlaySiren();
-            }
-
             if (_dialogue != null)
             {
-                _dialogue.Play(OutroDialogue.Monologue());
+                string userName = null;
+                try
+                {
+                    userName = System.Environment.UserName;
+                }
+                catch (System.Exception)
+                {
+                    userName = null;
+                }
+
+                _dialogue.Play(OutroDialogue.Monologue(userName));
             }
             else
             {
@@ -250,15 +248,8 @@ namespace AlgoRhythm.Game.Combat
             }
             else
             {
-                FinishToMenu();
+                _phase = Phase.Done;
             }
-        }
-
-        /// <summary>Demo stops here: back to the main menu.</summary>
-        private void FinishToMenu()
-        {
-            _phase = Phase.Done;
-            SceneManager.LoadScene("MainMenu");
         }
 
         private void OnDialogueFinished()

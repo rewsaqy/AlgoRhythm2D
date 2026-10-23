@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace AlgoRhythm.Tests
 {
     /// <summary>
-    /// Demo run contract: Tutorial - Lagu 1 - Lagu 2 - teaser. Every new
+    /// Demo run contract: Tutorial - Lagu 1 - Lagu 2 - outro. Every new
     /// thing has its own blocking tutorial, and no visible line uses an
     /// em/en dash (antislop R-02).
     /// </summary>
@@ -47,7 +47,7 @@ namespace AlgoRhythm.Tests
                 yield return line.Speaker + " : " + line.Text;
             }
 
-            foreach (DialogueLine line in OutroDialogue.Monologue())
+            foreach (DialogueLine line in OutroDialogue.Monologue("tester"))
             {
                 yield return line.Speaker + " : " + line.Text;
             }
@@ -100,18 +100,6 @@ namespace AlgoRhythm.Tests
             Assert.IsFalse(string.IsNullOrEmpty(line1));
             Assert.IsFalse(string.IsNullOrEmpty(id2));
             Assert.IsFalse(string.IsNullOrEmpty(line2));
-        }
-
-        [Test]
-        public void Outro_BlackoutThenTerminal()
-        {
-            DialogueLine blackout = OutroDialogue.BlackoutLine();
-            Assert.AreEqual("KAMU", blackout.Speaker);
-            IReadOnlyList<DialogueLine> mono = OutroDialogue.Monologue();
-            Assert.IsTrue(mono.Count >= 4);
-            Assert.IsTrue(mono.Any(l => l.Text.Contains("DATA TELAH DIJEBOL")));
-            Assert.IsTrue(mono.Any(l => l.Speaker == "TERMINAL"));
-            Assert.IsTrue(mono[mono.Count - 1].Text.Contains("TO BE CONTINUED"));
         }
 
         [Test]
