@@ -2,14 +2,16 @@ using AlgoRhythm.Core.Rhythm;
 using AlgoRhythm.Game.Combat;
 using AlgoRhythm.Game.Presentation;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace AlgoRhythm.Game.Combat
 {
     /// <summary>
-    /// Run-clear outro: black fade in, AIDA blackout line, 4 black-white
-    /// flicker cycles, black fade in again, AIDA monologue naming the OS
-    /// account, fade out. Pure presentation over the idle run-clear state;
-    /// judging already ended. Lines confirm with ENTER like the tutorial.
+    /// Run-clear outro: dramatic power failure, emergency glitch flickers,
+    /// A.I.D.A. v2.0 revelation monologue addressing the real OS account,
+    /// final system override stinger, and interactive cinematic card.
+    /// Pure presentation over the idle run-clear state; judging ended.
     /// </summary>
     public sealed class OutroDriver : MonoBehaviour
     {
@@ -17,27 +19,34 @@ namespace AlgoRhythm.Game.Combat
         {
             Idle,
             Delay,
+            PowerCutImpact,
             BlackIn,
-            Line,
-            Flicker,
-            BlackInAgain,
-            Monologue,
-            BlackOut,
+            Act1_PowerFailure,
+            GlitchStrobe,
+            Act2_Alarm,
+            TakeoverImpact,
+            Act3_Betrayal,
+            OverrideClimax,
+            FinaleCard,
             Done
         }
 
-    /// <summary>Dialogue stays readable: blackout stops at near-black.</summary>
+        /// <summary>Dialogue stays readable: blackout stops at near-black.</summary>
         private const float ReadableBlackoutAlpha = 0.88f;
 
         [Header("Timing [U]")]
-        [Min(0f)] [SerializeField] private float startDelaySeconds = 1.5f;
-        [Min(1)] [SerializeField] private int flickerCycles = 4;
-        [Min(0.05f)] [SerializeField] private float flickerHalfPeriod = 0.25f;
+        [Min(0f)] [SerializeField] private float startDelaySeconds = 1.0f;
+        [Min(1)] [SerializeField] private int flickerCycles = 5;
+        [Min(0.05f)] [SerializeField] private float flickerHalfPeriod = 0.12f;
 
         private WaveDirector _director;
         private DialogueView _dialogue;
         private BlackoutView _blackout;
         private BeatClock _clock;
+        private CameraShake _shake;
+        private SfxPlayer _sfx;
+        private DamageFlashView _damageFlash;
+
         private Phase _phase = Phase.Idle;
         private float _phaseAt;
         private float _blackTarget = 0f;
@@ -48,12 +57,22 @@ namespace AlgoRhythm.Game.Combat
         public bool IsActive => _phase != Phase.Idle && _phase != Phase.Done;
 
         public void Initialize(
-            WaveDirector director, DialogueView dialogue, BlackoutView blackout, BeatClock clock)
+            WaveDirector director,
+            DialogueView dialogue,
+            BlackoutView blackout,
+            BeatClock clock,
+            CameraShake cameraShake = null,
+            SfxPlayer sfx = null,
+            DamageFlashView damageFlash = null)
         {
             _director = director;
             _dialogue = dialogue;
             _blackout = blackout;
             _clock = clock;
+            _shake = cameraShake;
+            _sfx = sfx;
+            _damageFlash = damageFlash;
+
             if (_dialogue != null)
             {
                 _dialogue.Finished -= OnDialogueFinished;
@@ -66,6 +85,7 @@ namespace AlgoRhythm.Game.Combat
             if (_dialogue != null)
             {
                 _dialogue.Finished -= OnDialogueFinished;
+                _dialogue.RestoreDefaultStyle();
             }
         }
 
@@ -104,60 +124,77 @@ namespace AlgoRhythm.Game.Combat
                 case Phase.Delay:
                     if (Time.unscaledTime - _phaseAt >= startDelaySeconds)
                     {
-                        EnterBlackIn();
+                        EnterPowerCutImpact();
                     }
-
                     break;
+
+                case Phase.PowerCutImpact:
+                    EnterBlackIn();
+                    break;
+
                 case Phase.BlackIn:
                     if (!IsBlackoutBusy() && BlackoutAlpha() >= _blackTarget - 0.02f)
                     {
-                        EnterLine();
+                        EnterAct1_PowerFailure();
                     }
-
                     break;
-                case Phase.Line:
+
+                case Phase.Act1_PowerFailure:
                     if (_dialogueDone)
                     {
-                        EnterFlicker();
+                        EnterGlitchStrobe();
                     }
-
                     break;
-                case Phase.Flicker:
+
+                case Phase.GlitchStrobe:
                     if (!IsBlackoutBusy())
                     {
-                        EnterBlackInAgain();
+                        EnterAct2_Alarm();
                     }
-
                     break;
-                case Phase.BlackInAgain:
-                    if (!IsBlackoutBusy() && BlackoutAlpha() >= _blackTarget - 0.02f)
-                    {
-                        EnterMonologue();
-                    }
 
-                    break;
-                case Phase.Monologue:
+                case Phase.Act2_Alarm:
                     if (_dialogueDone)
                     {
-                        EnterBlackOut();
+                        EnterTakeoverImpact();
                     }
-
                     break;
-                case Phase.BlackOut:
-                    if (!IsBlackoutBusy() && BlackoutAlpha() <= 0.01f)
+
+                case Phase.TakeoverImpact:
+                    if (Time.unscaledTime - _phaseAt >= 0.8f)
                     {
-                        if (_dialogue != null)
-                        {
-                            _dialogue.Stop();
-                        }
-
-                        SetSceneVisible(true);
-                        _keepOff.Clear();
-                        _phase = Phase.Done;
+                        EnterAct3_Betrayal();
                     }
+                    break;
 
+                case Phase.Act3_Betrayal:
+                    if (_dialogueDone)
+                    {
+                        EnterOverrideClimax();
+                    }
+                    break;
+
+                case Phase.OverrideClimax:
+                    if (Time.unscaledTime - _phaseAt >= 0.6f)
+                    {
+                        EnterFinaleCard();
+                    }
+                    break;
+
+                case Phase.FinaleCard:
+                    UpdateFinaleInput();
                     break;
             }
+        }
+
+        private void EnterPowerCutImpact()
+        {
+            _phase = Phase.PowerCutImpact;
+            _dialogue?.ConfigureOutroStyle();
+            _sfx?.PlayGlitchZap(0.5f, 0.8f);
+            _sfx?.PlayStinger(0.6f, 0.85f);
+            _shake?.AddTrauma(1.0f);
+            _damageFlash?.Flash(0.9f);
         }
 
         private void EnterBlackIn()
@@ -171,20 +208,17 @@ namespace AlgoRhythm.Game.Combat
             }
             else
             {
-                EnterLine();
+                EnterAct1_PowerFailure();
             }
         }
 
-        private void EnterLine()
+        private void EnterAct1_PowerFailure()
         {
-            _phase = Phase.Line;
+            _phase = Phase.Act1_PowerFailure;
             _dialogueDone = false;
             if (_dialogue != null)
             {
-                _dialogue.Play(new System.Collections.Generic.List<DialogueLine>
-                {
-                    OutroDialogue.BlackoutLine(),
-                });
+                _dialogue.Play(OutroDialogue.PowerFailureLines());
             }
             else
             {
@@ -192,32 +226,49 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        private void EnterFlicker()
+        private void EnterGlitchStrobe()
         {
-            _phase = Phase.Flicker;
+            _phase = Phase.GlitchStrobe;
+            _sfx?.PlayGlitchZap(1.3f, 0.7f);
+            _damageFlash?.Flash(0.75f);
+            _shake?.AddTrauma(0.7f);
+
             if (_blackout != null)
             {
                 _blackout.Flicker(flickerCycles, flickerHalfPeriod);
             }
         }
 
-        private void EnterBlackInAgain()
+        private void EnterAct2_Alarm()
         {
-            _phase = Phase.BlackInAgain;
+            _phase = Phase.Act2_Alarm;
+            _dialogueDone = false;
             _blackTarget = ReadableBlackoutAlpha;
-            if (_blackout != null)
+            _blackout?.FadeTo(ReadableBlackoutAlpha);
+
+            if (_dialogue != null)
             {
-                _blackout.FadeTo(ReadableBlackoutAlpha);
+                _dialogue.Play(OutroDialogue.AlarmLines());
             }
             else
             {
-                EnterMonologue();
+                _dialogueDone = true;
             }
         }
 
-        private void EnterMonologue()
+        private void EnterTakeoverImpact()
         {
-            _phase = Phase.Monologue;
+            _phase = Phase.TakeoverImpact;
+            _phaseAt = Time.unscaledTime;
+            _sfx?.PlayStinger(0.45f, 0.9f);
+            _shake?.AddTrauma(0.85f);
+            _damageFlash?.Flash(0.5f);
+            _blackout?.FadeTo(0.92f);
+        }
+
+        private void EnterAct3_Betrayal()
+        {
+            _phase = Phase.Act3_Betrayal;
             _dialogueDone = false;
             if (_dialogue != null)
             {
@@ -231,7 +282,7 @@ namespace AlgoRhythm.Game.Combat
                     userName = null;
                 }
 
-                _dialogue.Play(OutroDialogue.Monologue(userName));
+                _dialogue.Play(OutroDialogue.Betrayal(userName));
             }
             else
             {
@@ -239,16 +290,43 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        private void EnterBlackOut()
+        private void EnterOverrideClimax()
         {
-            _phase = Phase.BlackOut;
-            if (_blackout != null)
+            _phase = Phase.OverrideClimax;
+            _phaseAt = Time.unscaledTime;
+            _sfx?.PlayGlitchZap(0.4f, 0.85f);
+            _sfx?.PlayStinger(0.35f, 1.0f);
+            _shake?.AddTrauma(1.0f);
+            _damageFlash?.Flash(1.0f);
+            _blackout?.FadeTo(0.95f);
+        }
+
+        private void EnterFinaleCard()
+        {
+            _phase = Phase.FinaleCard;
+            if (_dialogue != null)
             {
-                _blackout.FadeTo(0f);
+                _dialogue.ShowRaw(OutroDialogue.FinaleCardText());
             }
-            else
+        }
+
+        private void UpdateFinaleInput()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
             {
-                _phase = Phase.Done;
+                return;
+            }
+
+            if (keyboard[Key.Enter].wasPressedThisFrame
+                || keyboard[Key.NumpadEnter].wasPressedThisFrame
+                || keyboard[Key.Escape].wasPressedThisFrame)
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
+            else if (keyboard[Key.R].wasPressedThisFrame)
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
         }
 

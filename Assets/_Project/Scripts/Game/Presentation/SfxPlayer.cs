@@ -122,6 +122,51 @@ namespace AlgoRhythm.Game.Presentation
             source.PlayScheduled(AudioSettings.dspTime);
         }
 
+        /// <summary>
+        /// Outro/cutscene stinger. Plays immediately on unscaled time without
+        /// requiring BeatClock to be running, at an adjustable pitch.
+        /// </summary>
+        public void PlayStinger(float pitch = 1.0f, float volume = 0.7f)
+        {
+            if (_sources == null || _sources.Length == 0 || destroyClip == null)
+            {
+                return;
+            }
+
+            AudioSource source = _sources[_sourceCursor];
+            _sourceCursor = (_sourceCursor + 1) % _sources.Length;
+            source.Stop();
+            source.clip = destroyClip;
+            source.volume = Mathf.Clamp01(volume);
+            source.pitch = Mathf.Clamp(pitch, 0.2f, 3.0f);
+            source.Play();
+        }
+
+        /// <summary>
+        /// Outro/cutscene glitch zap. Plays the retro zap sound at an adjustable pitch.
+        /// </summary>
+        public void PlayGlitchZap(float pitch = 1.0f, float volume = 0.6f)
+        {
+            if (_sources == null || _sources.Length == 0)
+            {
+                return;
+            }
+
+            AudioClip clip = aidaFireClip != null ? aidaFireClip : (pewClip != null ? pewClip : destroyClip);
+            if (clip == null)
+            {
+                return;
+            }
+
+            AudioSource source = _sources[_sourceCursor];
+            _sourceCursor = (_sourceCursor + 1) % _sources.Length;
+            source.Stop();
+            source.clip = clip;
+            source.volume = Mathf.Clamp01(volume);
+            source.pitch = Mathf.Clamp(pitch, 0.2f, 3.0f);
+            source.Play();
+        }
+
         public void Pause()
         {
             StopAllSources();

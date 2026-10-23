@@ -20,7 +20,7 @@ MonoBehaviour:
   - kind: 0
     direction: 0
     spawnBeat: 1
-    impactBeat: 5
+    impactBeat: 16
     baseDamage: 0
     angleMode: 0
     angleDeg: 0

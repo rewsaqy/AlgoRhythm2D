@@ -9,10 +9,10 @@
     "tier": "small"
   },
   "snapshot": {
-    "observed_date": "2026-10-20",
+    "observed_date": "2026-10-23",
     "source_kind": "git working tree",
-    "revision": "77f12cf",
-    "dirty": true,
+    "revision": "fd9ed3b",
+    "dirty": false,
     "completeness_limits": [
       "Original GDD DOCX absent; docs/ALGORHYTHM_GAME_CONTEXT.md is a derived summary.",
       "Unity 6000.3.8f1 batchmode compile, EditMode tests, and a bootstrap-only PlayMode smoke ran in a disposable clone; no input-driven Play Mode, build, player, or profiler run.",

@@ -59,6 +59,81 @@ namespace AlgoRhythm.Game.Presentation
 
         public bool IsPlaying => _playing;
 
+        public int MaxLines
+        {
+            get => maxLines;
+            set => maxLines = Mathf.Max(1, value);
+        }
+
+        public int MaxCharsPerLine
+        {
+            get => maxCharsPerLine;
+            set => maxCharsPerLine = Mathf.Max(8, value);
+        }
+
+        private Vector3 _originalLocalPosition;
+        private TextAnchor _originalAnchor;
+        private TextAlignment _originalAlignment;
+        private float _originalCharSize;
+        private int _originalFontSize;
+        private Color _originalColor;
+        private bool _hasSavedStyle;
+
+        /// <summary>
+        /// Centers the dialogue and sets luminous CRT phosphor styling for outro.
+        /// </summary>
+        public void ConfigureOutroStyle()
+        {
+            if (!EnsureLabel())
+            {
+                return;
+            }
+
+            if (!_hasSavedStyle)
+            {
+                _originalLocalPosition = _label.transform.localPosition;
+                _originalAnchor = _label.anchor;
+                _originalAlignment = _label.alignment;
+                _originalCharSize = _label.characterSize;
+                _originalFontSize = _label.fontSize;
+                _originalColor = _label.color;
+                _hasSavedStyle = true;
+            }
+
+            maxLines = 18;
+            maxCharsPerLine = 64;
+            _label.anchor = TextAnchor.MiddleCenter;
+            _label.alignment = TextAlignment.Center;
+            _label.characterSize = 0.065f;
+            _label.fontSize = 28;
+            _label.lineSpacing = 1.15f;
+            _label.color = UiTypography.Info;
+            _label.transform.localPosition = new Vector3(8.288889f, -4.4f, -0.2f);
+
+            if (advancePrompt != null)
+            {
+                advancePrompt.transform.localPosition = new Vector3(8.288889f, -5.8f, 0f);
+                advancePrompt.color = UiTypography.Good;
+            }
+        }
+
+        /// <summary>Restores default gameplay styling and positioning.</summary>
+        public void RestoreDefaultStyle()
+        {
+            if (_hasSavedStyle && _label != null)
+            {
+                _label.transform.localPosition = _originalLocalPosition;
+                _label.anchor = _originalAnchor;
+                _label.alignment = _originalAlignment;
+                _label.characterSize = _originalCharSize;
+                _label.fontSize = _originalFontSize;
+                _label.color = _originalColor;
+                maxLines = 5;
+                maxCharsPerLine = 56;
+                _hasSavedStyle = false;
+            }
+        }
+
         private void Awake()
         {
             // NOTE: GameBootstrap.Awake (root) runs before this Awake, and
@@ -226,6 +301,27 @@ namespace AlgoRhythm.Game.Presentation
             SetPromptVisible(false);
             gameObject.SetActive(true);
             RenderStatic();
+        }
+
+        /// <summary>
+        /// Displays pre-formatted raw text directly without word-wrap splitting.
+        /// Preserves exact indentation, ASCII box drawing, and line breaks.
+        /// </summary>
+        public void ShowRaw(string text)
+        {
+            if (!EnsureLabel())
+            {
+                return;
+            }
+
+            _playing = false;
+            _autoHideAt = -1f;
+            _script.Clear();
+            _wrappedBody = text ?? string.Empty;
+            _shown = _wrappedBody.Length;
+            SetPromptVisible(false);
+            gameObject.SetActive(true);
+            _label.text = _wrappedBody;
         }
 
         private void RenderStatic()

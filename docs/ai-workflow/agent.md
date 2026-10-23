@@ -101,9 +101,9 @@ Hard depends on: I-001
 Soft depends on: none
 Verification depends on: V-006, V-007, V-008
 Exit check: V-009
-Status: not_started
+Status: done
 
-Scope: `RuleWhitelist` + `RuleValidator` + `RuleRuntime` with A1 auto-shield; 3-slot code panel with preview/errors and safe reset; `WaveDefinitionSO`/`WaveMapper` and W1A/W1B; Adware Decoy; Energy regen; wave-clear summary; 1A→1B transition and retry. Out of scope: production rule content, dialogue, build.
+Scope: `RuleWhitelist` + `RuleValidator` + `RuleRuntime` with A1 auto-shield; 3-slot code panel with preview/errors and safe reset; `WaveDefinitionSO`/`WaveMapper` and W1A/W1B/W1C/W1D/W1T/WS1/WS2; Adware Decoy; PTS Shop economy; 4 new enemy archetypes; Energy regen; wave-clear summary; 1A→1B transition and retry. Fully verified in EditMode tests (87/87) and user-driven PlayMode runs (V-008, V-009). Out of scope: production rule content, dialogue, build.
 
 ### I-003 Day 3 — narrative, stability, and Linux demo build
 Hard depends on: I-002
@@ -125,8 +125,8 @@ Scope: `DialogueView` with A.I.D.A. 1.0/2.0; pause/alt-tab handling; calibration
 
 ## Tool limits
 
-- AnkleBreaker Unity MCP is an external candidate, not a configured tool. The inspected server (2.36.0, commit `9c84ff9`) requires the companion Unity plugin and an MCP stdio entry; it is not installed here. The demo does not depend on it. See `project-context.md` §14. Do not claim Unity bridge access until a read-only ping succeeds.
-- If the MCP is enabled later: select the correct editor, prefer read-only calls, treat code execution/scene/asset writes/builds/Play Mode control as privileged mutations, and inspect after timeouts before retrying a write.
+- AnkleBreaker Unity MCP is configured in `~/.gemini/config/mcp_config.json` with the companion plugin `com.anklebreaker.unity-mcp` (v2.41.4) installed in `Packages/manifest.json`. The bridge is verified active on port 7891 with 0 compilation errors and 87/87 EditMode tests passed. Context7 MCP is configured globally for live documentation lookups.
+- MCP safe-use: select the correct editor, prefer read-only calls, treat code execution/scene/asset writes/builds/Play Mode control as privileged mutations, and inspect after timeouts before retrying a write.
 - The pack tools (`context.py`, `validate_pack.py`) only inspect workflow documents; they do not prove game behavior.
 - The Unity Editor may be open; check `Temp/UnityLockfile` and running processes before batch-mode work. Current observation: lockfile present, no editor process.
 - Windows Build Support is not installed and `wine` is absent; only LinuxStandaloneSupport is available. Plan V-011 accordingly and keep V-012 blocked until the environment exists.

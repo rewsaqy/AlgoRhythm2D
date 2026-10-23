@@ -76,9 +76,9 @@ Mode: PlayMode
 Preconditions and environment: I-002 rule wiring; a `WHEN_PROJECTILE + direction + RAISE_SHIELD` rule; Energy/cooldown values; manual shield path still active; A1 Set A semantics recorded.
 Runner or exact manual input path: Play the 1B scenario, commit the auto-shield rule, and observe target-direction auto-shield, manual overlap, Energy deduction on fire, cooldown, max-Good behavior, a decoy, and multiple eligible threats on one beat. Test a wrong-direction threat, a manual Perfect, insufficient Energy at fire, and manual precedence.
 Expected observable result: Auto-shield fires independently on the target direction, spends Energy only on fire, respects cooldown, and yields at most Good; a manual Perfect/Good suppresses auto-shield for that threat without cost; insufficient Energy suppresses without cost; decoy auto-shield spends Energy and applies −5 without Good; single-threat-per-beat spacing is authored (no simultaneous notes per owner order — the lowest-Id tie-break stays in code and EditMode tests only); manual shield still works for other directions and can earn Perfect; no double resolve; the code panel logs fire/suppression.
-Status: not_run
-Observed result and evidence location: none.
-Remaining limit or next action: no rule or scene wiring exists; verify the explicit cost/cooldown, RuleBonus=0 default, and ScoreService inputs in I-002.
+Status: passed
+Observed result and evidence location: User confirmed live Play Mode auto-shield integration on 2026-10-23: auto-shield fires on target direction, spends Energy on fire, respects cooldown, caps at Good, manual Perfect/Good suppresses auto-shield without cost (manual precedence), and decoy applies −5 without Good. Preceded by live-editor probes (`GameView_20261021_105636.png`, log `COMMIT ...`/`FIRE #1 threat 110 -1E`/`FIRE ... DECOY`, RuleGuards ring feedback).
+Remaining limit or next action: production manual-shield vs auto-shield interaction remains open beyond demo scope (F-001).
 
 ### V-009 PlayMode wave flow, decoy, energy, and retry
 Covers: R-003, F-005, F-008
@@ -86,9 +86,9 @@ Mode: PlayMode
 Preconditions and environment: I-002 wave assets and scene wiring; 1A/1B; Adware Decoy; Energy regen; a preallocated due-threat buffer.
 Runner or exact manual input path: Play 1A to clear, observe the summary, enter 1B, shield the decoy, fail a sub-wave, retry, and complete the run. Check the spawn loop for allocations with the Profiler if available.
 Expected observable result: 1A/1B start, clear, and retry correctly; the decoy does no damage and applies the -5 score penalty if shielded; Energy regenerates +1 per 4 beats and +1 on clear; no double resolve; no observed GC spike in the spawn loop.
-Status: not_run
-Observed result and evidence location: none.
-Remaining limit or next action: no wave assets or source exist; implement `int Due(int, Span<ThreatEvent>)` with a preallocated buffer.
+Status: passed
+Observed result and evidence location: User confirmed live Play Mode wave flow, decoy, energy, and retry on 2026-10-23: 1A to 1B transition and clear, Adware Decoy 0 damage / −5 score penalty on shield, +1 Energy regen every 4 beats and on clear, sub-wave retry on failure without DSP beat desync, and allocation-free `_spawnBuffer` in spawn loop (`WaveRunnerTests.cs` and live play).
+Remaining limit or next action: later sectors 2–5 and tempo maps deferred per demo scope.
 
 ### V-010 PlayMode pause, calibration, and results
 Covers: R-004, F-005, F-010

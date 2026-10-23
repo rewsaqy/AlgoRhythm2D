@@ -50,10 +50,24 @@ namespace AlgoRhythm.Game.Presentation
 
         private void OnDamaged(int _)
         {
+            Flash();
+        }
+
+        /// <summary>
+        /// Explicit flash trigger for dramatic events or outro cinematics.
+        /// </summary>
+        public void Flash(float customAlpha = -1f)
+        {
+            if (_renderer == null)
+            {
+                _renderer = GetComponent<SpriteRenderer>();
+            }
+
+            float target = customAlpha > 0f ? Mathf.Clamp01(customAlpha) : maxAlpha;
             float now = Time.unscaledTime;
             _flashUntil = now + holdSeconds;
             _fadeUntil = _flashUntil + fadeSeconds;
-            SetAlpha(maxAlpha);
+            SetAlpha(target);
         }
 
         private void Update()

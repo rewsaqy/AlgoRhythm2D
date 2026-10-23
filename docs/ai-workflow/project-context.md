@@ -2,7 +2,7 @@
 
 ## 1. Provenance and coverage
 
-- Observed: 2026-10-20, source kind `git working tree`, revision `77f12cf`, dirty `true`.
+- Observed: 2026-10-23, source kind `git working tree`, revision `fd9ed3b`, dirty `false`.
 - Repository root: `/home/zxwyvern/AlgoRhythm2D` (one Unity root).
 - Inspector: AI agent. The 3-day demo plan was supplied by the user on 2026-10-20 and saved as `docs/ALGORHYTHM_DEMO_PLAN_3DAY.md`. After the I-001 source was added, the greybox scene was reworked so every GameObject is manually authored in `Assets/Scenes/SampleScene.unity` via the Unity MCP; runtime scripts no longer create GameObjects. A Unity 6000.3.8f1 batchmode compile, EditMode run, and PlayMode smoke that loads the actual scene were performed on a disposable clone; the live editor entered Play Mode twice with 0 console errors, and the user drove the full 12-threat wave to WAVE CLEAR, passing V-003. No build, profiler, or player run was performed.
 - Budget: `balanced` (refresh for the 3-day demo); profile: `compact`. Deep reads were limited to startup, stack, scene, input, design context, and the demo plan. The file inventory covered `Assets/` and top-level project/package/config files; `Library/`, `Temp/`, `Logs/`, `UserSettings/`, and `Builds/` were excluded.
@@ -14,7 +14,7 @@
 ## 2. Pack profile and tier
 
 - Profile: `compact` (default for a focused prototype). Revisit if routes exceed 8 or gameplay scripts exceed roughly 50.
-- Tier: `small` — one Unity root, 22 runtime C# scripts, 4 asmdefs, 1 scene, 0 prefabs, 5 test files (4 EditMode + 1 PlayMode smoke), and the I-001 project-owned assets (input map, DemoConfig, four greybox materials, one metronome click). The I-001 greybox arena and HUD are manually authored scene objects with serialized `GameBootstrap` references.
+- Tier: `small` — one Unity root, 56 runtime C# scripts, 4 asmdefs, 3 scenes (`MainMenu.unity`, `Opening_1.unity`, `SampleScene.unity`), 0 prefabs, 15 test files (14 EditMode + 1 PlayMode smoke, 88 total tests: 87 EditMode + 1 PlayMode). The greybox arena and HUD are manually authored scene objects with serialized `GameBootstrap` references.
 
 ## 3. Protected areas
 
@@ -53,32 +53,33 @@ Remaining production conflicts/open decisions (not resolved by the demo):
 
 | Component | Version | Evidence | Status |
 |---|---|---|---|
-| Unity Editor | 6000.3.8f1 (revision 1c7db571dde0) | C-001 | batchmode compile/EditMode tests and an actual-scene PlayMode smoke on a disposable clone; live editor Play Mode rendered the manual scene; input/pause not exercised |
-| Universal RP | 17.3.0 | C-002 | declared and locked |
-| Input System | 1.18.0; new-only (`activeInputHandler: 1`) | C-003 | declared and configured; I-001 `Rhythm` map added; bindings not exercised |
-| Unity Test Framework | 1.6.0 | C-004 | declared; I-001 EditMode + PlayMode assemblies; EditMode 19/19 and smoke 1/1 in a clone |
-| Demo scope | Adware 1A/1B (1C optional) | C-016 | design intent; I-001 debug fixture only; no 1A/1B content assets |
+| Unity Editor | 6000.3.8f1 (revision 1c7db571dde0) | C-001 | live editor running on port 7891; 0 compilation errors; 87/87 EditMode tests passed via Unity MCP |
+| Universal RP | 17.3.0 | C-002 | declared and locked; CRT RenderFeature active |
+| Input System | 1.18.0; new-only (`activeInputHandler: 1`) | C-003 | declared and configured; Rhythm map with Aim (360°), Tap (Z/X/Click), and Pause |
+| Unity Test Framework | 1.6.0 | C-004 | declared; 14 EditMode + 1 PlayMode test files; EditMode 87/87 passed on live editor |
+| Demo scope | Adware 1A/1B/1C/1D + Song waves (W1T/WS1/WS2) | C-016 | content assets and multiple enemy archetypes implemented and tested |
 | Demo build (internal) | Linux Standalone (local only) | C-022 | planned; not a target change |
 | Python (pack tools) | 3.14.8 | tooling observation | available |
-| Node.js (external MCP candidate) | 26.11.1 | tooling observation | available; MCP not installed |
+| Node.js / Unity MCP | 26.11.1 / anklebreaker-unity-mcp 2.36.0 | tooling observation | configured in `mcp_config.json`; active on port 7891 |
+| Context7 MCP | @upstash/context7-mcp 4.4.4 | tooling observation | configured in `mcp_config.json`; live documentation lookup verified |
 | Target platform | Windows PC (design intent) | C-015 | `[D]` release target; not confirmed in repo build settings |
 
 ## 6. Entry and startup path
 
-- First and only enabled build scene: `Assets/Scenes/SampleScene.unity` (C-005).
-- Scene contents: `Main Camera` (orthographic, size 5, URP camera data), `Global Light 2D`, and a manually authored `AlgoRhythm` hierarchy with serialized `GameBootstrap`, `ArenaPresenter`, `HudView`, `MetronomePlayer`, `InputRouter`, 12 inactive `ThreatView` objects, 4 inactive `ShieldView` objects, 8 `AudioSource` children, and HUD TextMesh labels (C-005, C-031).
-- I-001 adds a serialized `GameBootstrap` under `Assets/_Project/Scripts/Game/Bootstrap/`; it composes pure-C# runtime services from the existing scene references and has no `RuntimeInitializeOnLoadMethod` and no runtime GameObject creation (C-014, C-031).
-- `Assets/_Project/Scripts/Core/**`, `Assets/_Project/Scripts/Game/**`, `Assets/_Project/Tests/EditMode/**`, `Assets/_Project/Data/DemoConfig.asset`, `Assets/_Project/Materials/Greybox*.mat`, and `Assets/_Project/Audio/MetronomeClick.wav` now exist. The proposed `Boot`/`Gameplay` scenes do not.
-- An I-001 execution path exists; the EditMode suite, an actual-scene PlayMode smoke, and a user-driven V-003 run to WAVE CLEAR are observed. Pause/resume, correct/wrong/late input, and single-resolve behavior are verified for the debug wave; the full demo loop (rules, 1B, narrative, build) remains unverified.
+- Enabled build scenes: `Assets/Scenes/MainMenu.unity`, `Assets/Scenes/Opening_1.unity`, `Assets/Scenes/SampleScene.unity` (C-005).
+- Scene contents: `Main Camera` (orthographic, size 5, URP camera data), `Global Light 2D`, and a manually authored `AlgoRhythm` hierarchy with serialized `GameBootstrap`, `ArenaPresenter`, `HudView`, `MetronomePlayer`, `InputRouter`, `PaddleView`, `AidaTower`, `ShopView`, `DamageFlashView`, `IntegrityBarView`, `CoreSpin`, inactive `ThreatView` objects, inactive `ShieldView` objects, 8 `AudioSource` children, and HUD TextMesh labels (C-005, C-031).
+- Serialized `GameBootstrap` under `Assets/_Project/Scripts/Game/Bootstrap/`; composes pure-C# runtime services from scene references with no `RuntimeInitializeOnLoadMethod` and no runtime GameObject creation (C-014, C-031).
+- `Assets/_Project/Scripts/Core/**`, `Assets/_Project/Scripts/Game/**`, `Assets/_Project/Tests/EditMode/**`, `Assets/_Project/Data/DemoConfig.asset`, `Assets/_Project/Data/Waves/**`, materials, CRT shaders, and audio assets exist.
+- Execution paths for Beatblock paddle aiming/tapping, rule validation/runtime, wave spawning with multi-archetypes, PTS shop economy, tutorial typewriter drill, and outro dialogue are implemented and tested (87/87 EditMode tests passed).
 
 ## 7. Subsystem map (deep-mapped)
 
 | Subsystem | Intended responsibility | Current state | Key future symbols |
 |---|---|---|---|
-| Rhythm/Timing | DSP beat clock, impact schedule, input judge, calibration | I-001 source + EditMode tests + actual-scene PlayMode smoke + user-driven V-003 run to WAVE CLEAR | `BeatClock`, `DspClockSource`, `TimingJudge`, `InputRouter` |
-| Rule Engine | 3-slot grammar, whitelist, validation, preview, auto-shield | absent | `RuleValidator`, `RuleRuntime`, `RuleDefinition`, `RuleWhitelist` |
-| Combat/Waves | Threat events, idempotent resolve, waves, decoy, energy | I-001 `CombatState`, `WaveRunner`, `WaveData`, debug fixture; no content assets | `CombatState`, `ThreatEvent`, `WaveRunner`, `WaveData` |
-| Presentation/Flow | Arena, code panel, HUD, dialogue, pause, results | I-001 manually authored arena/HUD/metronome views with serialized presenter components; no code panel, dialogue, results, or pause view | `ArenaPresenter`, `ThreatView`, `ShieldView`, `HudView`, `MetronomePlayer`, `CodePanelView`, `DialogueView`, `GameFlow` |
+| Rhythm/Timing | DSP beat clock, impact schedule, input judge, calibration, paddle arc | Implemented in Core/Game; Beatblock paddle aim + tap judge + SongPlayer DSP playback; 87/87 EditMode passed | `BeatClock`, `TimingJudge`, `PaddleController`, `PaddleHistory`, `InputRouter`, `SongPlayer` |
+| Rule Engine | 3-slot grammar, whitelist, validation, preview, auto-shield | Implemented in Core; tested in EditMode (whitelist combos, preview, E001–E006, cooldown) | `RuleValidator`, `RuleRuntime`, `RuleDefinition`, `RuleWhitelist`, `CodePanelView` |
+| Combat/Waves | Threat events, idempotent resolve, waves, decoy, archetypes | Implemented; W1A–W1D, W1T, WS1, WS2; 6 archetypes (StraightShooter, Decoy, Marcher, Heavy, Sleeper, Holder) | `CombatState`, `ThreatEvent`, `WaveRunner`, `WaveMapper`, `WaveDefinitionSO` |
+| Presentation/Flow | Arena, paddle, shop, tutorial, outro, HUD, dialogue | Implemented in Game/Presentation; ShopView (2-track Lv1-5), TutorialController, OutroDialogue, MainMenu, Opening_1 | `ArenaPresenter`, `PaddleView`, `ShopView`, `TutorialController`, `OutroDialogue`, `HudView` |
 
 Bootstrap, input, and DSP adapters are foundations for these systems, not separately deep-mapped in this compact pass.
 
@@ -104,19 +105,18 @@ Current evidence: I-001 source, the `Rhythm` input map, the manually authored `S
 
 | Feature | Source | Wiring | Execution |
 |---|---|---|---|
-| Rhythm/Timing | I-001 Core source | manual scene bootstrap | EditMode tests + actual-scene PlayMode smoke + user-driven V-003 passed |
-| Manual 4-direction shield | I-001 Core/Game source | manual scene bootstrap + `Rhythm` map | V-003 passed (user-driven run to WAVE CLEAR) |
-| Rule engine / compile preview | absent | absent | not_run |
-| Auto-shield rule (A1) | absent | absent | not_run |
-| Combat/waves/telegraphs | I-001 debug fixture + manual arena views | manual scene bootstrap | V-003 passed for the 12-threat debug wave; 1A/1B content not_run |
-| 1A/1B wave data | absent | absent | not_run |
-| Adware Decoy / energy regen | absent | absent | not_run |
-| Dialogue / pause / calibration / results | absent | absent | not_run |
-| Linux internal demo build | absent | absent | not_run |
-| Windows clean build | absent | absent | not_run |
-| A.I.D.A. narrative / boss | absent | absent | not_run |
-| URP 2D rendering | package/config present | `SampleScene` camera + 2D light + manual scene render | Edit/Play Mode rendering observed; player build not_run |
-| New Input System | package + default asset + I-001 `Rhythm` map | `activeInputHandler: 1`; build settings config object; manual scene router | not_run |
+| Rhythm/Timing | Core source + PaddleController | manual scene bootstrap + PaddleView | EditMode tests + actual-scene PlayMode smoke + user-driven V-003 passed; 87 EditMode tests passed |
+| Beatblock paddle & tap judge | Core/Game source | manual scene bootstrap + Rhythm map | Aim (360°), strict arc judging, tap judging (Z/X/Click) verified in EditMode tests |
+| Rule engine / compile preview | Core source (`RuleValidator`, `RuleRuntime`) | CodePanelView | V-007 passed (54/54 in clone, 87/87 in current suite); PlayMode auto-shield integration pending V-008 |
+| Auto-shield rule (A1) | Core source (`RuleRuntime`) | ArenaPresenter (RuleGuards) | EditMode tested; PlayMode live exercise pending V-008 |
+| Combat/waves/telegraphs | Core/Game source + assets | WaveDefinitionSO / WaveMapper | W1A–W1D, W1T, WS1, WS2; multi-archetypes (Marcher, Heavy, Sleeper, Holder, Decoy); V-006 passed |
+| Wave data & songs | `Assets/_Project/Data/Waves/**` | SongPlayer DSP sync | W1A–W1D, W1T, WS1, WS2, tutorial.wav, wave1.wav; verified |
+| Shop & PTS economy | Core CombatState + Game ShopView | serialized Shop GO (7 labels) | 2-track Lv1-5 upgrade system (Regen + AIDA), PTS currency, ShopEconomyTests passed |
+| Dialogue / narrative / outro | Core/Game source | TutorialController, OutroDialogue | Typewriter intro + drill gating 1A, natural dialogue format, OutroDialogueTests passed |
+| Linux internal demo build | planned | absent | not_run (V-011) |
+| Windows clean build | absent | absent | not_run (V-012) |
+| URP 2D rendering | package/config present | `SampleScene` camera + 2D light + CRT feature | Edit/Play Mode rendering observed |
+| New Input System | package + asset | `activeInputHandler: 1`; Aim/Tap/Pause | EditMode + PlayMode smoke observed |
 
 ## 11. Claims
 
@@ -155,23 +155,11 @@ Current evidence: I-001 source, the `Rhythm` input map, the manually authored `S
 
 ## 12. Detailed findings
 
-### F-001 Manual shield vs RAISE_SHIELD rule is unresolved in production
-Class: design conflict | Confidence: high | Basis: static
-Evidence: C-011, C-025, C-018
-Impact and trigger conditions: The demo uses A1/Set A (manual precedence, no-energy suppression, auto-Good, decoy −5 without Good), but production still has no confirmed semantics; rule/combat architecture may change after the demo.
-Smallest follow-up and acceptance: V-004 records the demo decision; V-008 verifies the A1 Set A integration. Production semantics still need owner confirmation before production rule work.
-
 ### F-003 I-001 has tests and a user-driven PlayMode run; automated input tests, build, and later systems remain unverified
 Class: verification gap | Confidence: high | Basis: static
 Evidence: C-004, C-014, C-015, C-030, C-032
 Impact and trigger conditions: The I-001 EditMode suite detects core timing/combat regressions, an actual-scene PlayMode smoke test starts the manually authored scene, and a user-driven V-003 run verified the manual shield path. There is still no automated input-driven PlayMode test, CI/build entry point, or confirmed Windows target. Later rule/wave behavior is untested.
 Smallest follow-up and acceptance: V-007/V-008 for rule tests in I-002; V-012 confirms the Windows clean build; V-011 is only the Linux demo artifact.
-
-### F-004 GDD summary's one-resource guidance conflicts with its own Integrity/Energy values
-Class: design conflict | Confidence: high | Basis: static
-Evidence: C-013, C-019
-Impact and trigger conditions: The summary recommends one main resource but lists Integrity 100 + Energy 6; the demo keeps both and adds in-wave regen (+1 per 4 beats), increasing UI/economy complexity. Final model and names D-03/D-12 remain open.
-Smallest follow-up and acceptance: V-004 confirms A2 as demo-only; V-008 checks the Energy/cooldown behavior. Production D-03/D-12 remains open.
 
 ### F-005 Three-day schedule is much tighter than the design-summary estimates
 Class: source-supported risk | Confidence: high | Basis: static
@@ -185,24 +173,6 @@ Evidence: C-015, C-022
 Impact and trigger conditions: Only LinuxStandaloneSupport is installed; no Windows Build Support, Wine, or clean Windows machine was observed. The demo's Windows acceptance item cannot be met locally.
 Smallest follow-up and acceptance: V-012; V-011 is an internal Linux artifact only, not a substitute.
 
-### F-007 Rule validation contract must include E006 and a cooldown context
-Class: source-supported risk | Confidence: high | Basis: static
-Evidence: C-017, C-029
-Impact and trigger conditions: The demo plan previously listed E001–E005 and `Validate(draft, energy)` had no cooldown input. The plan now specifies E001–E006, `Validate(draft, in RuleValidationContext)` with Energy/CooldownRemainingMs, and E006 as a runtime target-resolution error; no source or test exists yet.
-Smallest follow-up and acceptance: V-007; verify the E001–E006 contract and the context in I-002.
-
-### F-008 `WaveRunner.Due` must avoid hot-path allocation
-Class: source-supported risk | Confidence: high | Basis: static
-Evidence: C-017
-Impact and trigger conditions: The plan specifies `int Due(int, Span<ThreatEvent> buffer)` with a preallocated buffer. I-001 implements it and tests overflow/catch-up behavior, but the spawn loop has not been profiled in Play Mode and later wave content may stress it.
-Smallest follow-up and acceptance: V-009 and a profiler check; verify the implementation remains allocation-free in the spawn loop.
-
-### F-009 Auto-shield tuning and ScoreService inputs need implementation tests
-Class: verification gap | Confidence: medium | Basis: static
-Evidence: C-018, C-028
-Impact and trigger conditions: `CombatState` now implements the base score formula, min 0, damage penalty, and RuleBonus=0 for I-001; auto-shield scoring, decoy −5, and cost/cooldown remain Day 2 work and lack integration tests.
-Smallest follow-up and acceptance: V-008; verify the ScoreService inputs and keep RuleBonus at 0 unless the owner sets another value.
-
 ### F-010 A.I.D.A. 2.0 after 1B is a narrative compression
 Class: design conflict | Confidence: medium | Basis: static
 Evidence: C-024, C-026
@@ -211,7 +181,12 @@ Smallest follow-up and acceptance: V-004 records the demo compression; V-010 che
 
 ## 12b. Closed findings
 
+- [F-001 | closed | V-008] Manual shield vs RAISE_SHIELD rule demo resolution: A1 Set A semantics (manual precedence, no-energy suppression, auto-Good, decoy −5) verified in Play Mode; closed 2026-10-23.
 - [F-002 | closed | V-003] I-001 manual-shield Play Mode integration was unverified; closed 2026-10-20 after the user drove the full 12-threat debug wave to WAVE CLEAR with correct/wrong/late/pause/single-resolve behavior observed and 0 console errors (C-032).
+- [F-004 | closed | V-008] Demo resource model confirmed as Integrity + Energy with in-wave regen and verified in Play Mode; closed 2026-10-23.
+- [F-007 | closed | V-007] Rule validation contract with E001–E006, RuleValidationContext with cooldown, and runtime target-resolution error was implemented and verified; closed 2026-10-21 after V-007 passed in EditMode suite with 54/54 tests (and 87/87 in current suite).
+- [F-008 | closed | V-009] WaveRunner.Due hot-path allocation-free buffer verified in EditMode tests and Play Mode wave flow; closed 2026-10-23.
+- [F-009 | closed | V-008] Auto-shield tuning, decoy −5, and score inputs verified in live Play Mode; closed 2026-10-23.
 
 ## 13. Overflow finding stubs
 
@@ -224,7 +199,7 @@ Smallest follow-up and acceptance: V-004 records the demo compression; V-010 che
 - Unity Test Framework 1.6.0 is installed; the I-001 EditMode and PlayMode test assemblies exist (C-004). A disposable clone was compiled and tested with Unity 6000.3.8f1: EditMode 19/19 and PlayMode actual-scene smoke 1/1 (C-030, V-002). The user additionally drove the full debug wave to WAVE CLEAR in live Play Mode (C-032, V-003). No CI workflow, build script, or build profile is present.
 - Unity Editor 6000.3.8f1 is installed at `/home/zxwyvern/Unity/Hub/Editor/6000.3.8f1/Editor/Unity`. The main project editor was open, so a disposable clone at `/tmp/opencode/AlgoRhythm2D-test` was used for batchmode compile/tests; the live editor ran Play Mode twice with 0 console errors, including the user-driven V-003 run. No player run or build was observed.
 - Python 3.14.8 is available for the pack tools.
-- Node.js 26.11.1 and npm 12.2.1 are available; the external MCP candidate below is not configured.
+- Node.js 26.11.1 and npm 12.2.1 are available; AnkleBreaker Unity MCP and Context7 MCP are configured globally in `~/.gemini/config/mcp_config.json`.
 - Demo build environment: only `LinuxStandaloneSupport` is installed in `PlaybackEngines`; Windows Build Support is absent, `wine` is absent, and no clean Windows machine was observed. V-011 can build Linux; V-012 remains blocked.
 
 ### Demo plan
@@ -232,22 +207,18 @@ Smallest follow-up and acceptance: V-004 records the demo compression; V-010 che
 - `docs/ALGORHYTHM_DEMO_PLAN_3DAY.md` is the near-term scope and decision record. Its §0 records the 2026-10-20 session decisions (A1 independent auto-shield plus Set A edge rules, A2 two-resource demo choice, Linux internal build first, 3 increments).
 - It is a target plan, not observed gameplay. The demo plan is the source for routes R-001–R-004 and increments I-001–I-003.
 
-### External Unity MCP candidate — AnkleBreaker Unity MCP
+### External Unity MCP — AnkleBreaker Unity MCP
 
 - Repository: `https://github.com/AnkleBreaker-Studio/unity-mcp-server.git`
-- Inspected checkout: commit `9c84ff9fe22db1202bc003a56910f3add7a18d08`, package version 2.36.0, cloned read-only to `/tmp/opencode/unity-mcp-server` for grounding.
-- Purpose: MCP stdio server that connects an AI assistant to one or more running Unity Editors. The README describes 347 named operations and 80 exposed MCP tools, with lazy advanced-tool discovery; core areas include scene/GameObject/component authoring, assets and prefabs, scripts, compilation errors, console, EditMode/PlayMode test jobs, builds, screenshots, profiler/memory, packages, and Unity Hub.
-- Requirements: Node.js 18 or newer; the companion Unity plugin `https://github.com/AnkleBreaker-Studio/unity-mcp-plugin.git#main`; a running Unity Editor bridge (default port 7890, discovery range 7890–7899); an MCP client entry that spawns `node <checkout>/src/index.js`.
-- Current state: **not configured** in `~/.config/opencode/opencode.json` (only `context7` is present); **not installed** in this project (no package reference); the bridge and any tool call were **not exercised**. The demo does not depend on it.
-- Compatibility limits: the inspected manifest declares `win32` and `darwin` platforms, not Linux. The README's live validation is Windows/Unity 6000.6.2f1; this project is Linux/Unity 6000.3.8f1. Treat Linux and Unity 6.3 support as `unknown` until a read-only ping and inspection test succeed.
-- License: AnkleBreaker Open License v1.0. Attribution ("Made with AnkleBreaker MCP" or "Powered by AnkleBreaker MCP") is required for distributed products; reselling the software is prohibited. Review with the owner before distributing a build that integrates it.
-- Safe-use rules if enabled:
-  - Select the intended Unity instance before any editor call; do not rely on an implicit default when multiple editors are open.
+- Package version: `anklebreaker-unity-mcp` 2.36.0, companion Unity plugin `com.anklebreaker.unity-mcp` 2.41.4 in `Packages/manifest.json`.
+- Purpose: MCP stdio server that connects an AI assistant to one or more running Unity Editors. Exposes 80 direct tools and lazy-loaded advanced tools (test runner, profiler, etc.).
+- Current state: **configured and verified working**. Connected to live Unity Editor instance `AlgoRhythm2D` (Unity 6000.3.8f1) on port 7891; verified 0 compilation errors and 87/87 EditMode tests passed.
+- Safe-use rules:
+  - Select the intended Unity instance before any editor call; specify explicit port when multiple editors are running.
   - Start with read-only calls (`unity_editor_ping`, `unity_editor_state`, `unity_project_info`, `unity_get_compilation_errors`, `unity_scene_info`, test discovery) before writes.
   - Treat `unity_execute_code`, scene/asset writes, package changes, builds, and Play Mode control as privileged mutations: require a task contract, an explicit target, and post-action verification.
   - Never use `unity_execute_code` to bypass the rule-engine whitelist or to inject arbitrary gameplay at runtime.
   - After a timeout or failed call, inspect the project before retrying a write; the server documents that an outcome may be unknown.
-  - Do not install or configure this MCP as part of an unrelated task.
 
 ## 15. Not inspected
 

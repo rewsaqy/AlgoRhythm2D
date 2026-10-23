@@ -155,7 +155,9 @@ namespace AlgoRhythm.Game.Bootstrap
             OutroDriver outroDriver = GetComponentInChildren<OutroDriver>(true);
             if (outroDriver != null)
             {
-                BlackoutView blackout = cameraShake.GetComponentInChildren<BlackoutView>(true);
+                BlackoutView blackout = cameraShake != null
+                    ? cameraShake.GetComponentInChildren<BlackoutView>(true)
+                    : null;
                 if (blackout == null)
                 {
                     Debug.LogWarning(
@@ -166,7 +168,9 @@ namespace AlgoRhythm.Game.Bootstrap
                 DialogueView outroDialogue = tutorial != null
                     ? tutorial.GetComponent<DialogueView>()
                     : GetComponentInChildren<DialogueView>(true);
-                outroDriver.Initialize(_director, outroDialogue, blackout, clock);
+                outroDriver.Initialize(
+                    _director, outroDialogue, blackout, clock,
+                    cameraShake, sfx, damageFlash);
             }
             _controller.Start();
             if (tutorial != null)
