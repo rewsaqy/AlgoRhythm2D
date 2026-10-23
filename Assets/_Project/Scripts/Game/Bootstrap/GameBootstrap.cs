@@ -166,7 +166,7 @@ namespace AlgoRhythm.Game.Bootstrap
                 DialogueView outroDialogue = tutorial != null
                     ? tutorial.GetComponent<DialogueView>()
                     : GetComponentInChildren<DialogueView>(true);
-                outroDriver.Initialize(_director, outroDialogue, blackout, clock);
+                outroDriver.Initialize(_director, outroDialogue, blackout, clock, sfx);
             }
             _controller.Start();
             if (tutorial != null)

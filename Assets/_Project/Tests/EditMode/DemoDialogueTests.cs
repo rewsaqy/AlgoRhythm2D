@@ -42,12 +42,12 @@ namespace AlgoRhythm.Tests
                 yield return textId + " " + lineText;
             }
 
-            foreach (DialogueLine line in DemoDialogue.TeaserPart1())
+            foreach (DialogueLine line in new[] { OutroDialogue.BlackoutLine() })
             {
                 yield return line.Speaker + " : " + line.Text;
             }
 
-            foreach (DialogueLine line in DemoDialogue.TeaserPart2())
+            foreach (DialogueLine line in OutroDialogue.Monologue())
             {
                 yield return line.Speaker + " : " + line.Text;
             }
@@ -103,15 +103,15 @@ namespace AlgoRhythm.Tests
         }
 
         [Test]
-        public void Teaser_BlackoutThenTerminal()
+        public void Outro_BlackoutThenTerminal()
         {
-            IReadOnlyList<DialogueLine> part1 = DemoDialogue.TeaserPart1();
-            IReadOnlyList<DialogueLine> part2 = DemoDialogue.TeaserPart2();
-            Assert.IsTrue(part1.Count >= 3);
-            Assert.AreEqual("KAMU", part1[0].Speaker);
-            Assert.IsTrue(part1.Any(l => l.Text.Contains("DATA TELAH DIJEBOL")));
-            Assert.IsTrue(part2.Any(l => l.Speaker == "TERMINAL"));
-            Assert.IsTrue(part2[part2.Count - 1].Text.Contains("TO BE CONTINUED"));
+            DialogueLine blackout = OutroDialogue.BlackoutLine();
+            Assert.AreEqual("KAMU", blackout.Speaker);
+            IReadOnlyList<DialogueLine> mono = OutroDialogue.Monologue();
+            Assert.IsTrue(mono.Count >= 4);
+            Assert.IsTrue(mono.Any(l => l.Text.Contains("DATA TELAH DIJEBOL")));
+            Assert.IsTrue(mono.Any(l => l.Speaker == "TERMINAL"));
+            Assert.IsTrue(mono[mono.Count - 1].Text.Contains("TO BE CONTINUED"));
         }
 
         [Test]

@@ -104,33 +104,5 @@ namespace AlgoRhythm.Game.Presentation
             textId = "SONG_XX";
             line = "Jaga ritmemu!";
         }
-
-        /// <summary>Teaser part 1: blackout + siren. Played blocking.</summary>
-        public static IReadOnlyList<DialogueLine> TeaserPart1()
-        {
-            return new[]
-            {
-                new DialogueLine("KAMU",
-                    "Aneh, biasanya kantor nggak mati lampu gini."),
-                new DialogueLine("A.I.D.A",
-                    "Core-ku ikut padam. Operator, ini bukan mati lampu biasa."),
-                new DialogueLine("SISTEM",
-                    "DATA TELAH DIJEBOL"),
-            };
-        }
-
-        /// <summary>Teaser part 2: read-only terminal, then back to menu.</summary>
-        public static IReadOnlyList<DialogueLine> TeaserPart2()
-        {
-            return new[]
-            {
-                new DialogueLine("TERMINAL",
-                    "> breach sektor 2. jejak upload asing terdeteksi. koneksi operator terputus."),
-                new DialogueLine("A.I.D.A",
-                    "Itu bukan aku. Ada yang lain di dalam sistem ini."),
-                new DialogueLine("SISTEM",
-                    "TO BE CONTINUED. Terima kasih sudah main demo ini."),
-            };
-        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Linq;
 using AlgoRhythm.Game.Presentation;
 using NUnit.Framework;
 
@@ -6,24 +7,24 @@ namespace AlgoRhythm.Tests
     public sealed class OutroDialogueTests
     {
         [Test]
-        public void Monologue_NamesThePlayer()
+        public void BlackoutLine_IsKamuLightsOut()
         {
-            var lines = OutroDialogue.Monologue("zxwyvern");
+            DialogueLine line = OutroDialogue.BlackoutLine();
 
-            Assert.AreEqual(2, lines.Count);
-            Assert.IsTrue(lines[1].Text.Contains("zxwyvern"));
+            Assert.AreEqual("KAMU", line.Speaker);
+            Assert.IsTrue(line.Text.Contains("mati lampu"));
         }
 
         [Test]
-        public void Monologue_BlankName_FallsBackToOperator()
+        public void Monologue_BreachTerminalThenStop()
         {
-            foreach (string blank in new[] { null, "", "   " })
-            {
-                var lines = OutroDialogue.Monologue(blank);
+            var lines = OutroDialogue.Monologue();
 
-                Assert.IsTrue(lines[1].Text.Contains("operator"));
-                Assert.IsFalse(lines[1].Text.Contains("  "));
-            }
+            Assert.IsTrue(lines.Count >= 4);
+            Assert.IsTrue(lines.Any(l => l.Text.Contains("DATA TELAH DIJEBOL")));
+            Assert.IsTrue(lines.Any(l => l.Speaker == "TERMINAL"));
+            Assert.IsTrue(lines.All(l => !string.IsNullOrEmpty(l.Speaker)));
+            Assert.IsTrue(lines[lines.Count - 1].Text.Contains("TO BE CONTINUED"));
         }
 
         [Test]

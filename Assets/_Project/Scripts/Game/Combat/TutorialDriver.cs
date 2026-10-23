@@ -221,36 +221,6 @@ namespace AlgoRhythm.Game.Combat
             return true;
         }
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// Dev-only: graduates the tutorial instantly without confirmations
-        /// (used by the F9 finish-all dev shortcut). Mirrors the Praise
-        /// branch of OnDialogueFinished.
-        /// </summary>
-        public void DevGraduate()
-        {
-            if (_phase == Phase.Done)
-            {
-                return;
-            }
-
-            _phase = Phase.Done;
-            if (_dialogue != null)
-            {
-                _dialogue.Finished -= OnDialogueFinished;
-                _dialogue.Stop();
-            }
-
-            if (_director != null)
-            {
-                // The drill threat is skipped, not played: seal the runner
-                // so AllWavesCleared (outro trigger) still holds at RUN CLEAR.
-                _director.ActiveRunner.ForceResolveAll();
-                _director.Advance();
-            }
-        }
-#endif
-
         private void OnDialogueFinished()
         {
             switch (_phase)
