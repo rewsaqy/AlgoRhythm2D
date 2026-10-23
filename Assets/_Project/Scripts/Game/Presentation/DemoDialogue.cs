@@ -4,11 +4,13 @@ namespace AlgoRhythm.Game.Presentation
 {
     /// <summary>
     /// Demo-only dialogue lines [A]. Every line is addressed by text_id; the
-    /// TutorialDriver shows them through DialogueView (typewriter), so no
-    /// text is dumped all at once. A.I.D.A. 1.0 teaches the tutorial, 2.0
-    /// appears after 1B clear — a demo compression, not production canon.
-    /// Rule/energy system is temporarily OFF (manual-shield only until the
-    /// final AIDA form); dialogue therefore never mentions Energy or slots.
+    /// drivers show them through DialogueView (typewriter), so no text is
+    /// dumped all at once. Run order is Tutorial (W1T) - Lagu 1 (WS1) -
+    /// Lagu 2 (WS2) - teaser. Every new thing gets its own tutorial script:
+    /// W1T drills paddle + Perfect, WS1 teaches song + PTS + shop, WS2
+    /// teaches the new threat roster. Rule/energy system is temporarily OFF
+    /// (manual-shield only until the final AIDA form); dialogue therefore
+    /// never mentions Energy or slots.
     /// </summary>
     public static class DemoDialogue
     {
@@ -45,6 +47,42 @@ namespace AlgoRhythm.Game.Presentation
             return "Yah, belum pas. Santai aja, ikutin dentingnya... tekan TEPAT pas nempel. Sekali lagi, bisa yuk!";
         }
 
+        /// <summary>
+        /// Blocking pre-wave tutorial. Every new thing is taught here before
+        /// its wave starts: WS1 teaches song + PTS + shop, WS2 teaches the
+        /// new threat roster. Returns null for waves with nothing new.
+        /// </summary>
+        public static IReadOnlyList<DialogueLine> SongIntroScript(string waveId)
+        {
+            switch (waveId)
+            {
+                case "WS1":
+                    return new[]
+                    {
+                        new DialogueLine("A.I.D.A",
+                            "Dengerin. Lagu pertama mau nyala. Notnya jalan ngikutin beat, jadi arahin paddle dan tap ngikutin dentingnya."),
+                        new DialogueLine("A.I.D.A",
+                            "Tiap Perfect kamu dapat 2 PTS, Good dapat 1. Kumpulin yang banyak. Habis lagu ada SHOP: beli REGEN biar tiap wave pulih, atau upgrade aku biar tembakanku makin rajin."),
+                        new DialogueLine("A.I.D.A",
+                            "Aku cuma bantu dari bawah, ya. Yang jaga ritme tetap kamu. Tekan ENTER kalau siap."),
+                    };
+                case "WS2":
+                    return new[]
+                    {
+                        new DialogueLine("A.I.D.A",
+                            "Oke, lagu kedua. Isinya beda-beda, kenalan dulu biar nggak kaget."),
+                        new DialogueLine("A.I.D.A",
+                            "Yang badannya tebel itu Heavy, tap sampai pecahnya. Yang jalan baris itu Marcher. Yang tidur itu Sleeper, dia nge-dash pas beat terakhir."),
+                        new DialogueLine("A.I.D.A",
+                            "Ada juga note panjang, Holder. Tekan dan TAHAN sampai ekornya habis. Terus ada umpan Adware, itu cuekin aja, jangan di-tap."),
+                        new DialogueLine("A.I.D.A",
+                            "Siap? Tekan ENTER, lagunya mulai."),
+                    };
+                default:
+                    return null;
+            }
+        }
+
         public static void WaveStartLine(string waveId, out string textId, out string line)
         {
             switch (waveId)
@@ -53,48 +91,46 @@ namespace AlgoRhythm.Game.Presentation
                     textId = string.Empty;
                     line = string.Empty;
                     return;
-                case "W1A":
-                    textId = "TUTO_01";
-                    line = "Wave 1A mulai. Blokir virusnya ikut irama. Paddle siap, tap yang pas!";
-                    return;
-                case "W1B":
-                    textId = "AIDA2_01";
-                    line = "Buset, bagus. Oke naik level. Lebih cepat, plus ada umpan. Yang decoy cuekin aja!";
-                    return;
-                case "W1C":
-                    textId = "AIDA2_C";
-                    line = "Nih kenalin pasukan barunya: ada yang baris, badannya tebel, tukang tidur, sama note yang panjang. Seru kan?";
-                    return;
-                case "W1D":
-                    textId = "AIDA2_D";
-                    line = "Gauntlet! Semua yang kau pelajari, keluar bareng. Gas!";
-                    return;
                 case "WS1":
                     textId = "SONG_01";
-                    line = "Oke, musik nyala. Ikutin ketukannya, hadap ancamannya, tap pas nempel ring.";
+                    line = "Lagu 1 mulai. Ikutin beatnya, kumpulin PTS!";
                     return;
                 case "WS2":
                     textId = "SONG_02";
-                    line = "Lanjut lagu kedua. Lebih rame, tetap tenang, jaga ritmemu!";
+                    line = "Lagu 2 mulai. Ingat bekal tadi, gas!";
                     return;
             }
 
-            if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W2"))
-            {
-                textId = "AIDA2_W2";
-                line = "Gelombang 2. Tempo naik ke 115. Jangan kasih kendor!";
-                return;
-            }
+            textId = "SONG_XX";
+            line = "Jaga ritmemu!";
+        }
 
-            if (!string.IsNullOrEmpty(waveId) && waveId.StartsWith("W3"))
+        /// <summary>Teaser part 1: blackout + siren. Played blocking.</summary>
+        public static IReadOnlyList<DialogueLine> TeaserPart1()
+        {
+            return new[]
             {
-                textId = "AIDA2_W3";
-                line = "Gelombang 3. 130 BPM. Ini ujian beneran. Tahan!";
-                return;
-            }
+                new DialogueLine("KAMU",
+                    "Aneh, biasanya kantor nggak mati lampu gini."),
+                new DialogueLine("A.I.D.A",
+                    "Core-ku ikut padam. Operator, ini bukan mati lampu biasa."),
+                new DialogueLine("SISTEM",
+                    "DATA TELAH DIJEBOL"),
+            };
+        }
 
-            textId = "AIDA2_01";
-            line = "Naikin tempo dikit. Jaga ritmemu!";
+        /// <summary>Teaser part 2: read-only terminal, then back to menu.</summary>
+        public static IReadOnlyList<DialogueLine> TeaserPart2()
+        {
+            return new[]
+            {
+                new DialogueLine("TERMINAL",
+                    "> breach sektor 2. jejak upload asing terdeteksi. koneksi operator terputus."),
+                new DialogueLine("A.I.D.A",
+                    "Itu bukan aku. Ada yang lain di dalam sistem ini."),
+                new DialogueLine("SISTEM",
+                    "TO BE CONTINUED. Terima kasih sudah main demo ini."),
+            };
         }
     }
 }

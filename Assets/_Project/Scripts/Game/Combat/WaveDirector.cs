@@ -56,6 +56,17 @@ namespace AlgoRhythm.Game.Combat
 
         public int WaveCount => _runners.Count;
 
+        /// <summary>Wave id at an index, or empty when out of range.</summary>
+        public string WaveIdAt(int index)
+        {
+            if (index < 0 || index >= _runners.Count)
+            {
+                return string.Empty;
+            }
+
+            return _runners[index].Data.WaveId;
+        }
+
         public bool AllWavesCleared
         {
             get

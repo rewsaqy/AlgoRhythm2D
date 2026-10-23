@@ -1138,6 +1138,8 @@ namespace AlgoRhythm.Game.Combat
 
             if (lastWave)
             {
+                // Run clear: Advance fires WaveCleared so the outro driver
+                // (blackout + teaser) takes over; no shop on the last wave.
                 _director.Advance();
                 return;
             }
@@ -1179,6 +1181,13 @@ namespace AlgoRhythm.Game.Combat
             {
                 _inShop = false;
                 _shop.Hide();
+                // Tiap hal baru ada tutorial: next wave punya intro
+                // blocking sendiri, advance-nya habis intro selesai.
+                if (Tutorial != null && Tutorial.TryConsumeShopContinue())
+                {
+                    return;
+                }
+
                 _director.Advance();
                 return;
             }

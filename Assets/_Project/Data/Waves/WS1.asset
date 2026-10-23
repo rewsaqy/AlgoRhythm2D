@@ -27,6 +27,14 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 1
+    spawnBeat: 6
+    impactBeat: 14
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
     spawnBeat: 10
     impactBeat: 18
     baseDamage: 10
@@ -34,7 +42,15 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 3
+    spawnBeat: 14
+    impactBeat: 22
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
     spawnBeat: 18
     impactBeat: 26
     baseDamage: 10
@@ -42,9 +58,25 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 1
+    spawnBeat: 22
+    impactBeat: 30
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
     spawnBeat: 26
     impactBeat: 34
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 30
+    impactBeat: 38
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -59,6 +91,14 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 1
+    spawnBeat: 38
+    impactBeat: 46
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
     spawnBeat: 42
     impactBeat: 50
     baseDamage: 10
@@ -66,7 +106,15 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 3
+    spawnBeat: 46
+    impactBeat: 54
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
     spawnBeat: 50
     impactBeat: 58
     baseDamage: 10
@@ -74,9 +122,113 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 1
+    spawnBeat: 54
+    impactBeat: 62
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
     spawnBeat: 58
     impactBeat: 66
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 62
+    impactBeat: 70
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 66
+    impactBeat: 74
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 70
+    impactBeat: 78
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 74
+    impactBeat: 82
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 78
+    impactBeat: 86
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 82
+    impactBeat: 90
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 86
+    impactBeat: 94
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 90
+    impactBeat: 98
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 94
+    impactBeat: 102
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 98
+    impactBeat: 106
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 102
+    impactBeat: 110
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 106
+    impactBeat: 114
     baseDamage: 10
     angleMode: 0
     angleDeg: 0

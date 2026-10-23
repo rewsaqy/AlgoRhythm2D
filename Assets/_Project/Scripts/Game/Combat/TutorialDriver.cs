@@ -7,12 +7,14 @@ using UnityEngine;
 namespace AlgoRhythm.Game.Combat
 {
     /// <summary>
-    /// Boot tutorial: AIDA greeting + tap drill on a single harmless threat,
-    /// then hands the run over to wave 1A. Owns wave W1T end-to-end:
-    /// CombatController defers the first StartWave and the W1T clear
-    /// transition to this driver. Requires a Perfect to graduate; anything
-    /// else retries the drill with zero damage. Pure flow — judging stays in
-    /// TimingJudge/CombatState, visuals in DialogueView/ArenaPresenter.
+    /// Boot tutorial + song intros + ending teaser. Owns W1T end-to-end
+    /// (CombatController defers the first StartWave and the W1T clear
+    /// transition to this driver; graduation needs a Perfect, anything else
+    /// retries the drill with zero damage). After graduation it plays the
+    /// blocking pre-wave tutorial for each song (WS1: song + PTS + shop,
+    /// WS2: new threat roster) and the blackout teaser after the last wave.
+    /// Pure flow — judging stays in TimingJudge/CombatState, visuals in
+    /// DialogueView/ArenaPresenter.
     /// </summary>
     public sealed class TutorialDriver : MonoBehaviour
     {
@@ -24,6 +26,7 @@ namespace AlgoRhythm.Game.Combat
             Intro,
             Practice,
             Praise,
+            SongIntro,
             Done
         }
 
@@ -80,7 +83,7 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-        /// <summary>Begins the greeting; wave 1A waits until graduation.</summary>
+        /// <summary>Begins the greeting; wave WS1 waits until graduation.</summary>
         public void Begin()
         {
             if (_dialogue == null)
@@ -193,6 +196,61 @@ namespace AlgoRhythm.Game.Combat
         }
 #endif
 
+        /// <summary>
+        /// Shop LANJUT hook: when the next wave has its own tutorial, play
+        /// it blocking here and advance after. Returns true when consumed
+        /// (the caller must NOT advance); false means advance directly.
+        /// </summary>
+        public bool TryConsumeShopContinue()
+        {
+            if (_phase != Phase.Done || _director == null || _dialogue == null)
+            {
+                return false;
+            }
+
+            string nextId = _director.WaveIdAt(_director.ActiveIndex + 1);
+            IReadOnlyList<DialogueLine> script = DemoDialogue.SongIntroScript(nextId);
+            if (script == null || script.Count == 0)
+            {
+                return false;
+            }
+
+            _phase = Phase.SongIntro;
+            _dialogue.Finished += OnDialogueFinished;
+            _dialogue.Play(script);
+            return true;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Dev-only: graduates the tutorial instantly without confirmations
+        /// (used by the F9 finish-all dev shortcut). Mirrors the Praise
+        /// branch of OnDialogueFinished.
+        /// </summary>
+        public void DevGraduate()
+        {
+            if (_phase == Phase.Done)
+            {
+                return;
+            }
+
+            _phase = Phase.Done;
+            if (_dialogue != null)
+            {
+                _dialogue.Finished -= OnDialogueFinished;
+                _dialogue.Stop();
+            }
+
+            if (_director != null)
+            {
+                // The drill threat is skipped, not played: seal the runner
+                // so AllWavesCleared (outro trigger) still holds at RUN CLEAR.
+                _director.ActiveRunner.ForceResolveAll();
+                _director.Advance();
+            }
+        }
+#endif
+
         private void OnDialogueFinished()
         {
             switch (_phase)
@@ -202,7 +260,12 @@ namespace AlgoRhythm.Game.Combat
                     _director.StartWave(0);
                     break;
                 case Phase.Praise:
-                    // Graduated: hand over to wave 1A.
+                    // Graduated: teach the first song, then start it.
+                    PlaySongIntroOrAdvance();
+                    break;
+                case Phase.SongIntro:
+                    // Pre-wave tutorial done: start the wave, stay Done so
+                    // the wave-start one-liner still shows.
                     _phase = Phase.Done;
                     _dialogue.Finished -= OnDialogueFinished;
                     _director.Advance();
@@ -214,6 +277,22 @@ namespace AlgoRhythm.Game.Combat
                     _director.RetryCurrent();
                     break;
             }
+        }
+
+        private void PlaySongIntroOrAdvance()
+        {
+            IReadOnlyList<DialogueLine> script = DemoDialogue.SongIntroScript(
+                _director != null ? _director.WaveIdAt(_director.ActiveIndex + 1) : string.Empty);
+            if (script != null && script.Count > 0)
+            {
+                _phase = Phase.SongIntro;
+                _dialogue.Play(script);
+                return;
+            }
+
+            _phase = Phase.Done;
+            _dialogue.Finished -= OnDialogueFinished;
+            _director.Advance();
         }
     }
 }
