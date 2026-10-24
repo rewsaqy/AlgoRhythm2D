@@ -49,7 +49,7 @@ namespace AlgoRhythm.Game.Config
         [Min(1f)] public float radialSpawnDistance = 8.2f;
 
         [Header("Code Panel")]
-        public bool enableCodePanel = false;
+        public bool enableCodePanel = true;
 
         [Header("Shop [U] — popup 2-track, Lv1-5 (owner 2026-10-23)")]
         [Tooltip("Biaya PTS untuk naik ke level berikutnya. Index = level saat ini (regen 0-4, AIDA 0-4 sebagai level-1).")]

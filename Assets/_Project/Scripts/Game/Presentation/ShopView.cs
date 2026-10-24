@@ -64,6 +64,7 @@ namespace AlgoRhythm.Game.Presentation
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
             if (_title != null) _title.text = "SHOP PHASE";
             if (_hint != null) _hint.text = "ATAS/BAWAH pilih · ENTER beli / lanjut";
+            SetupBackdrop();
             gameObject.SetActive(false);
             _open = false;
             _animating = false;
@@ -73,6 +74,18 @@ namespace AlgoRhythm.Game.Presentation
         {
             _open = true;
             _selected = 0;
+
+            // Ensure shop is neatly situated on the open left side
+            var rt = GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchoredPosition = new Vector2(-4.3f, -0.35f);
+            }
+            else
+            {
+                transform.localPosition = new Vector3(-4.3f, -0.35f, 0f);
+            }
+
             gameObject.SetActive(true);
             _animStart = Time.unscaledTime;
             _animating = true;
@@ -144,7 +157,7 @@ namespace AlgoRhythm.Game.Presentation
             const float slideSeconds = 0.35f;
             const int steps = 5;
             const float stagger = 0.07f;
-            const float travel = 7f;
+            const float travel = 2.0f;
 
             bool done = true;
             float now = Time.unscaledTime;
@@ -204,6 +217,59 @@ namespace AlgoRhythm.Game.Presentation
         {
             Transform child = transform.Find(childName);
             return child != null ? child.GetComponent<TextMesh>() : null;
+        }
+
+        private void SetupBackdrop()
+        {
+            Transform existing = transform.Find("ShopBackdrop");
+            GameObject backdrop;
+            if (existing != null)
+            {
+                backdrop = existing.gameObject;
+            }
+            else
+            {
+                backdrop = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                backdrop.name = "ShopBackdrop";
+                backdrop.transform.SetParent(transform, false);
+                backdrop.transform.localPosition = new Vector3(0f, -0.05f, 0.05f);
+                backdrop.transform.localScale = new Vector3(6.6f, 4.2f, 1f);
+
+                Collider col = backdrop.GetComponent<Collider>();
+                if (col != null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        Destroy(col);
+                    }
+                    else
+                    {
+                        DestroyImmediate(col);
+                    }
+                }
+
+                Renderer rend = backdrop.GetComponent<Renderer>();
+                if (rend != null)
+                {
+                    Shader s = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit") ?? Shader.Find("Unlit/Color");
+                    if (s != null)
+                    {
+                        Material m = new Material(s);
+                        m.color = new Color(0.03f, 0.04f, 0.08f, 0.96f);
+                        rend.material = m;
+                    }
+                }
+            }
+
+            Transform panel = transform.Find("Panel");
+            if (panel != null)
+            {
+                var img = panel.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                {
+                    img.color = new Color(0.03f, 0.04f, 0.08f, 0.95f);
+                }
+            }
         }
     }
 }

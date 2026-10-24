@@ -4985,7 +4985,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 3.88, y: -0.33}
+  m_AnchoredPosition: {x: -4.3, y: -0.35}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &811698745
@@ -5740,7 +5740,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fed0aec94cc1745fea5325ec2bbca533, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Presentation.DialogueView
-  charsPerSecond: 45
+  charsPerSecond: 36
   advanceKeyA: 2
   advanceKeyB: 1
   maxCharsPerLine: 56
@@ -5749,6 +5749,9 @@ MonoBehaviour:
   advancePromptText: '[ENTER]'
   promptFontSize: 24
   promptCharacterSize: 0.07
+  typewriterClip: {fileID: 8300000, guid: 1813a5ee815fe91cfbf85931e94ac1b1, type: 3}
+  sfxVolume: 0.55
+  sfxInterval: 0.05
 --- !u!114 &968798807
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6165,7 +6168,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1075671402}
-  m_Text: asdadadasdasdasdasdasdw
+  m_Text: 
   m_OffsetZ: 0
   m_CharacterSize: 0.08
   m_LineSpacing: 1
@@ -6718,7 +6721,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1136570030
 Transform:
   m_ObjectHideFlags: 0
@@ -7793,7 +7796,7 @@ Transform:
   m_GameObject: {fileID: 1262358768}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -6.74, z: -0.1}
+  m_LocalPosition: {x: 0, y: -4.2, z: -0.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8366,7 +8369,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1342002174
 Transform:
   m_ObjectHideFlags: 0
@@ -11471,6 +11474,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Presentation.SongPlayer
   source: {fileID: 0}
   songVolume: 0.8
+  fadeInDuration: 1
+  fadeOutDuration: 1
 --- !u!82 &1860728940
 AudioSource:
   m_ObjectHideFlags: 0
@@ -12917,7 +12922,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2115604777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12939,7 +12944,7 @@ Transform:
   m_GameObject: {fileID: 2115604776}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 8.288889, y: 4.4, z: 0}
+  m_LocalPosition: {x: 8.288889, y: 2.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

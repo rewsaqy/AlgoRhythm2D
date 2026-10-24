@@ -47,6 +47,15 @@ namespace AlgoRhythm.Game.Presentation
         [Min(8)] [SerializeField] private int promptFontSize = 24;
         [Min(0.01f)] [SerializeField] private float promptCharacterSize = 0.07f;
 
+        [Header("Audio SFX [U]")]
+        [SerializeField] private AudioClip typewriterClip;
+        [Range(0f, 1f)] [SerializeField] private float sfxVolume = 0.22f;
+        [SerializeField] private float sfxInterval = 0.055f;
+
+        private AudioSource _audioSource;
+        private float _lastSfxTime;
+        private int _lastCharCount;
+
         private TextMesh _label;
         private readonly List<DialogueLine> _script = new List<DialogueLine>();
         private int _index;
@@ -272,6 +281,11 @@ namespace AlgoRhythm.Game.Presentation
         public void Stop()
         {
             _playing = false;
+            if (_audioSource != null)
+            {
+                _audioSource.Stop();
+            }
+
             if (_label != null)
             {
                 _label.text = string.Empty;
@@ -379,6 +393,11 @@ namespace AlgoRhythm.Game.Presentation
 
         private void Advance()
         {
+            if (_audioSource != null)
+            {
+                _audioSource.Stop();
+            }
+
             if (_shown < _wrappedBody.Length)
             {
                 _shown = _wrappedBody.Length;
@@ -439,10 +458,61 @@ namespace AlgoRhythm.Game.Presentation
             }
 
             int count = Mathf.Clamp(Mathf.FloorToInt(_shown), 0, _wrappedBody.Length);
+            if (count > _lastCharCount && count < _wrappedBody.Length)
+            {
+                PlaySpeakSound(count);
+                _lastCharCount = count;
+            }
+            else if (count >= _wrappedBody.Length)
+            {
+                // Kalimat selesai terketik: hentikan audio seketika
+                if (_audioSource != null && _audioSource.isPlaying)
+                {
+                    _audioSource.Stop();
+                }
+            }
+
             string partial = _wrappedBody.Substring(0, count);
             string speaker = SpeakerPrefix(_script[_index]);
             _label.text = $"{speaker}{partial}";
             SetPromptVisible(count >= _wrappedBody.Length && !_autoHideAtEnd && _playing);
+        }
+
+        private void PlaySpeakSound(int charIndex)
+        {
+            if (typewriterClip == null)
+            {
+                return;
+            }
+
+            if (charIndex > 0 && charIndex <= _wrappedBody.Length)
+            {
+                char c = _wrappedBody[charIndex - 1];
+                if (char.IsWhiteSpace(c) || c == '.' || c == ',' || c == '!' || c == '?')
+                {
+                    return;
+                }
+            }
+
+            if (Time.unscaledTime - _lastSfxTime < sfxInterval)
+            {
+                return;
+            }
+
+            if (_audioSource == null)
+            {
+                _audioSource = GetComponent<AudioSource>();
+                if (_audioSource == null)
+                {
+                    _audioSource = gameObject.AddComponent<AudioSource>();
+                }
+                _audioSource.playOnAwake = false;
+                _audioSource.spatialBlend = 0f;
+            }
+
+            _audioSource.pitch = UnityEngine.Random.Range(0.96f, 1.04f);
+            _audioSource.PlayOneShot(typewriterClip, sfxVolume);
+            _lastSfxTime = Time.unscaledTime;
         }
     }
 }

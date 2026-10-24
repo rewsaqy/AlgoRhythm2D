@@ -13,33 +13,33 @@ MonoBehaviour:
   m_Name: Moon
   m_EditorClassIdentifier: 
   data:
-    pixelationAmount: 4
+    pixelationAmount: 1
     maxColorChannels:
       red: 4
       green: 4
       blue: 4
       greyScale: 0
-    dithering4: 0
-    dithering8: 0.205
-    vignette: 0.14
-    innerCurve: 2.3
-    monitorCurve: 0.112
+    dithering4: 0.015
+    dithering8: 0.24
+    vignette: 0.286
+    innerCurve: 2.7
+    monitorCurve: 0.069
     monitorInnerSize:
       width: 0
       height: 0
     monitorOutterSize:
       width: 0.288
       height: 0.191
-    zoom: 1.06
+    zoom: 1.15
     monitorRoundness: 0.2
     monitorTexture: {fileID: 2800000, guid: a5e897f9f29eb488ba4791cd52d004b5, type: 3}
-    monitorColor: {r: 0, g: 0, b: 0, a: 0.21176471}
-    innerMonitorDarkness: 0.29
-    innerMonitorShine: 0.04
+    monitorColor: {r: 0.1792453, g: 0.1750178, b: 0.1750178, a: 0.21176471}
+    innerMonitorDarkness: 0.306
+    innerMonitorShine: 0.02
     colorScans:
       greenChannelMultiplier: 0.375
-      redBlueChannelMultiplier: -0.292
+      redBlueChannelMultiplier: -0.27
       sizeMultiplier: 10
     innerMonitorShineRadius: -0.087
     innerMonitorShineCurve: 10
-  validationId: 1be2e5bd-959c-4c06-901a-09bce1580e65
+  validationId: aad9c9ee-e99f-4afa-b7af-d6e4a2110222

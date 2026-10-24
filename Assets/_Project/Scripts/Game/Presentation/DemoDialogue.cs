@@ -22,29 +22,29 @@ namespace AlgoRhythm.Game.Presentation
             return new[]
             {
                 new DialogueLine("A.I.D.A",
-                    "Eh, halo?! Kamu operator barunya ya? Akhirnya datang juga. Aku A.I.D.A, asisten yang bakal nemenin kamu di sini."),
+                    "Eh, halo! Kamu operator barunya ya? Selamat datang di terminal AlgoRhythm. Kenalin, aku A.I.D.A, asisten AI pribadi yang bakal memandu kamu."),
                 new DialogueLine("A.I.D.A",
-                    "Eh sori, aku excited. Soalnya kantor heboh dari kemarin. Katanya yang ditugasin jaga Data Base ini anak baru yang kemampuannya gila banget. Itu kamu?!"),
+                    "Tugasmu adalah menjaga Database Core di tengah dari serbuan paket malware! Kontrolnya simpel: gerakkan MOUSE untuk mengarahkan paddle pelindung."),
                 new DialogueLine("A.I.D.A",
-                    "Oke oke, pemanasan dulu biar nggak kaku. Liat lingkaran di tengah itu? Itu Core kita. Caranya gampang: gerakin MOUSE buat ngarahin paddle ke ancaman, terus tekan Z / X / KLIK pas not-nya nempel ring."),
+                    "Ketika malware menyentuh ring pertahanan tepat pada beat lagu, tekan KLIK KIRI mouse atau tombol Z / X untuk menangkis (PERFECT / GOOD)!"),
                 new DialogueLine("A.I.D.A",
-                    "Nih aku siapin satu malware jinak dari UTARA. Kasih aku satu PERFECT ya, biar aku liat sendiri gosip kantor itu beneran."),
+                    "Tiap tangkisan sukses menghasilkan PTS untuk upgrade meriamku di SHOP nanti. Sekarang coba tangkis 1 malware uji coba dari arah UTARA!"),
             };
         }
 
         public static string PracticeHint()
         {
-            return "Arahkan paddle ke UTARA (atas). Tap TEPAT pas note nempel ring!";
+            return "Arahkan paddle ke UTARA (atas). Tap pas note menyentuh ring!";
         }
 
         public static string PracticePraise()
         {
-            return "NAH ITU DIA. Perfect! Oke, gosip kantor valid. Kamu beneran jago. Tekan ENTER, misi beneran dimulai.";
+            return "PERFECT! Reflekmu luar biasa. Sistem sinkron seratus persen. Tekan ENTER, kita mulai sesi aslinya!";
         }
 
         public static string PracticeRetry()
         {
-            return "Yah, belum pas. Santai aja, ikutin dentingnya... tekan TEPAT pas nempel. Sekali lagi, bisa yuk!";
+            return "Hampir kena! Dengar denyut ritmenya, tap pas note tepat menyentuh ring. Sekali lagi, santai aja!";
         }
 
         /// <summary>
@@ -60,23 +60,21 @@ namespace AlgoRhythm.Game.Presentation
                     return new[]
                     {
                         new DialogueLine("A.I.D.A",
-                            "Dengerin. Lagu pertama mau nyala. Notnya jalan ngikutin beat, jadi arahin paddle dan tap ngikutin dentingnya."),
+                            "Track pertama masuk antrean sinkronisasi pada tempo 100 BPM. Perhatikan denting ritme dan arah datangnya malware."),
                         new DialogueLine("A.I.D.A",
-                            "Tiap Perfect kamu dapat 2 PTS, Good dapat 1. Kumpulin yang banyak. Habis lagu ada SHOP: beli REGEN biar tiap wave pulih, atau upgrade aku biar tembakanku makin rajin."),
+                            "Setiap PERFECT bernilai 2 PTS dan GOOD bernilai 1 PTS. Kumpulkan poin sebanyak-banyaknya untuk fase SHOP setelah wave ini!"),
                         new DialogueLine("A.I.D.A",
-                            "Aku cuma bantu dari bawah, ya. Yang jaga ritme tetap kamu. Tekan ENTER kalau siap."),
+                            "Meriamku di kiri bawah siap menembak otomatis membantu pertahananmu. Tekan ENTER saat kamu siap!"),
                     };
                 case "WS2":
                     return new[]
                     {
                         new DialogueLine("A.I.D.A",
-                            "Oke, lagu kedua. Isinya beda-beda, kenalan dulu biar nggak kaget."),
+                            "Wave 2 dimulai! Tempo naik ke 115 BPM dengan serangan malware yang lebih cepat dan rapat!"),
                         new DialogueLine("A.I.D.A",
-                            "Yang badannya tebel itu Heavy, tap sampai pecahnya. Yang jalan baris itu Marcher. Yang tidur itu Sleeper, dia nge-dash pas beat terakhir."),
+                            "Waspadai malware bertipe Heavy dan aliran data bertipe Holder. Hati-hati juga terhadap jebakan Adware!"),
                         new DialogueLine("A.I.D.A",
-                            "Ada juga note panjang, Holder. Tekan dan TAHAN sampai ekornya habis. Terus ada umpan Adware, itu cuekin aja, jangan di-tap."),
-                        new DialogueLine("A.I.D.A",
-                            "Siap? Tekan ENTER, lagunya mulai."),
+                            "Kumpulkan PTS maksimal untuk memperkuat sistem kita. Tekan ENTER untuk membuka gerbang pertahanan!"),
                     };
                 default:
                     return null;

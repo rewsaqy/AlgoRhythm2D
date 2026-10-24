@@ -484,14 +484,12 @@ namespace AlgoRhythm.Game.Presentation
         {
             SetSlot(_slotCondition, 0, "WHEN", _cond.HasValue ? ConditionName(_cond.Value) : "___");
             SetSlot(_slotTarget, 1, "TARGET", _tgt?.ToString().ToUpperInvariant() ?? "___");
-            SetSlot(_slotAction, 2, "DO", _act.HasValue ? "RAISE_SHIELD" : "___");
+            SetSlot(_slotAction, 2, "ACTION", _act.HasValue ? "RAISE_SHIELD" : "___");
 
             if (_preview != null)
             {
-                // Player sentence, never the raw whitelist key. Coverage
-                // itself reads on the arena rule guards.
                 bool valid = _lastError == RuleError.None;
-                _preview.text = valid ? PlayerPreview() : "Belum ada preview";
+                _preview.text = valid ? $"▶ STATUS: {PlayerPreview()}" : "▶ STATUS: Menunggu konfigurasi rule...";
                 _preview.color = valid ? UiTypography.Info : UiTypography.Dim;
             }
 
@@ -503,8 +501,9 @@ namespace AlgoRhythm.Game.Presentation
             if (_hint != null)
             {
                 _hint.text = _hasCommitted
-                    ? string.Empty
-                    : "1/2/3 slot · Q/E cycle · ENTER commit · R reset";
+                    ? "AUTO-DEFENSE ACTIVE · [1/2/3] EDIT · [ENTER] UPDATE"
+                    : "[1/2/3] PILIH SLOT  ·  [Q/E] UBAH  ·  [ENTER] COMMIT  ·  [R] RESET";
+                _hint.color = _hasCommitted ? UiTypography.Dim : UiTypography.Faint;
             }
         }
 
@@ -515,12 +514,17 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
-            bool blink = ((int)(Time.unscaledTime * 2f) & 1) == 0;
-            string marker = slot == _selectedSlot ? ">" : " ";
-            string flag = (ErrorVisibleNow() && slot == _errorSlot && blink)
-                ? "  !!"
-                : string.Empty;
-            label.text = $"{marker}[{slot + 1}] {name}: {value}{flag}";
+            bool isSelected = slot == _selectedSlot;
+            bool isError = ErrorVisibleNow() && slot == _errorSlot;
+            bool blink = ((int)(Time.unscaledTime * 2.5f) & 1) == 0;
+
+            string pointer = isSelected ? "▶ " : "  ";
+            string bracketLeft = isSelected ? "【" : "[";
+            string bracketRight = isSelected ? "】" : "]";
+            string flag = (isError && blink) ? " ◄ PERIKSA" : string.Empty;
+
+            label.text = $"{pointer}{bracketLeft}SLOT {slot + 1}{bracketRight} {name,-6} : {value}{flag}";
+            label.color = isError ? UiTypography.Warn : (isSelected ? UiTypography.Ink : UiTypography.Dim);
         }
 
         private static string ErrorText(RuleError error)

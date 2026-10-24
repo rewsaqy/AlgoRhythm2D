@@ -19,14 +19,6 @@ MonoBehaviour:
   spawnSequence:
   - kind: 0
     direction: 0
-    spawnBeat: 2
-    impactBeat: 10
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  - kind: 0
-    direction: 1
     spawnBeat: 4
     impactBeat: 12
     baseDamage: 10
@@ -34,7 +26,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 1
     spawnBeat: 6
     impactBeat: 14
     baseDamage: 10
@@ -42,9 +34,17 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 2
     spawnBeat: 8
     impactBeat: 16
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 10
+    impactBeat: 18
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -83,14 +83,6 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 0
-    spawnBeat: 20
-    impactBeat: 28
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  - kind: 0
-    direction: 1
     spawnBeat: 22
     impactBeat: 30
     baseDamage: 10
@@ -98,7 +90,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 1
     spawnBeat: 24
     impactBeat: 32
     baseDamage: 10
@@ -106,7 +98,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 0
     spawnBeat: 26
     impactBeat: 34
     baseDamage: 10
@@ -114,7 +106,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 0
+    direction: 2
     spawnBeat: 28
     impactBeat: 36
     baseDamage: 10
@@ -122,7 +114,15 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
+    direction: 3
+    spawnBeat: 30
+    impactBeat: 38
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
     spawnBeat: 32
     impactBeat: 40
     baseDamage: 10
@@ -130,7 +130,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 1
     spawnBeat: 34
     impactBeat: 42
     baseDamage: 10
@@ -138,7 +138,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 0
+    direction: 3
     spawnBeat: 36
     impactBeat: 44
     baseDamage: 10
@@ -146,15 +146,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
-    spawnBeat: 38
-    impactBeat: 46
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  - kind: 0
-    direction: 2
+    direction: 0
     spawnBeat: 40
     impactBeat: 48
     baseDamage: 10
@@ -162,9 +154,9 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
-    spawnBeat: 44
-    impactBeat: 52
+    direction: 2
+    spawnBeat: 42
+    impactBeat: 50
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -178,23 +170,31 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
+    direction: 1
+    spawnBeat: 47
+    impactBeat: 55
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 50
+    impactBeat: 58
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
     direction: 3
-    spawnBeat: 48
-    impactBeat: 56
+    spawnBeat: 51
+    impactBeat: 59
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
     direction: 0
-    spawnBeat: 52
-    impactBeat: 60
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  - kind: 0
-    direction: 1
     spawnBeat: 54
     impactBeat: 62
     baseDamage: 10
@@ -203,14 +203,14 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 2
-    spawnBeat: 56
-    impactBeat: 64
+    spawnBeat: 55
+    impactBeat: 63
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 1
     spawnBeat: 58
     impactBeat: 66
     baseDamage: 10
@@ -218,15 +218,15 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 0
-    spawnBeat: 60
-    impactBeat: 68
+    direction: 3
+    spawnBeat: 59
+    impactBeat: 67
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
+    direction: 0
     spawnBeat: 62
     impactBeat: 70
     baseDamage: 10
@@ -234,17 +234,25 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
+    direction: 1
+    spawnBeat: 63
+    impactBeat: 71
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
     direction: 2
-    spawnBeat: 64
-    impactBeat: 72
+    spawnBeat: 66
+    impactBeat: 74
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
     direction: 3
-    spawnBeat: 68
-    impactBeat: 76
+    spawnBeat: 67
+    impactBeat: 75
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -258,7 +266,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
+    direction: 2
     spawnBeat: 72
     impactBeat: 80
     baseDamage: 10
@@ -266,15 +274,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
-    spawnBeat: 74
-    impactBeat: 82
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  - kind: 0
-    direction: 3
+    direction: 1
     spawnBeat: 76
     impactBeat: 84
     baseDamage: 10
@@ -282,7 +282,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 0
+    direction: 3
     spawnBeat: 78
     impactBeat: 86
     baseDamage: 10
@@ -290,7 +290,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
+    direction: 0
     spawnBeat: 80
     impactBeat: 88
     baseDamage: 10
@@ -299,8 +299,8 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 2
-    spawnBeat: 84
-    impactBeat: 92
+    spawnBeat: 82
+    impactBeat: 90
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -315,14 +315,14 @@ MonoBehaviour:
     halfWidthDeg: 0
   - kind: 0
     direction: 1
-    spawnBeat: 88
-    impactBeat: 96
+    spawnBeat: 87
+    impactBeat: 95
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 2
     spawnBeat: 90
     impactBeat: 98
     baseDamage: 10
@@ -330,9 +330,9 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
-    spawnBeat: 92
-    impactBeat: 100
+    direction: 3
+    spawnBeat: 91
+    impactBeat: 99
     baseDamage: 10
     angleMode: 0
     angleDeg: 0
@@ -346,7 +346,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 1
+    direction: 2
     spawnBeat: 96
     impactBeat: 104
     baseDamage: 10
@@ -354,7 +354,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 3
+    direction: 1
     spawnBeat: 98
     impactBeat: 106
     baseDamage: 10
@@ -362,7 +362,7 @@ MonoBehaviour:
     angleDeg: 0
     halfWidthDeg: 0
   - kind: 0
-    direction: 2
+    direction: 3
     spawnBeat: 100
     impactBeat: 108
     baseDamage: 10
@@ -377,15 +377,13 @@ MonoBehaviour:
     angleMode: 0
     angleDeg: 0
     halfWidthDeg: 0
-  - kind: 0
-    direction: 1
-    spawnBeat: 103
-    impactBeat: 111
-    baseDamage: 10
-    angleMode: 0
-    angleDeg: 0
-    halfWidthDeg: 0
-  ruleUnlocks: []
+  ruleUnlocks:
+  - WHEN_PROJECTILE
+  - NORTH
+  - SOUTH
+  - EAST
+  - WEST
+  - RAISE_SHIELD
   dialogueTrigger: OnStart
   songClip: {fileID: 8300000, guid: 1693f133087a058e79f2082b4aee715d, type: 3}
   songLoop: 0

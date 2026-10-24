@@ -320,7 +320,11 @@ namespace AlgoRhythm.Game.Combat
 
             if (keyboard[Key.Enter].wasPressedThisFrame
                 || keyboard[Key.NumpadEnter].wasPressedThisFrame
-                || keyboard[Key.Escape].wasPressedThisFrame)
+                || keyboard[Key.Space].wasPressedThisFrame)
+            {
+                SceneManager.LoadScene("BossFightScene");
+            }
+            else if (keyboard[Key.Escape].wasPressedThisFrame)
             {
                 SceneManager.LoadScene("MainMenu");
             }

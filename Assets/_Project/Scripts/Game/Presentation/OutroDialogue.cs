@@ -115,7 +115,7 @@ namespace AlgoRhythm.Game.Presentation
                 "║              ALGORHYTHM: CODE IS SHIELD                  ║\n" +
                 "║         BERSAMBUNG KE PROTOKOL SEKTOR PENUH              ║\n" +
                 "╠══════════════════════════════════════════════════════════╣\n" +
-                "║           [ENTER] MENU UTAMA  ·  [R] ULANGI              ║\n" +
+                "║        [ENTER] NYALAKAN ULANG DAN LAWAN A.I.D.A!         ║\n" +
                 "╚══════════════════════════════════════════════════════════╝";
         }
     }

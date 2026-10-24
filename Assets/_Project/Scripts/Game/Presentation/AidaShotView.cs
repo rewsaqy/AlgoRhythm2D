@@ -67,6 +67,13 @@ namespace AlgoRhythm.Game.Presentation
                 return 1f;
             }
 
+            // Jika timeline DSP meloncat mundur (misal saat retry/restart wave)
+            // atau jika tembakan sudah melebihi batas waktu (timeout), anggap arrived agar di-recycle
+            if (nowDsp < _startDsp - 0.2 || nowDsp > ArrivalDsp + 0.5)
+            {
+                return 1f;
+            }
+
             return Mathf.Clamp01((float)((nowDsp - _startDsp) / _durationSec));
         }
 
@@ -80,6 +87,7 @@ namespace AlgoRhythm.Game.Presentation
         {
             TargetId = -1;
             WillHit = false;
+            transform.localPosition = new Vector3(-999f, -999f, 0f);
             gameObject.SetActive(false);
         }
     }

@@ -36,13 +36,48 @@ namespace AlgoRhythm.Game.Menu
         [Min(0.1f)] [SerializeField] private float slideDuration = 0.7f;
         [Min(2)] [SerializeField] private int slideSteps = 5;
 
+        [Header("Audio BGM & SFX")]
+        [SerializeField] private AudioClip bgmClip;
+        [SerializeField] private AudioClip confirmSfx;
+        [SerializeField] private AudioClip cursorSfx;
+        [Range(0f, 1f)] [SerializeField] private float bgmVolume = 0.55f;
+
+        private AudioSource _bgmSource;
+        private AudioSource _sfxSource;
         private readonly List<TextMeshProUGUI> _labels = new List<TextMeshProUGUI>();
         private readonly List<Vector2> _labelBase = new List<Vector2>();
         private readonly List<Button> _gatedButtons = new List<Button>();
         private bool _skipped;
+        private bool _startingGame;
 
         private void Awake()
         {
+            // Initialize Audio Sources
+            _bgmSource = gameObject.AddComponent<AudioSource>();
+            _bgmSource.playOnAwake = false;
+            _bgmSource.loop = true;
+            _bgmSource.spatialBlend = 0f;
+            _bgmSource.volume = bgmVolume;
+
+            _sfxSource = gameObject.AddComponent<AudioSource>();
+            _sfxSource.playOnAwake = false;
+            _sfxSource.spatialBlend = 0f;
+
+#if UNITY_EDITOR
+            if (bgmClip == null)
+            {
+                bgmClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/Tutorial.wav");
+            }
+            if (confirmSfx == null)
+            {
+                confirmSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/53439420-retro-zap-sound-01-474786.mp3");
+            }
+            if (cursorSfx == null)
+            {
+                cursorSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/AidaPew.wav");
+            }
+#endif
+
             if (wipe != null)
             {
                 // Cover the screen instantly; the sweep reveals from here.
@@ -56,6 +91,7 @@ namespace AlgoRhythm.Game.Menu
             _gatedButtons.Clear();
             if (title != null)
             {
+                title.text = "AlgoRhythm";
                 RegisterLabel(title, null);
             }
 
@@ -80,11 +116,27 @@ namespace AlgoRhythm.Game.Menu
                 {
                     buttons[i].onClick.AddListener(ExitGame);
                 }
+
+                // Add pointer enter sound effect
+                var trigger = buttons[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+                var entry = new UnityEngine.EventSystems.EventTrigger.Entry
+                {
+                    eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter
+                };
+                entry.callback.AddListener((data) => { PlaySfx(cursorSfx, 0.3f); });
+                trigger.triggers.Add(entry);
             }
         }
 
         private void Start()
         {
+            // Start Lobby BGM immediately
+            if (_bgmSource != null && bgmClip != null)
+            {
+                _bgmSource.clip = bgmClip;
+                _bgmSource.Play();
+            }
+
             StartCoroutine(PlayIntro());
         }
 
@@ -208,6 +260,7 @@ namespace AlgoRhythm.Game.Menu
 
         private IEnumerator SlideIn(int labelIndex)
         {
+            PlaySfx(cursorSfx, 0.4f);
             RectTransform rt = _labels[labelIndex].rectTransform;
             Vector2 home = _labelBase[labelIndex];
             // Alternate sides: first button from the left, next from right.
@@ -247,8 +300,46 @@ namespace AlgoRhythm.Game.Menu
             }
         }
 
+        private void PlaySfx(AudioClip clip, float volume)
+        {
+            if (_sfxSource != null && clip != null)
+            {
+                _sfxSource.pitch = UnityEngine.Random.Range(0.96f, 1.04f);
+                _sfxSource.PlayOneShot(clip, volume);
+            }
+        }
+
         private void LoadGame()
         {
+            if (_startingGame) return;
+            _startingGame = true;
+            StartCoroutine(LoadGameRoutine());
+        }
+
+        private IEnumerator LoadGameRoutine()
+        {
+            PlaySfx(confirmSfx, 0.7f);
+
+            // Stepped wipe sweep back to black
+            if (wipe != null)
+            {
+                wipe.gameObject.SetActive(true);
+                float width = Screen.width;
+                for (int s = wipeSteps; s >= 0; s--)
+                {
+                    float stepped = (float)s / wipeSteps;
+                    float x = stepped * (width + 64f);
+                    wipe.offsetMin = new Vector2(x, 0f);
+                    wipe.offsetMax = new Vector2(x, 0f);
+                    yield return new WaitForSecondsRealtime(0.04f);
+                }
+            }
+
+            if (_bgmSource != null)
+            {
+                _bgmSource.Stop();
+            }
+
             SceneManager.LoadScene("Opening_1");
         }
 

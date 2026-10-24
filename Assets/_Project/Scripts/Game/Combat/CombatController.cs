@@ -146,6 +146,7 @@ namespace AlgoRhythm.Game.Combat
             _lastBeat = int.MinValue;
             _aidaHitEvery = AidaTable(_config.shopAidaHitEvery, 1, 8);
             _aidaFireEvery = AidaTable(_config.shopAidaFireEvery, 1, 4);
+            _aida?.SetLevel(_aidaLevel, animate: false);
 
             _input.TapPressed += HandleTapPressed;
             _input.TapReleased += HandleTapReleased;
@@ -179,13 +180,24 @@ namespace AlgoRhythm.Game.Combat
                 return;
             }
 
-#if UNITY_EDITOR
-            if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
+            if (Keyboard.current != null)
             {
-                DevFinishAllWaves();
-                return;
-            }
+                // Cheat F9: Skip wave saat ini
+                if (Keyboard.current.f9Key.wasPressedThisFrame)
+                {
+#if UNITY_EDITOR
+                    DevFinishAllWaves();
+                    return;
 #endif
+                }
+
+                // Cheat F10 atau B: Langsung lompat ke Boss Fight AIDA
+                if (Keyboard.current.f10Key.wasPressedThisFrame || Keyboard.current.bKey.wasPressedThisFrame)
+                {
+                    UnityEngine.SceneManagement.SceneManager.LoadScene("BossFightScene");
+                    return;
+                }
+            }
 
             UpdatePaddleAim();
 
@@ -372,6 +384,7 @@ namespace AlgoRhythm.Game.Combat
         private void OnWaveStarted(int index)
         {
             _clearAnnounced = false;
+            _aida?.ClearShots();
             _hud.ShowWaveSummary(string.Empty);
             string waveId = _director.ActiveRunner.Data.WaveId;
             _hud.SetStatus($"WAVE {waveId} START");
@@ -1005,12 +1018,20 @@ namespace AlgoRhythm.Game.Combat
             active.Resolved = true;
             _director.ActiveRunner.MarkResolved(active.Threat.Id);
             bool success = grade != TimingGrade.Miss;
-            if (success && blockFlash)
+            if (success)
             {
-                _arena.FlashAtAngle(
-                    active.Threat.AngleDeg,
-                    grade == TimingGrade.Perfect ? 2.0f : 1.6f,
-                    grade == TimingGrade.Perfect ? 0.45f : 0.35f);
+                if (_rulesEnabled && grade == TimingGrade.Perfect)
+                {
+                    _combat.AddEnergy(1);
+                }
+
+                if (blockFlash)
+                {
+                    _arena.FlashAtAngle(
+                        active.Threat.AngleDeg,
+                        grade == TimingGrade.Perfect ? 2.0f : 1.6f,
+                        grade == TimingGrade.Perfect ? 0.45f : 0.35f);
+                }
             }
 
             _arena.ResolveThreat(active.Threat.Id, grade, correctDirection: success, destroyed: grade != TimingGrade.Miss);
@@ -1130,6 +1151,7 @@ namespace AlgoRhythm.Game.Combat
             // Dialogue (typewriter panel) is owned by the TutorialDriver.
 
             _arena.ClearThreats();
+            _aida?.ClearShots();
             if (Tutorial != null && Tutorial.OwnsWave(waveId))
             {
                 Tutorial.OnWaveCleared();
@@ -1161,6 +1183,7 @@ namespace AlgoRhythm.Game.Combat
             }
 
             _inShop = true;
+            _aida?.ClearShots();
             if (_song != null)
             {
                 _song.StopSong();
@@ -1244,7 +1267,9 @@ namespace AlgoRhythm.Game.Combat
                 _aidaLevel = Mathf.Min(maxLevel, _aidaLevel + 1);
                 _aidaHitEvery = AidaTable(_config.shopAidaHitEvery, _aidaLevel, 8);
                 _aidaFireEvery = AidaTable(_config.shopAidaFireEvery, _aidaLevel, 4);
+                _aida?.SetLevel(_aidaLevel, animate: true);
                 _sfx.PlayPew();
+                _hud.SetStatus($"A.I.D.A EVOLUSI: LV {_aidaLevel} AKTIF!");
             }
 
             RenderShop();
@@ -1308,6 +1333,7 @@ namespace AlgoRhythm.Game.Combat
         private void RetryCurrentWave()
         {
             _arena.ClearThreats();
+            _aida?.ClearShots();
             _active.Clear();
             _combat.Reset(_config.maxIntegrity, _config.startingEnergy);
             _metronome.Pause();
