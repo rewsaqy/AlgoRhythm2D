@@ -55,5 +55,7 @@ namespace AlgoRhythm.Game.Data
         public AudioClip songClip;
         [Tooltip("Aktif = loop selama wave (tutorial). Mati = sekali putar (wave lagu).")]
         public bool songLoop;
+        [Tooltip("Pitch lagu. 1.0 = normal. Jika 0 atau default, dihitung otomatis dari tempoBpm / baseBpm klip.")]
+        [Range(0.5f, 2.0f)] public float songPitch = 1.0f;
     }
 }

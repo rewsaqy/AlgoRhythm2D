@@ -268,7 +268,26 @@ namespace AlgoRhythm.Game.Bootstrap
 
             WaveDefinitionSO definition = waveDefinitions[index];
             bool isRetry = _director != null && _director.IsRetrying;
-            songPlayer.PlayWaveSong(definition.songClip, definition.songLoop, _clock.BeatTime(0), isRetry);
+
+            float pitch = 1.0f;
+            if (definition.songPitch > 0.01f && Mathf.Abs(definition.songPitch - 1.0f) > 0.001f)
+            {
+                pitch = definition.songPitch;
+            }
+            else if (definition.songClip != null)
+            {
+                string clipName = definition.songClip.name.ToLowerInvariant();
+                if (clipName.Contains("wave_1") && definition.tempoBpm > 10.0)
+                {
+                    pitch = (float)(definition.tempoBpm / 100.0);
+                }
+                else if (clipName.Contains("wave_2") && definition.tempoBpm > 10.0)
+                {
+                    pitch = (float)(definition.tempoBpm / 115.0);
+                }
+            }
+
+            songPlayer.PlayWaveSong(definition.songClip, definition.songLoop, _clock.BeatTime(0), isRetry, pitch);
         }
 
         private void OnWaveCleared(int index)

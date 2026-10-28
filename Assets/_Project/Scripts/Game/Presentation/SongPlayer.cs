@@ -81,6 +81,7 @@ namespace AlgoRhythm.Game.Presentation
             src.playOnAwake = false;
             src.spatialBlend = 0f;
             src.volume = songVolume;
+            src.pitch = 1.0f;
         }
 
         /// <summary>
@@ -94,8 +95,10 @@ namespace AlgoRhythm.Game.Presentation
                 return AudioSettings.dspTime + leadInSeconds;
             }
 
+            double pitch = (_activeSource != null && _activeSource.pitch > 0.01f) ? _activeSource.pitch : 1.0;
             double songTime = _activeSource.time;
-            double currentBeat = songTime / secondsPerBeat;
+            double elapsedDspSeconds = songTime / pitch;
+            double currentBeat = elapsedDspSeconds / secondsPerBeat;
             double leadInBeats = leadInSeconds / secondsPerBeat;
             double minTargetBeat = currentBeat + leadInBeats;
             double targetBeat = Math.Ceiling(minTargetBeat / quantizeBeats) * quantizeBeats;
@@ -113,7 +116,7 @@ namespace AlgoRhythm.Game.Presentation
         /// Starts the wave song at an absolute DSP time. If another song is already playing and this is not a retry,
         /// performs a seamless crossfade at dspTime without interrupting the current track during lead-in.
         /// </summary>
-        public void PlayWaveSong(AudioClip clip, bool loop, double dspTime, bool isRetry = false)
+        public void PlayWaveSong(AudioClip clip, bool loop, double dspTime, bool isRetry = false, float pitch = 1.0f)
         {
             if (_activeSource == null)
             {
@@ -139,6 +142,7 @@ namespace AlgoRhythm.Game.Presentation
                 _activeSource.clip = clip;
                 _activeSource.loop = loop;
                 _activeSource.volume = 0f;
+                _activeSource.pitch = pitch;
 
                 ScheduleOrPlay(_activeSource, dspTime);
                 _fadeCoroutine = StartCoroutine(FadeInAfterDelay(_activeSource, (float)Mathf.Max(0f, (float)(dspTime - AudioSettings.dspTime))));
@@ -151,6 +155,7 @@ namespace AlgoRhythm.Game.Presentation
             {
                 _activeSource.loop = loop;
                 _activeSource.volume = songVolume;
+                _activeSource.pitch = pitch;
                 _wasPlaying = true;
                 return;
             }
@@ -161,6 +166,7 @@ namespace AlgoRhythm.Game.Presentation
                 _activeSource.clip = clip;
                 _activeSource.loop = loop;
                 _activeSource.volume = songVolume;
+                _activeSource.pitch = pitch;
 
                 ScheduleOrPlay(_activeSource, dspTime);
                 _wasPlaying = true;
@@ -172,6 +178,7 @@ namespace AlgoRhythm.Game.Presentation
             _standbySource.clip = clip;
             _standbySource.loop = loop;
             _standbySource.volume = 0f;
+            _standbySource.pitch = pitch;
 
             if (dspTime > AudioSettings.dspTime + 0.03)
             {
@@ -290,12 +297,14 @@ namespace AlgoRhythm.Game.Presentation
             {
                 _activeSource.Stop();
                 _activeSource.volume = songVolume;
+                _activeSource.pitch = 1.0f;
             }
 
             if (_standbySource != null)
             {
                 _standbySource.Stop();
                 _standbySource.volume = songVolume;
+                _standbySource.pitch = 1.0f;
             }
         }
 
