@@ -31,7 +31,7 @@ namespace AlgoRhythm.Tests
             yield return DemoDialogue.PracticeHint();
             yield return DemoDialogue.PracticePraise();
             yield return DemoDialogue.PracticeRetry();
-            foreach (string waveId in new[] { "WS1", "WS2" })
+            foreach (string waveId in new[] { "WS1", "WS2", "WS3", "WS4", "WS5" })
             {
                 foreach (DialogueLine line in DemoDialogue.SongIntroScript(waveId) ?? new DialogueLine[0])
                 {
@@ -70,17 +70,39 @@ namespace AlgoRhythm.Tests
         {
             IReadOnlyList<DialogueLine> ws1 = DemoDialogue.SongIntroScript("WS1");
             IReadOnlyList<DialogueLine> ws2 = DemoDialogue.SongIntroScript("WS2");
+            IReadOnlyList<DialogueLine> ws3 = DemoDialogue.SongIntroScript("WS3");
+            IReadOnlyList<DialogueLine> ws4 = DemoDialogue.SongIntroScript("WS4");
+            IReadOnlyList<DialogueLine> ws5 = DemoDialogue.SongIntroScript("WS5");
+
             Assert.IsNotNull(ws1);
             Assert.IsNotNull(ws2);
+            Assert.IsNotNull(ws3);
+            Assert.IsNotNull(ws4);
+            Assert.IsNotNull(ws5);
+
             Assert.IsTrue(ws1.Count >= 2, "WS1 must teach song + PTS + shop");
             Assert.IsTrue(ws2.Count >= 3, "WS2 must teach the new roster");
+            Assert.IsTrue(ws3.Count >= 3, "WS3 must teach Sleeper and show cold transition");
+            Assert.IsTrue(ws4.Count >= 3, "WS4 must teach combined pressure and network takeover");
+            Assert.IsTrue(ws5.Count >= 3, "WS5 must reveal extraction before betrayal");
+
             string ws1Text = string.Join(" ", ws1.Select(l => l.Text));
             StringAssert.Contains("PTS", ws1Text);
             StringAssert.Contains("SHOP", ws1Text);
+
             string ws2Text = string.Join(" ", ws2.Select(l => l.Text));
             StringAssert.Contains("Heavy", ws2Text);
             StringAssert.Contains("Holder", ws2Text);
             StringAssert.Contains("Adware", ws2Text);
+
+            string ws3Text = string.Join(" ", ws3.Select(l => l.Text));
+            StringAssert.Contains("Sleeper", ws3Text);
+
+            string ws4Text = string.Join(" ", ws4.Select(l => l.Text));
+            StringAssert.Contains("jaringan", ws4Text.ToLowerInvariant());
+
+            string ws5Text = string.Join(" ", ws5.Select(l => l.Text));
+            StringAssert.Contains("ekstraksi", ws5Text.ToLowerInvariant());
         }
 
         [Test]
@@ -92,14 +114,14 @@ namespace AlgoRhythm.Tests
         }
 
         [Test]
-        public void WaveStartLines_ExistForBothSongs()
+        public void WaveStartLines_ExistForAllSongs()
         {
-            DemoDialogue.WaveStartLine("WS1", out string id1, out string line1);
-            DemoDialogue.WaveStartLine("WS2", out string id2, out string line2);
-            Assert.IsFalse(string.IsNullOrEmpty(id1));
-            Assert.IsFalse(string.IsNullOrEmpty(line1));
-            Assert.IsFalse(string.IsNullOrEmpty(id2));
-            Assert.IsFalse(string.IsNullOrEmpty(line2));
+            foreach (string waveId in new[] { "WS1", "WS2", "WS3", "WS4", "WS5" })
+            {
+                DemoDialogue.WaveStartLine(waveId, out string id, out string line);
+                Assert.IsFalse(string.IsNullOrEmpty(id), "id missing for " + waveId);
+                Assert.IsFalse(string.IsNullOrEmpty(line), "line missing for " + waveId);
+            }
         }
 
         [Test]

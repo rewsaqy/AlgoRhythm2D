@@ -9535,6 +9535,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 272824f0362c86450a161675d6ee6575, type: 2}
   - {fileID: 11400000, guid: 1ce4d0997e5b08b5f8ad4773dbcbcbd3, type: 2}
   - {fileID: 11400000, guid: 02ba387fad807d6e7bced8e49413f0c2, type: 2}
+  - {fileID: 11400000, guid: 7da93becd847439ca63e0f1c52f916dd, type: 2}
+  - {fileID: 11400000, guid: b3dfe4c881b5473fac0fb3feee67c10e, type: 2}
+  - {fileID: 11400000, guid: 1c5aeac6ecc445a48e1a9853eedf683a, type: 2}
   displayFont: {fileID: 12800000, guid: 30108e443fb1451039f2b4f398795bbd, type: 3}
 --- !u!4 &1639154996
 Transform:
@@ -10461,8 +10464,8 @@ Transform:
   m_LocalScale: {x: 0.878446, y: 0.878446, z: 0.878446}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1228592327}
   - {fileID: 1820131344}
+  - {fileID: 1228592327}
   - {fileID: 1136570030}
   - {fileID: 1342002174}
   - {fileID: 1927055752}
@@ -11241,7 +11244,7 @@ Transform:
   m_GameObject: {fileID: 1820131343}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.429, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -11476,6 +11479,7 @@ MonoBehaviour:
   songVolume: 0.8
   fadeInDuration: 1
   fadeOutDuration: 1
+  crossfadeDuration: 0.6
 --- !u!82 &1860728940
 AudioSource:
   m_ObjectHideFlags: 0
@@ -12522,7 +12526,7 @@ Transform:
   m_GameObject: {fileID: 2054897270}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.4, z: 0}
   m_LocalScale: {x: 0.22, y: 0.7, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

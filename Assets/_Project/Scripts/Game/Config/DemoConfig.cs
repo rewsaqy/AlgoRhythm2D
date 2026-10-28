@@ -53,13 +53,13 @@ namespace AlgoRhythm.Game.Config
 
         [Header("Shop [U] — popup 2-track, Lv1-5 (owner 2026-10-23)")]
         [Tooltip("Biaya PTS untuk naik ke level berikutnya. Index = level saat ini (regen 0-4, AIDA 0-4 sebagai level-1).")]
-        public int[] shopUpgradeCosts = { 30, 55, 85, 120, 160 };
+        public int[] shopUpgradeCosts = { 35, 65, 85, 95, 130 };
         [Tooltip("Heal tiap wave clear per level regen 0-5. Lv0 = tidak regen.")]
-        public int[] shopRegenPerClear = { 0, 10, 15, 20, 25, 40 };
+        public int[] shopRegenPerClear = { 0, 15, 20, 25, 35, 50 };
         [Tooltip("Akurasi AIDA per level 1-5: tiap N tembakan kena 1.")]
-        public int[] shopAidaHitEvery = { 8, 8, 7, 6, 5, 4 };
+        public int[] shopAidaHitEvery = { 8, 8, 6, 5, 4 };
         [Tooltip("Tempo AIDA per level 1-5: tembak tiap N beat.")]
-        public int[] shopAidaFireEvery = { 4, 4, 4, 3, 3, 2 };
+        public int[] shopAidaFireEvery = { 4, 4, 3, 3, 2 };
         [Tooltip("Level maksimum tiap track.")]
         [Min(1)] public int shopMaxLevel = 5;
 

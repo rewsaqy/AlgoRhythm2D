@@ -37,6 +37,7 @@ namespace AlgoRhythm.Game.Bootstrap
         [SerializeField] private Font displayFont;
 
         private CombatController _controller;
+        public CombatController Controller => _controller;
         private WaveDirector _director;
         private BeatClock _clock;
         private RuleRuntime _rules;
@@ -66,6 +67,22 @@ namespace AlgoRhythm.Game.Bootstrap
             float savedCalibration = PlayerPrefs.GetFloat(
                 DemoDialogue.CalibrationPrefKey, (float)config.calibrationOffsetMs);
             judge.CalibrationOffsetMs = Mathf.Clamp(savedCalibration, -150f, 150f);
+
+#if UNITY_EDITOR
+            if (waveDefinitions == null || waveDefinitions.Length < 6)
+            {
+                var defs = new List<WaveDefinitionSO>();
+                foreach (string id in new[] { "W1T", "WS1", "WS2", "WS3", "WS4", "WS5" })
+                {
+                    var loaded = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveDefinitionSO>($"Assets/_Project/Data/Waves/{id}.asset");
+                    if (loaded != null) defs.Add(loaded);
+                }
+                if (defs.Count >= 6)
+                {
+                    waveDefinitions = defs.ToArray();
+                }
+            }
+#endif
 
             var waves = new List<WaveData>(waveDefinitions.Length);
             foreach (WaveDefinitionSO definition in waveDefinitions)
@@ -121,7 +138,31 @@ namespace AlgoRhythm.Game.Bootstrap
             }
             _director.WaveStarted += OnWaveStarted;
             _director.WaveCleared += OnWaveCleared;
+            _director.BeatTimeAligner = (leadInBeats, secondsPerBeat) =>
+            {
+                if (songPlayer != null && songPlayer.IsPlaying)
+                {
+                    return songPlayer.GetNextBeatAlignedDspTime(leadInBeats * secondsPerBeat, secondsPerBeat, 4);
+                }
+                return _clockSource.NowDsp + leadInBeats * secondsPerBeat;
+            };
             shop.Initialize();
+
+            var shopController = new ShopController(
+                _combat,
+                config,
+                shop,
+                hud,
+                sfx,
+                aidaTower,
+                _director,
+                songPlayer);
+
+            var threatManager = new ThreatLifecycleManager(
+                arena,
+                clock,
+                judge,
+                config);
 
             _controller = new CombatController(
                 _clockSource,
@@ -140,8 +181,9 @@ namespace AlgoRhythm.Game.Bootstrap
                 paddle,
                 history,
                 paddleView,
-                shop,
                 config,
+                shopController,
+                threatManager,
                 songPlayer);
             TutorialDriver tutorial = GetComponentInChildren<TutorialDriver>(true);
             if (tutorial != null)
@@ -225,7 +267,8 @@ namespace AlgoRhythm.Game.Bootstrap
             }
 
             WaveDefinitionSO definition = waveDefinitions[index];
-            songPlayer.PlayWaveSong(definition.songClip, definition.songLoop, _clock.BeatTime(0));
+            bool isRetry = _director != null && _director.IsRetrying;
+            songPlayer.PlayWaveSong(definition.songClip, definition.songLoop, _clock.BeatTime(0), isRetry);
         }
 
         private void OnWaveCleared(int index)

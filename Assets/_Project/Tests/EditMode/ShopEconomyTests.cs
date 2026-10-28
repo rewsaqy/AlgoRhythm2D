@@ -91,5 +91,63 @@ namespace AlgoRhythm.Tests
             Assert.AreEqual(12, state.CurrencyPts);
             Assert.AreEqual(0, state.PerfectCount);
         }
+
+        [Test]
+        public void AddPts_IncreasesCurrencyPts()
+        {
+            var state = new CombatState();
+            Assert.AreEqual(10, state.CurrencyPts);
+
+            state.AddPts(500);
+            Assert.AreEqual(510, state.CurrencyPts);
+
+            state.AddPts(999);
+            Assert.AreEqual(1509, state.CurrencyPts);
+        }
+
+        [Test]
+        public void AddPts_NegativeAmount_ThrowsArgumentOutOfRangeException()
+        {
+            var state = new CombatState();
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => state.AddPts(-1));
+        }
+
+        [Test]
+        public void EconomyProgression_FlawlessPlayerCanAffordAidaMax()
+        {
+            var state = new CombatState();
+            state.AddPts(296); // 10 initial + 296 = 306 PTS (flawless up to Shop 4)
+            Assert.AreEqual(306, state.CurrencyPts);
+
+            // Cost ladder: 35, 65, 85, 95
+            Assert.IsTrue(state.TrySpendPts(35)); // Lv2
+            Assert.IsTrue(state.TrySpendPts(65)); // Lv3
+            Assert.IsTrue(state.TrySpendPts(85)); // Lv4
+            Assert.IsTrue(state.TrySpendPts(95)); // Lv5 MAX
+
+            Assert.AreEqual(26, state.CurrencyPts); // 26 PTS spare
+        }
+
+        [Test]
+        public void EconomyProgression_DamagedPlayerPrioritizesLevel3AndRegen()
+        {
+            var state = new CombatState();
+            state.AddPts(222); // 10 initial + 222 = 232 PTS (~75% efficiency)
+            Assert.AreEqual(232, state.CurrencyPts);
+
+            // Player takes damage and invests in Regen Lv1 and Lv2
+            Assert.IsTrue(state.TrySpendPts(35)); // Regen Lv1
+            Assert.IsTrue(state.TrySpendPts(60)); // Regen Lv2
+            Assert.AreEqual(137, state.CurrencyPts);
+
+            // Upgrades AIDA up to Level 3
+            Assert.IsTrue(state.TrySpendPts(35)); // AIDA Lv2
+            Assert.IsTrue(state.TrySpendPts(65)); // AIDA Lv3
+            Assert.AreEqual(37, state.CurrencyPts);
+
+            // Cannot afford AIDA Lv4 (costs 85 PTS)
+            Assert.IsFalse(state.TrySpendPts(85));
+            Assert.AreEqual(37, state.CurrencyPts);
+        }
     }
 }

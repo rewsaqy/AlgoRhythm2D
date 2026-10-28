@@ -1,0 +1,261 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0ee5645becd9f7ce91bd7bd78712afa, type: 3}
+  m_Name: WS4
+  m_EditorClassIdentifier: AlgoRhythm.Game::AlgoRhythm.Game.Data.WaveDefinitionSO
+  waveId: WS4
+  tempoBpm: 125
+  difficultyTier: Song
+  idOffset: 400
+  spawnSequence:
+  - kind: 3
+    direction: 0
+    spawnBeat: 4
+    impactBeat: 12
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 2
+    spawnBeat: 8
+    impactBeat: 16
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 5
+    direction: 1
+    spawnBeat: 12
+    impactBeat: 20
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 5
+    direction: 3
+    spawnBeat: 16
+    impactBeat: 24
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 20
+    impactBeat: 28
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 22
+    impactBeat: 30
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 24
+    impactBeat: 32
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 26
+    impactBeat: 34
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 5
+    direction: 0
+    spawnBeat: 30
+    impactBeat: 38
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 2
+    spawnBeat: 34
+    impactBeat: 42
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 1
+    spawnBeat: 38
+    impactBeat: 46
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 1
+    direction: 3
+    spawnBeat: 42
+    impactBeat: 50
+    baseDamage: 0
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 5
+    direction: 0
+    spawnBeat: 46
+    impactBeat: 54
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 5
+    direction: 2
+    spawnBeat: 50
+    impactBeat: 58
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 54
+    impactBeat: 62
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 56
+    impactBeat: 64
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 58
+    impactBeat: 66
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 60
+    impactBeat: 68
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 1
+    spawnBeat: 64
+    impactBeat: 72
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 3
+    spawnBeat: 68
+    impactBeat: 76
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 4
+    direction: 0
+    spawnBeat: 72
+    impactBeat: 80
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 4
+    direction: 2
+    spawnBeat: 76
+    impactBeat: 84
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 1
+    spawnBeat: 80
+    impactBeat: 88
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 3
+    spawnBeat: 82
+    impactBeat: 90
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 0
+    spawnBeat: 86
+    impactBeat: 94
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 1
+    spawnBeat: 90
+    impactBeat: 98
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 3
+    direction: 3
+    spawnBeat: 94
+    impactBeat: 102
+    baseDamage: 15
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 0
+    spawnBeat: 98
+    impactBeat: 106
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  - kind: 0
+    direction: 2
+    spawnBeat: 100
+    impactBeat: 108
+    baseDamage: 10
+    angleMode: 0
+    angleDeg: 0
+    halfWidthDeg: 0
+  ruleUnlocks:
+  - WHEN_PROJECTILE
+  - NORTH
+  - SOUTH
+  - EAST
+  - WEST
+  - RAISE_SHIELD
+  dialogueTrigger: OnStart
+  songClip: {fileID: 8300000, guid: 7d65716a82c31ae7b898dfd064b54a0a, type: 3}
+  songLoop: 1

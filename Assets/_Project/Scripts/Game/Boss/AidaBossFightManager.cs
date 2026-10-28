@@ -24,6 +24,7 @@ namespace AlgoRhythm.Game.Boss
         [SerializeField] private BossDataBlock ball;
         [SerializeField] private CameraShake cameraShake;
         [SerializeField] private BossBootSequence bootSequence;
+        [SerializeField] private AidaDeathCinematic deathCinematic;
 
         [Header("UI Text Displays")]
         [SerializeField] private TextMesh timerText;
@@ -45,7 +46,10 @@ namespace AlgoRhythm.Game.Boss
         private bool _isGameOver;
         private bool _isVictory;
         private bool _battleStarted;
+        private int _aidaLevel = 1;
         private Coroutine _serveCoroutine;
+
+        public int AidaLevel => _aidaLevel;
 
         private void Awake()
         {
@@ -54,6 +58,37 @@ namespace AlgoRhythm.Game.Boss
 
         private void Start()
         {
+            _aidaLevel = Mathf.Clamp(PlayerPrefs.GetInt("AlgoRhythm.AidaLevel", 1), 0, 5);
+
+            switch (_aidaLevel)
+            {
+                case 0:
+                    totalUploadTimeSeconds = 360f;
+                    missPenaltySeconds = 8f;
+                    break;
+                case 1:
+                    totalUploadTimeSeconds = 330f;
+                    missPenaltySeconds = 10f;
+                    break;
+                case 2:
+                    totalUploadTimeSeconds = 300f;
+                    missPenaltySeconds = 13f;
+                    break;
+                case 3:
+                    totalUploadTimeSeconds = 270f;
+                    missPenaltySeconds = 16f;
+                    break;
+                case 4:
+                    totalUploadTimeSeconds = 220f;
+                    missPenaltySeconds = 20f;
+                    break;
+                case 5:
+                default:
+                    totalUploadTimeSeconds = 180f;
+                    missPenaltySeconds = 25f;
+                    break;
+            }
+
             if (cameraShake == null && Camera.main != null)
             {
                 cameraShake = Camera.main.GetComponent<CameraShake>();
@@ -72,13 +107,40 @@ namespace AlgoRhythm.Game.Boss
 
             if (boss != null)
             {
+                boss.ConfigureDifficulty(_aidaLevel);
                 boss.HealthChanged += OnBossHealthChanged;
                 boss.Defeated += OnBossDefeated;
                 boss.Initialize(playerPaddle != null ? playerPaddle.transform : transform, ball);
             }
 
+            if (PlayerPrefs.GetInt("AlgoRhythm.AutoTriggerEnding", 0) == 1)
+            {
+                PlayerPrefs.DeleteKey("AlgoRhythm.AutoTriggerEnding");
+                if (bootSequence != null)
+                {
+                    bootSequence.gameObject.SetActive(false);
+                }
+                StartCoroutine(AutoTriggerEndingRoutine());
+                return;
+            }
+
+            if (PlayerPrefs.GetInt("AlgoRhythm.AutoTriggerDefeat", 0) == 1)
+            {
+                PlayerPrefs.DeleteKey("AlgoRhythm.AutoTriggerDefeat");
+                if (bootSequence != null)
+                {
+                    bootSequence.gameObject.SetActive(false);
+                }
+                StartCoroutine(AutoTriggerDefeatRoutine());
+                return;
+            }
+
             if (ball != null)
             {
+                float baseSpeed = _aidaLevel <= 0 ? 6.5f : (_aidaLevel == 1 ? 7.0f : (_aidaLevel == 2 ? 8.0f : (_aidaLevel == 3 ? 9.0f : (_aidaLevel == 4 ? 10.2f : 11.5f))));
+                float increment = _aidaLevel <= 0 ? 1.025f : (_aidaLevel == 1 ? 1.030f : (_aidaLevel == 2 ? 1.042f : (_aidaLevel == 3 ? 1.055f : (_aidaLevel == 4 ? 1.065f : 1.075f))));
+                ball.ConfigureDifficulty(baseSpeed, increment);
+
                 ball.PlayerScored += OnPlayerScored;
                 ball.BossScored += OnBossScored;
                 ball.WallBounced += OnWallBounced;
@@ -87,7 +149,7 @@ namespace AlgoRhythm.Game.Boss
 
             if (bannerText != null)
             {
-                bannerText.text = "PANTULKAN BALOK DATA KE A.I.D.A!\n[MOUSE / ARROW KEYS: GERAKKAN PADDLE]";
+                bannerText.text = $"PANTULKAN BALOK DATA KE A.I.D.A v{_aidaLevel}.0!\n[MOUSE / ARROW KEYS: GERAKKAN PADDLE]";
             }
 
             UpdateDisplay();
@@ -245,7 +307,7 @@ namespace AlgoRhythm.Game.Boss
 
             if (ball != null)
             {
-                ball.Serve(towardsPlayer);
+                ball.Serve(towardsPlayer, 1.0f);
             }
         }
 
@@ -254,33 +316,94 @@ namespace AlgoRhythm.Game.Boss
             UpdateDisplay();
         }
 
+        private IEnumerator AutoTriggerEndingRoutine()
+        {
+            yield return null;
+            if (boss != null)
+            {
+                boss.TakeDamage(boss.CurrentHealth);
+            }
+            else
+            {
+                OnBossDefeated();
+            }
+        }
+
+        private IEnumerator AutoTriggerDefeatRoutine()
+        {
+            yield return null;
+            TriggerDefeat();
+        }
+
         private void OnBossDefeated()
         {
+            if (_isVictory) return;
             _isVictory = true;
             if (ball != null) ball.Stop();
             if (bgmSource != null) bgmSource.Stop();
-            PlaySound(victorySfx, 1.0f);
 
-            if (bannerText != null)
+            // Sembunyikan HUD pertempuran normal agar cinematic mendapatkan panggung penuh
+            if (timerText != null) timerText.gameObject.SetActive(false);
+            if (bossHpText != null) bossHpText.gameObject.SetActive(false);
+            if (rallyText != null) rallyText.gameObject.SetActive(false);
+            if (bannerText != null) bannerText.gameObject.SetActive(false);
+
+            Font fontToUse = timerText != null ? timerText.font : (bannerText != null ? bannerText.font : null);
+
+            var cinematic = deathCinematic != null ? deathCinematic : GetComponentInChildren<AidaDeathCinematic>(true);
+            if (cinematic == null)
             {
-                bannerText.text = "VICTORY! A.I.D.A BERHASIL DIKALAHKAN!\nCORE DATABASE BERHASIL DIREBUT KEMBALI!\n[ENTER] KEMBALI KE MAIN MENU";
-                bannerText.color = new Color(0f, 1f, 0.5f); // Emerald Neon
+                cinematic = gameObject.AddComponent<AidaDeathCinematic>();
             }
+
+            cinematic.Play(
+                boss,
+                cameraShake,
+                sfxSource,
+                hitBossSfx != null ? hitBossSfx : deflectSfx,
+                victorySfx,
+                _aidaLevel,
+                Mathf.Max(0f, totalUploadTimeSeconds - _elapsedTime),
+                fontToUse
+            );
         }
 
         private void TriggerDefeat()
         {
+            if (_isGameOver || _isVictory) return;
             _isGameOver = true;
             if (ball != null) ball.Stop();
             if (boss != null) boss.StopBehavior();
             if (bgmSource != null) bgmSource.Stop();
             PlaySound(defeatSfx, 1.0f);
 
-            if (bannerText != null)
+            // Sembunyikan HUD pertempuran normal agar cinematic mendapatkan panggung penuh
+            if (timerText != null) timerText.gameObject.SetActive(false);
+            if (bossHpText != null) bossHpText.gameObject.SetActive(false);
+            if (rallyText != null) rallyText.gameObject.SetActive(false);
+            if (bannerText != null) bannerText.gameObject.SetActive(false);
+
+            Font fontToUse = timerText != null ? timerText.font : (bannerText != null ? bannerText.font : null);
+
+            var cinematic = deathCinematic != null ? deathCinematic : GetComponentInChildren<AidaDeathCinematic>(true);
+            if (cinematic == null)
             {
-                bannerText.text = "SYSTEM COMPROMISED!\nCORE DATABASE BERHASIL DIJUAL KE DARK WEB!\n[R] COBA LAGI   ·   [ESC] MENU UTAMA";
-                bannerText.color = new Color(1f, 0.2f, 0.2f); // Red Alert
+                cinematic = gameObject.AddComponent<AidaDeathCinematic>();
             }
+
+            cinematic.PlayDefeat(
+                boss,
+                cameraShake,
+                sfxSource,
+                hitBossSfx != null ? hitBossSfx : deflectSfx,
+                _aidaLevel,
+                fontToUse
+            );
+        }
+
+        public void DevTriggerDefeat()
+        {
+            TriggerDefeat();
         }
 
         private void UpdateDisplay()
@@ -306,8 +429,8 @@ namespace AlgoRhythm.Game.Boss
                 int hp = boss.CurrentHealth;
                 int max = boss.MaxHealth;
                 string hpBar = new string('■', hp) + new string('□', max - hp);
-                string phase = hp <= 4 ? "[OVERCLOCK RAGE]" : "[DEFENSE CORE]";
-                bossHpText.text = $"A.I.D.A v5.0 {phase}: [{hpBar}] {hp}/{max} HP";
+                string phase = hp <= (max / 2) ? "[OVERCLOCK RAGE]" : (_aidaLevel <= 1 ? "[EASY MODE]" : "[DEFENSE CORE]");
+                bossHpText.text = $"A.I.D.A v{_aidaLevel}.0 {phase}: [{hpBar}] {hp}/{max} HP";
             }
 
             // Update Rally / Speed Text
@@ -322,14 +445,14 @@ namespace AlgoRhythm.Game.Boss
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
 
-            if (_isVictory)
+            // Navigasi saat victory maupun defeat dikendalikan penuh oleh AidaDeathCinematic jika aktif
+            var cinematic = deathCinematic != null ? deathCinematic : GetComponentInChildren<AidaDeathCinematic>(true);
+            if (cinematic != null && cinematic.IsPlaying)
             {
-                if (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame)
-                {
-                    SceneManager.LoadScene("MainMenu");
-                }
+                return;
             }
-            else if (_isGameOver)
+
+            if (_isGameOver)
             {
                 if (keyboard.rKey.wasPressedThisFrame)
                 {
@@ -347,16 +470,29 @@ namespace AlgoRhythm.Game.Boss
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
 
+            // Cheat F8: Instant Defeat / Trigger Defeat Ending
+            if (keyboard.f8Key.wasPressedThisFrame && !_isGameOver && !_isVictory)
+            {
+                TriggerDefeat();
+            }
+
             // Cheat F10: Kurangi HP Boss instan (-2 HP per tekan)
             if (keyboard.f10Key.wasPressedThisFrame && boss != null && !_isGameOver && !_isVictory)
             {
                 boss.TakeDamage(2);
             }
 
-            // Cheat F9: Instant Victory
-            if (keyboard.f9Key.wasPressedThisFrame && boss != null && !_isGameOver && !_isVictory)
+            // Cheat F9 / F12: Instant Victory / Trigger Magnum Opus Ending
+            if ((keyboard.f9Key.wasPressedThisFrame || keyboard.f12Key.wasPressedThisFrame) && !_isGameOver && !_isVictory)
             {
-                boss.TakeDamage(boss.CurrentHealth);
+                if (boss != null)
+                {
+                    boss.TakeDamage(boss.CurrentHealth);
+                }
+                else
+                {
+                    OnBossDefeated();
+                }
             }
 
             // Cheat F11: Percepat waktu (+60 detik per tekan)

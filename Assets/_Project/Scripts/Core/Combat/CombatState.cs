@@ -223,6 +223,17 @@ namespace AlgoRhythm.Core.Combat
             Energy += amount;
         }
 
+        /// <summary>Grants shop currency (PTS). Clamped non-negative.</summary>
+        public void AddPts(int amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount));
+            }
+
+            CurrencyPts += amount;
+        }
+
         /// <summary>Spends shop currency. Returns false when PTS are insufficient.</summary>
         public bool TrySpendPts(int amount)
         {

@@ -37,27 +37,25 @@ MonoBehaviour:
   heavyArmorHits: 2
   enableCodePanel: 0
   shopUpgradeCosts:
-  - 30
-  - 55
+  - 35
+  - 65
   - 85
-  - 120
-  - 160
+  - 95
+  - 130
   shopRegenPerClear:
   - 0
-  - 10
   - 15
   - 20
   - 25
-  - 40
+  - 35
+  - 50
   shopAidaHitEvery:
   - 8
   - 8
-  - 7
   - 6
   - 5
   - 4
   shopAidaFireEvery:
-  - 4
   - 4
   - 4
   - 3

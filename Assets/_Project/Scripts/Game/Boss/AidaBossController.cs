@@ -19,6 +19,7 @@ namespace AlgoRhythm.Game.Boss
         [SerializeField] private float baseAiSpeed = 7.5f;
         [SerializeField] private float enragedAiSpeed = 11.0f;
         [SerializeField] private float shieldWidth = 2.4f;
+        [SerializeField] private float predictionAccuracy = 0.65f;
         [SerializeField] private float minX = -5.5f;
         [SerializeField] private float maxX = 5.5f;
 
@@ -43,6 +44,75 @@ namespace AlgoRhythm.Game.Boss
         public bool IsDefeated => _isDefeated;
         public float ShieldWidth => shieldWidth;
         public float HalfShieldWidth => shieldWidth * 0.5f;
+        public float BaseAiSpeed => baseAiSpeed;
+        public float EnragedAiSpeed => enragedAiSpeed;
+        public float PredictionAccuracy => predictionAccuracy;
+
+        /// <summary>
+        /// Scales boss attributes based on AIDA upgrades purchased in the shop.
+        /// Levels 0 and 1 are intentionally very easy (slow tracking, narrow shield, low HP, low prediction).
+        /// Difficulty scales progressively up to Level 5 (overclock nightmare).
+        /// </summary>
+        public void ConfigureDifficulty(int aidaLevel)
+        {
+            int level = Mathf.Clamp(aidaLevel, 0, 5);
+
+            switch (level)
+            {
+                case 0:
+                    maxHealth = 3;
+                    baseAiSpeed = 3.5f;
+                    enragedAiSpeed = 5.0f;
+                    shieldWidth = 1.5f;
+                    predictionAccuracy = 0.15f;
+                    break;
+                case 1:
+                    maxHealth = 4;
+                    baseAiSpeed = 4.2f;
+                    enragedAiSpeed = 6.2f;
+                    shieldWidth = 1.8f;
+                    predictionAccuracy = 0.30f;
+                    break;
+                case 2:
+                    maxHealth = 6;
+                    baseAiSpeed = 6.0f;
+                    enragedAiSpeed = 8.5f;
+                    shieldWidth = 2.2f;
+                    predictionAccuracy = 0.50f;
+                    break;
+                case 3:
+                    maxHealth = 8;
+                    baseAiSpeed = 8.0f;
+                    enragedAiSpeed = 11.5f;
+                    shieldWidth = 2.7f;
+                    predictionAccuracy = 0.70f;
+                    break;
+                case 4:
+                    maxHealth = 11;
+                    baseAiSpeed = 10.2f;
+                    enragedAiSpeed = 14.5f;
+                    shieldWidth = 3.2f;
+                    predictionAccuracy = 0.85f;
+                    break;
+                case 5:
+                default:
+                    maxHealth = 15;
+                    baseAiSpeed = 12.5f;
+                    enragedAiSpeed = 18.0f;
+                    shieldWidth = 3.8f;
+                    predictionAccuracy = 0.98f;
+                    break;
+            }
+
+            _currentHealth = maxHealth;
+            if (shieldVisual != null)
+            {
+                _baseShieldScale = new Vector3(1.8f * (shieldWidth / 2.4f), _baseShieldScale.y, _baseShieldScale.z);
+                shieldVisual.localScale = _baseShieldScale;
+            }
+
+            HealthChanged?.Invoke(_currentHealth, maxHealth);
+        }
 
         public void Initialize(Transform playerTarget, BossDataBlock ball)
         {
@@ -90,9 +160,9 @@ namespace AlgoRhythm.Game.Boss
             // Only intensely track when ball is heading towards boss
             if (ballVel.y > 0f)
             {
-                // Simple trajectory prediction
+                // Trajectory prediction scaled by prediction accuracy
                 float timeToReach = Mathf.Max(0.01f, (transform.position.y - ballPos.y) / Mathf.Max(0.1f, ballVel.y));
-                float predictedX = ballPos.x + ballVel.x * (timeToReach * 0.65f);
+                float predictedX = ballPos.x + ballVel.x * (timeToReach * predictionAccuracy);
                 _targetX = Mathf.Clamp(predictedX, minX, maxX);
             }
             else
@@ -162,17 +232,23 @@ namespace AlgoRhythm.Game.Boss
             _currentHealth = Mathf.Max(0, _currentHealth - damage);
             HealthChanged?.Invoke(_currentHealth, maxHealth);
 
-            // Spawn procedural cyber explosion
-            BossExplosionVfx.Spawn(transform.position, new Color(0f, 1f, 0.8f), 18, 9f);
+            // Spawn procedural cyber explosion only when playing
+            if (Application.isPlaying)
+            {
+                BossExplosionVfx.Spawn(transform.position, new Color(0f, 1f, 0.8f), 18, 9f);
+            }
 
             // Safe color flash
             if (_flashCoroutine != null) StopCoroutine(_flashCoroutine);
-            _flashCoroutine = StartCoroutine(DamageFlashRoutine());
+            if (Application.isPlaying && gameObject.activeInHierarchy)
+            {
+                _flashCoroutine = StartCoroutine(DamageFlashRoutine());
+            }
 
             if (_currentHealth <= 0)
             {
                 _isDefeated = true;
-                StartCoroutine(DefeatSequence());
+                Defeated?.Invoke();
             }
         }
 

@@ -19,6 +19,7 @@ namespace AlgoRhythm.Game.Combat
         private readonly DspClockSource _clockSource;
         private readonly int _leadInBeats;
         private int _activeIndex;
+        private bool _isRetrying;
 
         public WaveDirector(
             IReadOnlyList<WaveData> waves,
@@ -55,6 +56,14 @@ namespace AlgoRhythm.Game.Combat
         public int ActiveIndex => _activeIndex;
 
         public int WaveCount => _runners.Count;
+
+        public bool IsRetrying => _isRetrying;
+
+        /// <summary>
+        /// Optional delegate to calculate beat-aligned dspStart for wave transitions.
+        /// Arguments: (leadInBeats, secondsPerBeat) -> returns dspStart.
+        /// </summary>
+        public Func<int, double, double> BeatTimeAligner { get; set; }
 
         /// <summary>Wave id at an index, or empty when out of range.</summary>
         public string WaveIdAt(int index)
@@ -95,13 +104,32 @@ namespace AlgoRhythm.Game.Combat
             // Per-wave BPM (demo decision: W1 100, W2 115, W3 130). Retune
             // before the lead-in offset so it uses the new spacing.
             _clock.SetBpm(_runners[index].Data.Bpm);
-            _clock.Start(_clockSource.NowDsp + _leadInBeats * _clock.SecondsPerBeat);
+
+            double dspStart;
+            if (!_isRetrying && BeatTimeAligner != null)
+            {
+                dspStart = BeatTimeAligner(_leadInBeats, _clock.SecondsPerBeat);
+            }
+            else
+            {
+                dspStart = _clockSource.NowDsp + _leadInBeats * _clock.SecondsPerBeat;
+            }
+
+            _clock.Start(dspStart);
             WaveStarted?.Invoke(index);
         }
 
         public void RetryCurrent()
         {
-            StartWave(_activeIndex);
+            _isRetrying = true;
+            try
+            {
+                StartWave(_activeIndex);
+            }
+            finally
+            {
+                _isRetrying = false;
+            }
         }
 
         /// <summary>

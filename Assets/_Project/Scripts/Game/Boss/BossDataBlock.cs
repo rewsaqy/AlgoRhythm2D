@@ -39,6 +39,14 @@ namespace AlgoRhythm.Game.Boss
         public int RallyCount => _rallyCount;
         public float CurrentSpeed => _currentSpeed;
         public Vector3 Velocity => _velocity;
+        public float BaseSpeed => baseSpeed;
+        public float SpeedIncrementPerBounce => speedIncrementPerBounce;
+
+        public void ConfigureDifficulty(float newBaseSpeed, float newIncrement)
+        {
+            baseSpeed = Mathf.Max(1f, newBaseSpeed);
+            speedIncrementPerBounce = Mathf.Max(1.001f, newIncrement);
+        }
 
         private void Awake()
         {
