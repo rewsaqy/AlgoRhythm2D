@@ -82,6 +82,9 @@ namespace BrewedInk.CRT.URP
 
 		private static void ExecuteMainPass(MainPassData data, RasterGraphContext context)
 		{
+			if (data == null || data.material == null || context.cmd == null)
+				return;
+
 			SharedPropertyBlock.Clear();
 			if (data.inputTexture.IsValid())
 				SharedPropertyBlock.SetTexture(KBlitTexturePropertyId, data.inputTexture);
@@ -96,18 +99,39 @@ namespace BrewedInk.CRT.URP
 			if (!IsActive())
 				return;
 
+			if (renderGraph == null || frameData == null)
+				return;
+
 			UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+			if (resourceData == null || !resourceData.cameraColor.IsValid())
+				return;
+
+			UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+			if (cameraData != null && (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection))
+				return;
+
+			TextureDesc cameraColorDesc;
+			try
+			{
+				cameraColorDesc = renderGraph.GetTextureDesc(resourceData.cameraColor);
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogWarning($"[CRTPass] Skipped frame: GetTextureDesc failed ({ex.Message})");
+				return;
+			}
+
+			cameraColorDesc.name = "CRT_Effect";
+			cameraColorDesc.clearBuffer = false;
+			TextureHandle destination = renderGraph.CreateTexture(cameraColorDesc);
+			if (!destination.IsValid())
+				return;
 
 			using (var builder = renderGraph.AddRasterRenderPass<MainPassData>(
 				PassName, out var passData, profilingSampler))
 			{
 				passData.material = m_Material;
 				passData.inputTexture = resourceData.cameraColor;
-
-				var cameraColorDesc = renderGraph.GetTextureDesc(resourceData.cameraColor);
-				cameraColorDesc.name = "CRT_Effect";
-				cameraColorDesc.clearBuffer = false;
-				TextureHandle destination = renderGraph.CreateTexture(cameraColorDesc);
 
 				builder.UseTexture(passData.inputTexture, AccessFlags.Read);
 				builder.SetRenderAttachment(destination, 0, AccessFlags.Write);

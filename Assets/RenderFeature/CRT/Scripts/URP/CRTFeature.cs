@@ -87,7 +87,14 @@ namespace BrewedInk.CRT.URP
 				return;
 
 			if (renderingData.cameraData.cameraType == CameraType.Preview
-				|| renderingData.cameraData.cameraType == CameraType.Reflection)
+				|| renderingData.cameraData.cameraType == CameraType.Reflection
+				|| renderingData.cameraData.cameraType == CameraType.SceneView
+				|| renderingData.cameraData.isPreviewCamera)
+			{
+				return;
+			}
+
+			if (renderingData.cameraData.renderType == CameraRenderType.Overlay)
 			{
 				return;
 			}

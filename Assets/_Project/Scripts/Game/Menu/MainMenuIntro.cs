@@ -80,6 +80,11 @@ namespace AlgoRhythm.Game.Menu
 
             if (wipe != null)
             {
+                var wipeImg = wipe.GetComponent<Image>();
+                if (wipeImg != null)
+                {
+                    wipeImg.raycastTarget = false;
+                }
                 // Cover the screen instantly; the sweep reveals from here.
                 wipe.offsetMin = Vector2.zero;
                 wipe.offsetMax = Vector2.zero;
@@ -105,7 +110,6 @@ namespace AlgoRhythm.Game.Menu
                 if (label != null && label != title)
                 {
                     RegisterLabel(label, buttons[i]);
-                    buttons[i].interactable = false;
                 }
 
                 if (buttons[i].name == "Play")
@@ -117,19 +121,27 @@ namespace AlgoRhythm.Game.Menu
                     buttons[i].onClick.AddListener(ExitGame);
                 }
 
-                // Add pointer enter sound effect
-                var trigger = buttons[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-                var entry = new UnityEngine.EventSystems.EventTrigger.Entry
-                {
-                    eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter
-                };
-                entry.callback.AddListener((data) => { PlaySfx(cursorSfx, 0.3f); });
-                trigger.triggers.Add(entry);
+                // Add pointer enter sound effect using dedicated handler that does not conflict with button click events
+                var hover = buttons[i].gameObject.AddComponent<ButtonHoverHandler>();
+                hover.OnHover = () => PlaySfx(cursorSfx, 0.3f);
             }
         }
 
         private void Start()
         {
+            // Set Play button as default selected GameObject for immediate keyboard/gamepad response
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+            {
+                for (int i = 0; i < _gatedButtons.Count; i++)
+                {
+                    if (_gatedButtons[i] != null && _gatedButtons[i].name == "Play")
+                    {
+                        UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(_gatedButtons[i].gameObject);
+                        break;
+                    }
+                }
+            }
+
             // Start Lobby BGM immediately
             if (_bgmSource != null && bgmClip != null)
             {
@@ -142,10 +154,24 @@ namespace AlgoRhythm.Game.Menu
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.anyKey.wasPressedThisFrame)
+            if (_startingGame)
             {
-                _skipped = true;
+                return;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame)
+                {
+                    LoadGame();
+                    return;
+                }
+
+                if (keyboard.anyKey.wasPressedThisFrame)
+                {
+                    _skipped = true;
+                }
             }
 
             var touch = Touchscreen.current;
@@ -308,7 +334,7 @@ namespace AlgoRhythm.Game.Menu
         {
             if (button != null)
             {
-                button.interactable = enabled;
+                button.interactable = true;
             }
         }
 
@@ -325,6 +351,7 @@ namespace AlgoRhythm.Game.Menu
         {
             if (_startingGame) return;
             _startingGame = true;
+            StopAllCoroutines();
             StartCoroutine(LoadGameRoutine());
         }
 
@@ -335,6 +362,11 @@ namespace AlgoRhythm.Game.Menu
             // Stepped wipe sweep back to black
             if (wipe != null)
             {
+                var wipeImg = wipe.GetComponent<Image>();
+                if (wipeImg != null)
+                {
+                    wipeImg.raycastTarget = false;
+                }
                 wipe.gameObject.SetActive(true);
                 float width = Screen.width;
                 for (int s = wipeSteps; s >= 0; s--)
@@ -362,6 +394,18 @@ namespace AlgoRhythm.Game.Menu
 #else
             Application.Quit();
 #endif
+        }
+    }
+
+    internal sealed class ButtonHoverHandler : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler
+    {
+        public System.Action OnHover;
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            // Only trigger hover on mouse cursor, not touch taps
+            if (eventData.pointerId >= 0 || eventData.dragging) return;
+            OnHover?.Invoke();
         }
     }
 }
