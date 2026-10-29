@@ -365,5 +365,14 @@ namespace AlgoRhythm.Game.Presentation
                 _standbySource.UnPause();
             }
         }
+
+        public void FastForward(float seconds)
+        {
+            if (_activeSource != null && _activeSource.clip != null)
+            {
+                float target = Mathf.Clamp(_activeSource.time + seconds, 0f, Mathf.Max(0f, _activeSource.clip.length - 0.1f));
+                _activeSource.time = target;
+            }
+        }
     }
 }

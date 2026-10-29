@@ -100,5 +100,18 @@ namespace AlgoRhythm.Tests
             Assert.Throws<System.ArgumentOutOfRangeException>(() => clock.SetBpm(0));
             Assert.Throws<System.ArgumentOutOfRangeException>(() => clock.SetBpm(double.NaN));
         }
+
+        [Test]
+        public void FastForward_AdvancesOriginAndBeatIndex()
+        {
+            var source = new FakeClock { NowDsp = 10.0 };
+            var clock = new BeatClock(source, 120.0);
+            clock.Start(10.0);
+
+            Assert.AreEqual(0, clock.CurrentBeatIndex);
+            clock.FastForward(16);
+            Assert.AreEqual(16, clock.CurrentBeatIndex);
+            Assert.AreEqual(8.0, clock.NowSeconds, 1e-9);
+        }
     }
 }

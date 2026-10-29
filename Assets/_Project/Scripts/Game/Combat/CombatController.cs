@@ -171,47 +171,53 @@ namespace AlgoRhythm.Game.Combat
 
             if (Keyboard.current != null)
             {
-                // Cheat F8: Skip 1 wave + tambah 999 PTS
-                if (Keyboard.current.f8Key.wasPressedThisFrame)
+                // Cheat F6: Pulih HP dan Energy penuh
+                if (Keyboard.current.f6Key.wasPressedThisFrame)
                 {
-#if UNITY_EDITOR
-                    DevSkipSingleWave(999);
+                    DevFullHeal();
                     return;
-#endif
                 }
 
                 // Cheat F7 atau U: Tambah 999 PTS instan
                 if (Keyboard.current.f7Key.wasPressedThisFrame || Keyboard.current.uKey.wasPressedThisFrame)
                 {
-#if UNITY_EDITOR
                     DevAddPts(999);
                     return;
-#endif
+                }
+
+                // Cheat F8: Skip 1 wave + tambah 999 PTS
+                if (Keyboard.current.f8Key.wasPressedThisFrame)
+                {
+                    DevSkipSingleWave(999);
+                    return;
                 }
 
                 // Cheat F9: Skip semua wave sampai Outro
                 if (Keyboard.current.f9Key.wasPressedThisFrame)
                 {
-#if UNITY_EDITOR
                     DevFinishAllWaves();
                     return;
-#endif
                 }
 
                 // Cheat F10 atau B: Langsung lompat ke Boss Fight AIDA
                 if (Keyboard.current.f10Key.wasPressedThisFrame || Keyboard.current.bKey.wasPressedThisFrame)
                 {
-                    UnityEngine.SceneManagement.SceneManager.LoadScene("BossFightScene");
+                    DevJumpToBossFight();
+                    return;
+                }
+
+                // Cheat F11: Fast forward linimasa musik (+16 Beat)
+                if (Keyboard.current.f11Key.wasPressedThisFrame)
+                {
+                    DevFastForward(16);
                     return;
                 }
 
                 // Cheat F12: Skip langsung ke Magnum Opus Ending AIDA
                 if (Keyboard.current.f12Key.wasPressedThisFrame)
                 {
-#if UNITY_EDITOR
                     DevSkipToMagnumOpusEnding();
                     return;
-#endif
                 }
             }
 
@@ -852,7 +858,17 @@ namespace AlgoRhythm.Game.Combat
             }
         }
 
-#if UNITY_EDITOR
+        /// <summary>
+        /// Dev cheat: Full heal & energy restore.
+        /// </summary>
+        public void DevFullHeal()
+        {
+            if (_combat == null) return;
+            _combat.Heal(_combat.MaxIntegrity);
+            _combat.AddEnergy(10);
+            _hud?.SetStatus($"DEV: PULIH PENUH (HP: {_combat.Integrity}/{_combat.MaxIntegrity}, ENERGY: {_combat.Energy})");
+        }
+
         /// <summary>
         /// Dev cheat: skips exactly 1 wave and grants bonus PTS.
         /// If in Tutorial, graduates and advances. If in wave, resolves threats and opens shop.
@@ -860,9 +876,14 @@ namespace AlgoRhythm.Game.Combat
         /// </summary>
         public void DevSkipSingleWave(int bonusPts = 999)
         {
-            if (!_started || _paused || _director.AllWavesCleared)
+            if (!_started || _director.AllWavesCleared)
             {
                 return;
+            }
+
+            if (_paused)
+            {
+                Resume();
             }
 
             _combat.AddPts(bonusPts);
@@ -916,11 +937,38 @@ namespace AlgoRhythm.Game.Combat
             UnityEngine.SceneManagement.SceneManager.LoadScene("BossFightScene");
         }
 
+        /// <summary>
+        /// Dev cheat: jumps straight to the Cyber Pong Boss Fight scene.
+        /// </summary>
+        public void DevJumpToBossFight()
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("BossFightScene");
+        }
+
+        /// <summary>
+        /// Dev cheat: fast-forwards the beat timeline and music playback by the given number of beats.
+        /// </summary>
+        public void DevFastForward(int beats = 16)
+        {
+            if (!_started) return;
+            _clock.FastForward(beats);
+            if (_song != null)
+            {
+                _song.FastForward((float)(beats * _clock.SecondsPerBeat));
+            }
+            _hud?.SetStatus($"DEV: PERCEPAT +{beats} BEAT (BEAT AKTIF: {_clock.CurrentBeatIndex})");
+        }
+
         public void DevFinishAllWaves()
         {
-            if (!_started || _paused)
+            if (!_started)
             {
                 return;
+            }
+
+            if (_paused)
+            {
+                Resume();
             }
 
             int guard = 0;
@@ -970,7 +1018,6 @@ namespace AlgoRhythm.Game.Combat
 
             runner.ForceResolveAll();
         }
-#endif
 
         private void AnnounceWaveClear()
         {

@@ -166,10 +166,9 @@ namespace AlgoRhythm.Game.Combat
             _lastResolved = false;
         }
 
-#if UNITY_EDITOR
         /// <summary>
-        /// Dev-only: graduates the tutorial instantly without confirmations
-        /// (used by the F9 finish-all dev shortcut). Mirrors the Praise
+        /// Dev cheat: graduates the tutorial instantly without confirmations
+        /// (used by the F8 / F9 finish-all dev shortcut). Mirrors the Praise
         /// branch of OnDialogueFinished.
         /// </summary>
         public void DevGraduate()
@@ -194,7 +193,6 @@ namespace AlgoRhythm.Game.Combat
                 _director.Advance();
             }
         }
-#endif
 
         /// <summary>
         /// Shop LANJUT hook: when the next wave has its own tutorial, play

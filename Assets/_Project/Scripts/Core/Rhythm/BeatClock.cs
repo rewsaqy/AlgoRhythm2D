@@ -87,6 +87,14 @@ namespace AlgoRhythm.Core.Rhythm
             _paused = false;
         }
 
+        /// <summary>
+        /// Fast-forwards the beat timeline by advancing origin DSP backward by the given beat count.
+        /// </summary>
+        public void FastForward(int beats)
+        {
+            _originDsp -= beats * _secondsPerBeat;
+        }
+
         public double BeatTime(int beatIndex)
         {
             return _originDsp + beatIndex * _secondsPerBeat;

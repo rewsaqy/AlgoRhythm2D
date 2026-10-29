@@ -229,7 +229,7 @@ namespace AlgoRhythm.Game.Bootstrap
                 var overlayGo = new GameObject("TouchControlsOverlay");
                 touchOverlay = overlayGo.AddComponent<TouchControlsOverlay>();
             }
-            touchOverlay.Initialize(input, arena.transform, shop);
+            touchOverlay.Initialize(input, arena.transform, shop, _controller);
 
             _controller.Start();
             if (tutorial != null)
