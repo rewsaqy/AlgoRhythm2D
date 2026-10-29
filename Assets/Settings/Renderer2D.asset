@@ -44,7 +44,7 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -6930895018603200004}
   m_RendererFeatureMap: fcc1a1b8b383d09f
-  m_UseNativeRenderPass: 0
+  m_UseNativeRenderPass: 1
   m_LayerMask:
     serializedVersion: 2
     m_Bits: 4294967295

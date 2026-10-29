@@ -31,6 +31,23 @@ namespace AlgoRhythm.Game.Presentation
         private bool _showEnergy = true;
         private IntegrityBarView _bar;
 
+        // Dirty-checking cache to eliminate per-frame GC allocations and TextMesh rebuilds
+        private int _cachedScore = -1;
+        private int _cachedPts = -1;
+        private int _cachedP = -1;
+        private int _cachedG = -1;
+        private int _cachedM = -1;
+        private int _cachedBeat = -1;
+        private int _cachedEnergy = -1;
+        private int _cachedIntegrity = -1;
+        private string _cachedWaveId = string.Empty;
+        private double _cachedCalibration = double.NaN;
+        private bool _cachedShowEnergy;
+        private bool _cachedLowIntegrity;
+        private string _cachedStatusString = null;
+        private bool _cachedPaused;
+        private string _cachedClearString = null;
+
         /// <summary>
         /// Called by the bootstrap from DemoConfig.enableCodePanel. When the
         /// rule/energy system is off, ENERGY is hidden (manual-shield only).
@@ -122,58 +139,115 @@ namespace AlgoRhythm.Game.Presentation
             if (_stats != null)
             {
                 int max = Mathf.Max(1, _combat.MaxIntegrity);
-                float fraction = (float)_combat.Integrity / max;
-                if (_bar != null)
+                int integrity = _combat.Integrity;
+                if (integrity != _cachedIntegrity)
                 {
-                    _bar.SetFraction(fraction);
+                    _cachedIntegrity = integrity;
+                    float fraction = (float)integrity / max;
+                    if (_bar != null)
+                    {
+                        _bar.SetFraction(fraction);
+                    }
                 }
+
                 string waveId = _director != null && _director.ActiveRunner != null
                     ? _director.ActiveRunner.Data.WaveId
                     : "--";
                 int beat = _clock.IsStarted ? _clock.CurrentBeatIndex : 0;
                 double calibration = _judge != null ? _judge.CalibrationOffsetMs : 0.0;
-                string calSign = calibration >= 0 ? "+" : "-";
-                string energySegment = _showEnergy
-                    ? $"ENERGY {_combat.Energy}   "
-                    : "MANUAL ONLY   ";
-                _stats.text =
-                    $"{energySegment}SCORE {_combat.Score}  PTS {_combat.CurrencyPts}\n" +
-                    $"P {_combat.PerfectCount}  G {_combat.GoodCount}  M {_combat.MissCount}   " +
-                    $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
-                    $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [ ]"
-                    + (_combat.Integrity <= max * 30 / 100 ? "\n!! LOW INTEGRITY" : string.Empty);
-                _stats.color = _combat.Integrity <= max * 30 / 100
-                    ? UiTypography.Warn
-                    : UiTypography.Ink;
+                int score = _combat.Score;
+                int pts = _combat.CurrencyPts;
+                int p = _combat.PerfectCount;
+                int g = _combat.GoodCount;
+                int m = _combat.MissCount;
+                int energy = _combat.Energy;
+                bool lowIntegrity = integrity <= max * 30 / 100;
+
+                // Dirty check: only format string and rebuild TextMesh when values change
+                if (score != _cachedScore
+                    || pts != _cachedPts
+                    || p != _cachedP
+                    || g != _cachedG
+                    || m != _cachedM
+                    || beat != _cachedBeat
+                    || energy != _cachedEnergy
+                    || lowIntegrity != _cachedLowIntegrity
+                    || _showEnergy != _cachedShowEnergy
+                    || waveId != _cachedWaveId
+                    || calibration != _cachedCalibration)
+                {
+                    _cachedScore = score;
+                    _cachedPts = pts;
+                    _cachedP = p;
+                    _cachedG = g;
+                    _cachedM = m;
+                    _cachedBeat = beat;
+                    _cachedEnergy = energy;
+                    _cachedLowIntegrity = lowIntegrity;
+                    _cachedShowEnergy = _showEnergy;
+                    _cachedWaveId = waveId;
+                    _cachedCalibration = calibration;
+
+                    string calSign = calibration >= 0 ? "+" : "-";
+                    string energySegment = _showEnergy
+                        ? $"ENERGY {energy}   "
+                        : "MANUAL ONLY   ";
+
+                    _stats.text =
+                        $"{energySegment}SCORE {score}  PTS {pts}\n" +
+                        $"P {p}  G {g}  M {m}   " +
+                        $"BEAT {beat} · {waveId} · {(int)_clock.Bpm} BPM\n" +
+                        $"CAL {calSign}{Mathf.Abs((float)calibration):0}ms [ ]"
+                        + (lowIntegrity ? "\n!! LOW INTEGRITY" : string.Empty);
+
+                    _stats.color = lowIntegrity
+                        ? UiTypography.Warn
+                        : UiTypography.Ink;
+                }
             }
 
             if (_status != null)
             {
-                _status.text = !string.IsNullOrEmpty(_statusText)
-                    && Time.unscaledTime <= _statusVisibleUntil
+                string targetStatus = !string.IsNullOrEmpty(_statusText) && Time.unscaledTime <= _statusVisibleUntil
                     ? _statusText
                     : string.Empty;
+
+                if (targetStatus != _cachedStatusString)
+                {
+                    _cachedStatusString = targetStatus;
+                    _status.text = targetStatus;
+                }
             }
 
             if (_pause != null)
             {
-                _pause.text = _clock.IsPaused
-                    ? "II PAUSED · ESC"
-                    : string.Empty;
+                bool isPaused = _clock.IsPaused;
+                if (isPaused != _cachedPaused)
+                {
+                    _cachedPaused = isPaused;
+                    _pause.text = isPaused ? "II PAUSED · ESC" : string.Empty;
+                }
             }
 
             if (_clear != null)
             {
+                string targetClear;
                 if (_clearSummary.Length > 0)
                 {
-                    _clear.text = _clearSummary;
+                    targetClear = _clearSummary;
                 }
                 else
                 {
                     bool cleared = _director != null
                                    && _director.ActiveRunner != null
                                    && _director.ActiveRunner.IsCleared;
-                    _clear.text = cleared ? "WAVE CLEAR" : string.Empty;
+                    targetClear = cleared ? "WAVE CLEAR" : string.Empty;
+                }
+
+                if (targetClear != _cachedClearString)
+                {
+                    _cachedClearString = targetClear;
+                    _clear.text = targetClear;
                 }
             }
         }

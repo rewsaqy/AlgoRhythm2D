@@ -229,6 +229,12 @@ Shader "Hidden/BrewedInk/CRT_URP"
                 half4 borderColor = (half4)SAMPLE_TEXTURE2D(_BorderTex, sampler_BorderTex, p * _BorderTex_ST.xy + _BorderTex_ST.zw);
                 borderColor.rgb = lerp(borderColor.rgb * (half3)_BorderTint.rgb, (half3)_BorderTint.rgb, 1.0h - (half)_BorderTint.a);
 
+                // Instant early-exit for outside bezel/pillarbox: skips 100% of CRT math and texture sampling
+                if (outsideMask > 0.999h)
+                {
+                    return borderColor;
+                }
+
                 float2 uv = p * (1.0 - _BorderOutterRound);
                 float2 offset = uv / _Curvature;
                 float2 curvedSpace = uv + uv * offset * offset;
