@@ -52,5 +52,17 @@ namespace AlgoRhythm.Tests
             judge.CalibrationOffsetMs = -999.0;
             Assert.AreEqual(-150.0, judge.CalibrationOffsetMs);
         }
+
+        [Test]
+        public void CalibrationClampCanBeCustomizedForMobile()
+        {
+            var judge = new TimingJudge(70.0, 130.0, 350.0);
+
+            judge.CalibrationOffsetMs = 999.0;
+            Assert.AreEqual(350.0, judge.CalibrationOffsetMs);
+
+            judge.CalibrationOffsetMs = -999.0;
+            Assert.AreEqual(-350.0, judge.CalibrationOffsetMs);
+        }
     }
 }

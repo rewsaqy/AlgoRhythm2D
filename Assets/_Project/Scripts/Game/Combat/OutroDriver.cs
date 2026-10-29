@@ -312,6 +312,16 @@ namespace AlgoRhythm.Game.Combat
 
         private void UpdateFinaleInput()
         {
+            var touch = Touchscreen.current;
+            bool touched = (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+                || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
+
+            if (touched)
+            {
+                SceneManager.LoadScene("BossFightScene");
+                return;
+            }
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
             {

@@ -443,7 +443,6 @@ namespace AlgoRhythm.Game.Boss
         private void HandleEndGameInput()
         {
             var keyboard = Keyboard.current;
-            if (keyboard == null) return;
 
             // Navigasi saat victory maupun defeat dikendalikan penuh oleh AidaDeathCinematic jika aktif
             var cinematic = deathCinematic != null ? deathCinematic : GetComponentInChildren<AidaDeathCinematic>(true);
@@ -454,13 +453,25 @@ namespace AlgoRhythm.Game.Boss
 
             if (_isGameOver)
             {
-                if (keyboard.rKey.wasPressedThisFrame)
+                var touch = Touchscreen.current;
+                var mouse = Mouse.current;
+                if ((touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+                    || (mouse != null && mouse.leftButton.wasPressedThisFrame))
                 {
                     SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    return;
                 }
-                else if (keyboard.escapeKey.wasPressedThisFrame)
+
+                if (keyboard != null)
                 {
-                    SceneManager.LoadScene("MainMenu");
+                    if (keyboard.rKey.wasPressedThisFrame)
+                    {
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    }
+                    else if (keyboard.escapeKey.wasPressedThisFrame)
+                    {
+                        SceneManager.LoadScene("MainMenu");
+                    }
                 }
             }
         }

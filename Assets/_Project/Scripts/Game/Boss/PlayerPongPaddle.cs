@@ -43,7 +43,15 @@ namespace AlgoRhythm.Game.Boss
             var keyboard = Keyboard.current;
 
             bool usedMouse = false;
-            if (mouse != null && _mainCamera != null)
+            var touch = Touchscreen.current;
+            if (touch != null && _mainCamera != null && touch.primaryTouch.press.isPressed)
+            {
+                Vector2 touchScreen = touch.primaryTouch.position.ReadValue();
+                Vector3 touchWorld = _mainCamera.ScreenToWorldPoint(new Vector3(touchScreen.x, touchScreen.y, 10f));
+                targetX = Mathf.Clamp(touchWorld.x, minX, maxX);
+                usedMouse = true;
+            }
+            else if (mouse != null && _mainCamera != null)
             {
                 Vector2 mouseDelta = mouse.delta.ReadValue();
                 if (mouseDelta.sqrMagnitude > 0.05f || mouse.leftButton.isPressed)

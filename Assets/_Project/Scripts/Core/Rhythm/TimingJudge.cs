@@ -14,7 +14,7 @@ namespace AlgoRhythm.Core.Rhythm
 
         private double _calibrationOffsetMs;
 
-        public TimingJudge(double perfectWindowMs = 70.0, double goodWindowMs = 130.0)
+        public TimingJudge(double perfectWindowMs = 70.0, double goodWindowMs = 130.0, double maxCalibrationOffsetMs = 150.0)
         {
             if (perfectWindowMs < 0 || double.IsNaN(perfectWindowMs))
             {
@@ -26,22 +26,30 @@ namespace AlgoRhythm.Core.Rhythm
                 throw new ArgumentOutOfRangeException(nameof(goodWindowMs));
             }
 
+            if (maxCalibrationOffsetMs < 0 || double.IsNaN(maxCalibrationOffsetMs))
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxCalibrationOffsetMs));
+            }
+
             PerfectWindowMs = perfectWindowMs;
             GoodWindowMs = goodWindowMs;
+            MaxCalibrationOffsetMs = maxCalibrationOffsetMs;
         }
 
         public double PerfectWindowMs { get; }
 
         public double GoodWindowMs { get; }
 
+        public double MaxCalibrationOffsetMs { get; }
+
         /// <summary>
         /// Player calibration offset. Positive values make late input count as
-        /// on-time. Clamped to +/-150 ms.
+        /// on-time. Clamped to +/-MaxCalibrationOffsetMs.
         /// </summary>
         public double CalibrationOffsetMs
         {
             get => _calibrationOffsetMs;
-            set => _calibrationOffsetMs = Math.Max(-150.0, Math.Min(150.0, value));
+            set => _calibrationOffsetMs = Math.Max(-MaxCalibrationOffsetMs, Math.Min(MaxCalibrationOffsetMs, value));
         }
 
         public double ErrorMs(double inputDsp, double expectedImpactDsp)

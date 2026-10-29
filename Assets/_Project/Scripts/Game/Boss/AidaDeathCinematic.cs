@@ -280,20 +280,24 @@ namespace AlgoRhythm.Game.Boss
 
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
+            var touch = Touchscreen.current;
 
-            if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame)
-                || mouse != null && mouse.leftButton.wasPressedThisFrame)
+            if ((keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
+                || (mouse != null && mouse.leftButton.wasPressedThisFrame)
+                || (touch != null && touch.primaryTouch.press.wasPressedThisFrame))
             {
                 _advanceRequested = true;
             }
 
-            if (_cinematicCompleted && keyboard != null)
+            if (_cinematicCompleted)
             {
-                if (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
+                if ((keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame))
+                    || (mouse != null && mouse.leftButton.wasPressedThisFrame)
+                    || (touch != null && touch.primaryTouch.press.wasPressedThisFrame))
                 {
                     SceneManager.LoadScene("MainMenu");
                 }
-                else if (keyboard.rKey.wasPressedThisFrame)
+                else if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
                 {
                     SceneManager.LoadScene(SceneManager.GetActiveScene().name);
                 }

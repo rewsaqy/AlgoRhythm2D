@@ -63,10 +63,11 @@ namespace AlgoRhythm.Game.Bootstrap
             UiTypography.DisplayFont = displayFont;
             var clock = new BeatClock(_clockSource, config.bpm);
             _clock = clock;
-            var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs);
+            double maxCal = Application.isMobilePlatform ? 350.0 : 150.0;
+            var judge = new TimingJudge(config.perfectWindowMs, config.goodWindowMs, maxCal);
             float savedCalibration = PlayerPrefs.GetFloat(
                 DemoDialogue.CalibrationPrefKey, (float)config.calibrationOffsetMs);
-            judge.CalibrationOffsetMs = Mathf.Clamp(savedCalibration, -150f, 150f);
+            judge.CalibrationOffsetMs = Mathf.Clamp(savedCalibration, -(float)maxCal, (float)maxCal);
 
 #if UNITY_EDITOR
             if (waveDefinitions == null || waveDefinitions.Length < 6)
@@ -214,6 +215,22 @@ namespace AlgoRhythm.Game.Bootstrap
                     _director, outroDialogue, blackout, clock,
                     cameraShake, sfx, damageFlash);
             }
+            if (Camera.main != null && Camera.main.GetComponent<MobileCameraFramer>() == null)
+            {
+                Camera.main.gameObject.AddComponent<MobileCameraFramer>();
+            }
+
+            var lifecycle = GetComponent<AppLifecycleHandler>() ?? gameObject.AddComponent<AppLifecycleHandler>();
+            lifecycle.Initialize(_controller);
+
+            var touchOverlay = FindAnyObjectByType<TouchControlsOverlay>(FindObjectsInactive.Include);
+            if (touchOverlay == null)
+            {
+                var overlayGo = new GameObject("TouchControlsOverlay");
+                touchOverlay = overlayGo.AddComponent<TouchControlsOverlay>();
+            }
+            touchOverlay.Initialize(input, arena.transform, shop);
+
             _controller.Start();
             if (tutorial != null)
             {

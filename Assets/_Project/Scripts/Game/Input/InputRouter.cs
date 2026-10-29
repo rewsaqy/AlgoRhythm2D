@@ -42,6 +42,37 @@ namespace AlgoRhythm.Game.Input
         /// <summary>Posisi pointer terakhir (piksel layar) untuk aim paddle.</summary>
         public Vector2 AimPosition { get; private set; }
 
+        /// <summary>
+        /// Ketika true, AimPosition hanya diperbarui via SetAimPosition (Touch overlay),
+        /// mengabaikan pointer generik agar tap tombol tidak memindahkan paddle.
+        /// </summary>
+        public bool LockPointerAim { get; set; }
+
+        /// <summary>Memperbarui AimPosition dari input eksternal (mis. virtual touch pad).</summary>
+        public void SetAimPosition(Vector2 screenPosition)
+        {
+            AimPosition = screenPosition;
+        }
+
+        /// <summary>Memicu tap dari tombol virtual touch (Tap A / Tap B / Click).</summary>
+        public void TriggerVirtualTap(TapSource source, bool pressed)
+        {
+            if (pressed)
+            {
+                FirePressed(source);
+            }
+            else
+            {
+                FireReleased(source);
+            }
+        }
+
+        /// <summary>Memicu pause dari tombol virtual atau gesture Android.</summary>
+        public void TriggerVirtualPause()
+        {
+            PausePressed?.Invoke();
+        }
+
         public void Initialize(DspClockSource clock)
         {
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
@@ -173,6 +204,11 @@ namespace AlgoRhythm.Game.Input
 
         private void OnAim(InputAction.CallbackContext context)
         {
+            if (LockPointerAim || Application.isMobilePlatform || SystemInfo.deviceType == DeviceType.Handheld)
+            {
+                return;
+            }
+
             AimPosition = context.ReadValue<Vector2>();
         }
 

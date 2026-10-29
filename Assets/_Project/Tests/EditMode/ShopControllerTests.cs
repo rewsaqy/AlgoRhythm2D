@@ -221,5 +221,26 @@ namespace AlgoRhythm.Tests
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void ShopView_GracePeriod_SuppressesConfirmationImmediatelyAfterShow()
+        {
+            var go = new GameObject("TestShopView");
+            var shopView = go.AddComponent<ShopView>();
+            shopView.Initialize();
+
+            bool confirmedFired = false;
+            shopView.Confirmed += slot => confirmedFired = true;
+
+            shopView.Show();
+            Assert.IsTrue(shopView.IsOpen);
+            Assert.IsTrue(shopView.IsInGracePeriod);
+
+            // Attempting to confirm during grace period should do nothing
+            shopView.ConfirmCurrentSelection();
+            Assert.IsFalse(confirmedFired, "ConfirmCurrentSelection should be ignored while IsInGracePeriod is true.");
+
+            Object.DestroyImmediate(go);
+        }
     }
 }

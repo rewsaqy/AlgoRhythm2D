@@ -147,6 +147,18 @@ namespace AlgoRhythm.Game.Menu
             {
                 _skipped = true;
             }
+
+            var touch = Touchscreen.current;
+            if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+            {
+                _skipped = true;
+            }
+
+            var mouse = Mouse.current;
+            if (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame))
+            {
+                _skipped = true;
+            }
         }
 
         private IEnumerator PlayIntro()

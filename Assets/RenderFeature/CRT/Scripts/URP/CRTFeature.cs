@@ -63,9 +63,26 @@ namespace BrewedInk.CRT.URP
 				m_Pass = new CRTPass();
 		}
 
+		/// <summary>
+		/// Controls whether the CRT post-processing pass is active.
+		/// Kept enabled (1) by default in builds.
+		/// </summary>
+		public static bool IsCrtEnabled
+		{
+			get => PlayerPrefs.GetInt("AlgoRhythm.EnableCRT", 1) == 1;
+			set
+			{
+				PlayerPrefs.SetInt("AlgoRhythm.EnableCRT", value ? 1 : 0);
+				PlayerPrefs.Save();
+			}
+		}
+
 		/// <inheritdoc/>
 		public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
 		{
+			if (!IsCrtEnabled)
+				return;
+
 			if (m_RuntimeMaterial == null || m_Pass == null || m_StartConfig == null)
 				return;
 

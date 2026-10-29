@@ -33,8 +33,12 @@ namespace AlgoRhythm.Game.Presentation
         private bool _open;
         private float _animStart;
         private bool _animating;
+        private float _openedTime;
+
+        public const float InputGracePeriod = 0.5f;
 
         public bool IsOpen => _open;
+        public bool IsInGracePeriod => _open && (Time.unscaledTime - _openedTime < InputGracePeriod);
 
         public void Initialize()
         {
@@ -63,7 +67,12 @@ namespace AlgoRhythm.Game.Presentation
             UiTypography.Style(_hint, 28, 0.065f, UiTypography.Dim,
                 TextAnchor.MiddleCenter, TextAlignment.Center, 1.1f);
             if (_title != null) _title.text = "SHOP PHASE";
-            if (_hint != null) _hint.text = "ATAS/BAWAH pilih · ENTER beli / lanjut";
+            if (_hint != null)
+            {
+                _hint.text = Application.isMobilePlatform
+                    ? "SENTUH baris untuk pilih & konfirmasi"
+                    : "ATAS/BAWAH pilih · ENTER beli / lanjut";
+            }
             SetupBackdrop();
             gameObject.SetActive(false);
             _open = false;
@@ -74,6 +83,7 @@ namespace AlgoRhythm.Game.Presentation
         {
             _open = true;
             _selected = 0;
+            _openedTime = Time.unscaledTime;
 
             // Ensure shop is neatly situated on the open left side
             var rt = GetComponent<RectTransform>();
@@ -118,6 +128,49 @@ namespace AlgoRhythm.Game.Presentation
 
             UpdateEntrance();
 
+            // Touch / mouse selection of shop rows
+            var touch = Touchscreen.current;
+            bool pointerDown = (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+                || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
+
+            if (pointerDown)
+            {
+                if (IsInGracePeriod)
+                {
+                    return;
+                }
+
+                Vector2 screenPos = touch != null && touch.primaryTouch.press.isPressed
+                    ? touch.primaryTouch.position.ReadValue()
+                    : (Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
+
+                Camera cam = Camera.main;
+                if (cam != null)
+                {
+                    Vector3 worldPos = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
+                    for (int i = 0; i < SlotCount; i++)
+                    {
+                        if (_rows[i] != null && _rows[i].gameObject.activeSelf)
+                        {
+                            Vector3 rowPos = _rows[i].transform.position;
+                            if (Mathf.Abs(worldPos.y - rowPos.y) < 0.65f && Mathf.Abs(worldPos.x - rowPos.x) < 4.5f)
+                            {
+                                if (_selected == i)
+                                {
+                                    Confirmed?.Invoke(_selected);
+                                }
+                                else
+                                {
+                                    _selected = i;
+                                    Repaint();
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
             {
@@ -137,8 +190,42 @@ namespace AlgoRhythm.Game.Presentation
             else if (keyboard.enterKey.wasPressedThisFrame
                 || keyboard.numpadEnterKey.wasPressedThisFrame)
             {
-                Confirmed?.Invoke(_selected);
+                if (!IsInGracePeriod)
+                {
+                    Confirmed?.Invoke(_selected);
+                }
             }
+        }
+
+        public void MoveSelectionUp()
+        {
+            _selected = (_selected + SlotCount - 1) % SlotCount;
+            Repaint();
+        }
+
+        public void MoveSelectionDown()
+        {
+            _selected = (_selected + 1) % SlotCount;
+            Repaint();
+        }
+
+        public void SelectSlot(int slot)
+        {
+            if (slot >= 0 && slot < SlotCount)
+            {
+                _selected = slot;
+                Repaint();
+            }
+        }
+
+        public void ConfirmCurrentSelection()
+        {
+            if (IsInGracePeriod)
+            {
+                return;
+            }
+
+            Confirmed?.Invoke(_selected);
         }
 
         private static readonly string[] SlotIcons = { "[+]", "(O)", "[→]" };

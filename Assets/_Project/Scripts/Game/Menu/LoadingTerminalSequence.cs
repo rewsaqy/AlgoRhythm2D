@@ -67,8 +67,10 @@ namespace AlgoRhythm.Game.Menu
         {
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
+            var touch = Touchscreen.current;
             if ((keyboard != null && keyboard.anyKey.wasPressedThisFrame) ||
-                (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)))
+                (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)) ||
+                (touch != null && touch.primaryTouch.press.wasPressedThisFrame))
             {
                 _skipped = true;
             }

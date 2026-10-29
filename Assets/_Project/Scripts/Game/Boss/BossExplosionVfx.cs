@@ -23,7 +23,9 @@ namespace AlgoRhythm.Game.Boss
             // Trigger UI FlashOverlay for 0.2s at each explosion
             AidaDeathCinematic.TriggerFlash(0.2f, 1.0f);
 
-            StartCoroutine(ExplosionRoutine(color, count, speed));
+            var routine = ExplosionRoutine(color, count, speed);
+            routine.MoveNext();
+            StartCoroutine(routine);
         }
 
         private IEnumerator ExplosionRoutine(Color color, int count, float speed)
@@ -43,7 +45,10 @@ namespace AlgoRhythm.Game.Boss
             var flashCol = flashCore.GetComponent<Collider>();
             if (flashCol != null) DestroySafe(flashCol);
 
-            Material flashCoreMat = new Material(unlit) { color = Color.white };
+            Material flashCoreMat = new Material(unlit);
+            if (flashCoreMat.HasProperty("_BaseColor")) flashCoreMat.SetColor("_BaseColor", Color.white);
+            if (flashCoreMat.HasProperty("_Color")) flashCoreMat.SetColor("_Color", Color.white);
+            try { flashCoreMat.color = Color.white; } catch { }
             var coreRend = flashCore.GetComponent<Renderer>();
             if (coreRend != null) coreRend.sharedMaterial = flashCoreMat;
 
@@ -56,7 +61,11 @@ namespace AlgoRhythm.Game.Boss
             var haloCol = flashHalo.GetComponent<Collider>();
             if (haloCol != null) DestroySafe(haloCol);
 
-            Material flashHaloMat = new Material(unlit) { color = new Color(color.r, color.g, color.b, 0.9f) };
+            Material flashHaloMat = new Material(unlit);
+            Color haloColVal = new Color(color.r, color.g, color.b, 0.9f);
+            if (flashHaloMat.HasProperty("_BaseColor")) flashHaloMat.SetColor("_BaseColor", haloColVal);
+            if (flashHaloMat.HasProperty("_Color")) flashHaloMat.SetColor("_Color", haloColVal);
+            try { flashHaloMat.color = haloColVal; } catch { }
             var haloRend = flashHalo.GetComponent<Renderer>();
             if (haloRend != null) haloRend.sharedMaterial = flashHaloMat;
 

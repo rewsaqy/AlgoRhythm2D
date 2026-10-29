@@ -79,7 +79,9 @@ namespace AlgoRhythm.Game.Presentation
 
             if (_hint != null)
             {
-                _hint.text = "1/2/3 slot · Q/E cycle · ENTER commit · R reset";
+                _hint.text = Application.isMobilePlatform
+                    ? "SENTUH slot untuk pilih & ganti · PREVIEW untuk pasang"
+                    : "1/2/3 slot · Q/E cycle · ENTER commit · R reset";
                 _hint.color = UiTypography.Faint;
             }
 
@@ -197,6 +199,54 @@ namespace AlgoRhythm.Game.Presentation
                 return;
             }
 
+            // Direct touch / click support for code panel slots and preview
+            var touch = Touchscreen.current;
+            bool pointerDown = (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+                || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
+
+            if (pointerDown)
+            {
+                Vector2 screenPos = touch != null && touch.primaryTouch.press.isPressed
+                    ? touch.primaryTouch.position.ReadValue()
+                    : (Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
+
+                Camera cam = Camera.main;
+                if (cam != null)
+                {
+                    Vector3 worldPos = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
+                    TextMesh[] slots = { _slotCondition, _slotTarget, _slotAction };
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        if (slots[i] != null)
+                        {
+                            Vector3 pos = slots[i].transform.position;
+                            if (Mathf.Abs(worldPos.y - pos.y) < 0.45f && Mathf.Abs(worldPos.x - pos.x) < 2.2f)
+                            {
+                                if (_selectedSlot == i)
+                                {
+                                    Cycle(1);
+                                }
+                                else
+                                {
+                                    SelectSlot(i);
+                                }
+                                return;
+                            }
+                        }
+                    }
+
+                    if (_preview != null)
+                    {
+                        Vector3 pos = _preview.transform.position;
+                        if (Mathf.Abs(worldPos.y - pos.y) < 0.45f && Mathf.Abs(worldPos.x - pos.x) < 2.5f)
+                        {
+                            Commit();
+                            return;
+                        }
+                    }
+                }
+            }
+
             // Self-cleaning toast: the last log line fades on its own so
             // the panel returns to slots + preview + hint only.
             if (_log != null && _logLines.Count > 0 && Time.unscaledTime > _logVisibleUntil)
@@ -295,14 +345,14 @@ namespace AlgoRhythm.Game.Presentation
 
         private void OnResetSafe(InputAction.CallbackContext context) => ResetSafe();
 
-        private void SelectSlot(int slot)
+        public void SelectSlot(int slot)
         {
             _selectedSlot = Mathf.Clamp(slot, 0, 2);
             TouchForError();
             RefreshLabels();
         }
 
-        private void Cycle(int direction)
+        public void Cycle(int direction)
         {
             switch (_selectedSlot)
             {
@@ -321,6 +371,10 @@ namespace AlgoRhythm.Game.Presentation
             TouchForError();
             RefreshLabels();
         }
+
+        public void CycleNext() => Cycle(1);
+
+        public void CyclePrev() => Cycle(-1);
 
         private void TouchForError()
         {
@@ -355,7 +409,7 @@ namespace AlgoRhythm.Game.Presentation
             return options[index];
         }
 
-        private void Commit()
+        public void Commit()
         {
             Revalidate(force: true);
             TouchForError();
@@ -373,7 +427,7 @@ namespace AlgoRhythm.Game.Presentation
             RefreshLabels();
         }
 
-        private void ResetSafe()
+        public void ResetSafe()
         {
             _cond = _condOptions.Count == 1 ? _condOptions[0] : (Condition?)null;
             _tgt = null;

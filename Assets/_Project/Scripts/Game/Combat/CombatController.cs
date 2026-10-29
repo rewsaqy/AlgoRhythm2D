@@ -317,7 +317,7 @@ namespace AlgoRhythm.Game.Combat
             _paused = true;
 
             _threats.ClearBufferedInput();
-            _hud.SetStatus("PAUSED: press ESC to resume");
+            _hud.SetStatus(Application.isMobilePlatform ? "II PAUSED: TAP II TO RESUME" : "PAUSED: press ESC to resume");
         }
 
         public void Resume()

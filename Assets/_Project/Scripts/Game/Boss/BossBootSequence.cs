@@ -53,8 +53,10 @@ namespace AlgoRhythm.Game.Boss
 
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
+            var touch = Touchscreen.current;
             if ((keyboard != null && keyboard.anyKey.wasPressedThisFrame) ||
-                (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)))
+                (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)) ||
+                (touch != null && touch.primaryTouch.press.wasPressedThisFrame))
             {
                 _skipped = true;
             }
@@ -120,8 +122,10 @@ namespace AlgoRhythm.Game.Boss
             {
                 var kb = Keyboard.current;
                 var ms = Mouse.current;
+                var tc = Touchscreen.current;
                 if ((kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame)) ||
-                    (ms != null && ms.leftButton.wasPressedThisFrame))
+                    (ms != null && ms.leftButton.wasPressedThisFrame) ||
+                    (tc != null && tc.primaryTouch.press.wasPressedThisFrame))
                 {
                     confirmed = true;
                 }

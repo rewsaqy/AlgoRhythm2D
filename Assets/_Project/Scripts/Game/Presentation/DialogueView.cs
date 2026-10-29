@@ -378,17 +378,33 @@ namespace AlgoRhythm.Game.Presentation
                 Render();
             }
 
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null)
+            bool touchPressed = false;
+            var touch = Touchscreen.current;
+            if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
             {
-                return;
+                touchPressed = true;
             }
 
-            if (keyboard[advanceKeyA].wasPressedThisFrame
-                || keyboard[advanceKeyB].wasPressedThisFrame)
+            var mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            {
+                touchPressed = true;
+            }
+
+            Keyboard keyboard = Keyboard.current;
+            bool keyPressed = keyboard != null && (keyboard[advanceKeyA].wasPressedThisFrame
+                || keyboard[advanceKeyB].wasPressedThisFrame);
+
+            if (touchPressed || keyPressed)
             {
                 Advance();
             }
+        }
+
+        /// <summary>Public method to advance dialogue from touch UI buttons.</summary>
+        public void AdvanceDialogue()
+        {
+            Advance();
         }
 
         private void Advance()
